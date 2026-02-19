@@ -26,10 +26,13 @@ class EvaluationController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'q' => ['nullable', 'string', 'max:120'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $limit = (int) ($validated['limit'] ?? 20);
+        $perPage = (int) ($validated['per_page'] ?? $validated['limit'] ?? 20);
+        $page = (int) ($validated['page'] ?? 1);
         $searchTerm = isset($validated['q']) ? mb_strtolower(trim($validated['q'])) : null;
 
         $query = OccupationalEvaluation::query()
@@ -72,9 +75,23 @@ class EvaluationController extends Controller
             });
         });
 
+        $total = (clone $query)->count();
+        $evaluations = $query
+            ->forPage($page, $perPage)
+            ->get();
+        $totalPages = max(1, (int) ceil($total / $perPage));
+
         return response()->json([
             'ok' => true,
-            'data' => $query->limit($limit)->get(),
+            'data' => $evaluations,
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+            ],
         ]);
     }
 

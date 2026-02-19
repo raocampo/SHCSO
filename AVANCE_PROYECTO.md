@@ -39,7 +39,7 @@
   - `php artisan migrate:fresh --seed`
   - `php artisan route:list`
   - `php artisan test` (incluyendo pruebas de historial/edicion de trabajador)
-- [ ] Ajustes finales de UX/UI (tablas paginadas, mensajes de validacion mas completos y exportaciones)
+- [x] Ajustes finales de UX/UI (tablas paginadas, mensajes de validacion mas completos y exportaciones)
 - [x] Modulo de usuarios en interfaz (crear/editar/desactivar usuarios y roles desde web)
 - [x] Historia clinica ampliada (antecedentes estructurados y evolucion longitudinal)
 
@@ -60,10 +60,9 @@
 
 ### Pendiente critico (producto cliente)
 
-1. Mejoras de UX:
-   - paginacion en tablas
-   - validaciones y mensajes mas claros en formularios
-   - exportaciones basicas (CSV/PDF) en listados clave
+1. Ajustes complementarios de cierre:
+   - afinar diseno visual en modulos de operacion
+   - preparar ajustes institucionales del PDF (logo/sello/firma)
 
 ## Actualizacion ejecutada (2026-02-19)
 
@@ -147,6 +146,22 @@
 - Pruebas:
   - `WorkerHistoryApiTest` ampliado para guardar/consultar historia clinica
   - validacion local completa: `11 passed (54 assertions)`
+
+## Actualizacion ejecutada (2026-02-19 - bloque UX)
+
+### Implementado
+
+- Paginacion:
+  - backend con `page` y `per_page` en listados de trabajadores, evaluaciones, certificados y usuarios
+  - respuesta con `meta` (`total`, `total_pages`, `has_next`, `has_prev`)
+  - controles Anterior/Siguiente en UI para tablas principales
+- Validaciones:
+  - manejo de errores de validacion por campo en frontend (mensajes mas claros para usuario)
+- Exportaciones:
+  - exportacion CSV (pagina actual) en listados de trabajadores, evaluaciones, certificados y usuarios
+- Pruebas:
+  - pruebas de paginacion en `WorkerHistoryApiTest` y `UserManagementApiTest`
+  - validacion local completa: `13 passed (72 assertions)`
 
 ### Bloque 3 - Cierre de sprint (prioridad media)
 

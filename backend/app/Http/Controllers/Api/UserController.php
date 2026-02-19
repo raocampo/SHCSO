@@ -14,8 +14,17 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $limit = max(1, min(200, (int) $request->integer('limit', 50)));
-        $query = trim((string) $request->query('q', ''));
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'is_active' => ['nullable', 'boolean'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        $query = trim((string) ($validated['q'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? $validated['limit'] ?? 50);
+        $page = (int) ($validated['page'] ?? 1);
 
         $usersQuery = User::query()
             ->with('roles:id,name')
@@ -29,15 +38,27 @@ class UserController extends Controller
             });
         }
 
-        if ($request->filled('is_active')) {
-            $usersQuery->where('is_active', $request->boolean('is_active'));
+        if (array_key_exists('is_active', $validated)) {
+            $usersQuery->where('is_active', (bool) $validated['is_active']);
         }
 
-        $users = $usersQuery->limit($limit)->get();
+        $total = (clone $usersQuery)->count();
+        $users = $usersQuery
+            ->forPage($page, $perPage)
+            ->get();
+        $totalPages = max(1, (int) ceil($total / $perPage));
 
         return response()->json([
             'ok' => true,
             'data' => $users->map(fn (User $user) => $this->serializeUser($user)),
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+            ],
         ]);
     }
 

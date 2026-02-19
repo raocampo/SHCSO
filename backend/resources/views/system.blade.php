@@ -17,6 +17,7 @@
         .subtitle { margin:4px 0 0; color:var(--muted); }
         .actions { display:flex; gap:8px; }
         .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:10px; padding:10px 13px; cursor:pointer; font-weight:700; }
+        .btn:disabled { opacity:.55; cursor:not-allowed; }
         .btn.primary { background:var(--ink); border-color:var(--ink); color:#fff; }
         .btn.accent { background:var(--accent); border-color:var(--accent); color:#fff; }
         .btn.warn { background:var(--warn); border-color:var(--warn); color:#2a1b08; }
@@ -62,6 +63,8 @@
         .toolbar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
         .toolbar.compact { grid-template-columns:2fr repeat(3,minmax(0,1fr)) auto; align-items:end; }
         .toolbar .btn { padding:9px 10px; }
+        .pager { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
+        .pager .hint { margin:0; }
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
         @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .workerSplit{grid-template-columns:1fr;} }
         @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} }
@@ -198,8 +201,16 @@
                 <div class="toolbar compact">
                     <div class="field"><label>Buscar</label><input id="workerSearchInput" placeholder="Documento o nombre"></div>
                     <button id="workerSearchBtn" class="btn" type="button">Buscar</button>
+                    <button id="workersExportBtn" class="btn" type="button">Exportar CSV</button>
                 </div>
                 <div class="tableWrap"><table><thead><tr><th>Documento</th><th>Nombre</th><th>Empresa</th><th>Historia</th><th>Accion</th></tr></thead><tbody id="workersBody"></tbody></table></div>
+                <div class="pager">
+                    <div class="rowActions">
+                        <button id="workersPrevBtn" class="btn small" type="button">Anterior</button>
+                        <button id="workersNextBtn" class="btn small" type="button">Siguiente</button>
+                    </div>
+                    <p id="workersPageInfo" class="hint">Pagina 1 de 1</p>
+                </div>
             </article>
             <article class="card view-operations">
                 <h2 class="section">Evaluaciones recientes</h2>
@@ -209,8 +220,16 @@
                     <div class="field"><label>Desde</label><input type="date" name="date_from"></div>
                     <div class="field"><label>Hasta</label><input type="date" name="date_to"></div>
                     <button class="btn" type="submit">Filtrar</button>
+                    <button id="evaluationsExportBtn" class="btn" type="button">Exportar CSV</button>
                 </form>
                 <div class="tableWrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Tipo</th><th>Aptitud</th></tr></thead><tbody id="evaluationsBody"></tbody></table></div>
+                <div class="pager">
+                    <div class="rowActions">
+                        <button id="evaluationsPrevBtn" class="btn small" type="button">Anterior</button>
+                        <button id="evaluationsNextBtn" class="btn small" type="button">Siguiente</button>
+                    </div>
+                    <p id="evaluationsPageInfo" class="hint">Pagina 1 de 1</p>
+                </div>
             </article>
         </div>
 
@@ -270,8 +289,16 @@
                 <div class="field"><label>Desde</label><input type="date" name="date_from"></div>
                 <div class="field"><label>Hasta</label><input type="date" name="date_to"></div>
                 <div class="field"><label>&nbsp;</label><button class="btn" type="submit">Filtrar</button></div>
+                <button id="certificatesExportBtn" class="btn" type="button">Exportar CSV</button>
             </form>
             <div class="tableWrap"><table><thead><tr><th>Codigo</th><th>Fecha</th><th>Trabajador</th><th>Aptitud</th><th>Acciones</th></tr></thead><tbody id="certificatesBody"></tbody></table></div>
+            <div class="pager">
+                <div class="rowActions">
+                    <button id="certificatesPrevBtn" class="btn small" type="button">Anterior</button>
+                    <button id="certificatesNextBtn" class="btn small" type="button">Siguiente</button>
+                </div>
+                <p id="certificatesPageInfo" class="hint">Pagina 1 de 1</p>
+            </div>
         </article>
 
         <div class="grid2 view-users">
@@ -304,6 +331,14 @@
         <article class="card view-users">
             <h2 class="section">Usuarios del sistema</h2>
             <div class="tableWrap"><table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+            <div class="pager">
+                <div class="rowActions">
+                    <button id="usersExportBtn" class="btn small" type="button">Exportar CSV</button>
+                    <button id="usersPrevBtn" class="btn small" type="button">Anterior</button>
+                    <button id="usersNextBtn" class="btn small" type="button">Siguiente</button>
+                </div>
+                <p id="usersPageInfo" class="hint">Pagina 1 de 1</p>
+            </div>
         </article>
     </section>
 </div>
@@ -313,6 +348,12 @@ const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
     selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
+    pagination:{
+        workers:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
+        evaluations:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
+        certificates:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
+        users:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
+    },
     evaluationFilters:{ evaluation_type:"", medical_aptitude:"", date_from:"", date_to:"" },
     certificateFilters:{ medical_aptitude:"", date_from:"", date_to:"" }
 };
@@ -323,6 +364,10 @@ const refs = {
     dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
+    workersPrevBtn: document.getElementById("workersPrevBtn"), workersNextBtn: document.getElementById("workersNextBtn"), workersPageInfo: document.getElementById("workersPageInfo"), workersExportBtn: document.getElementById("workersExportBtn"),
+    evaluationsPrevBtn: document.getElementById("evaluationsPrevBtn"), evaluationsNextBtn: document.getElementById("evaluationsNextBtn"), evaluationsPageInfo: document.getElementById("evaluationsPageInfo"), evaluationsExportBtn: document.getElementById("evaluationsExportBtn"),
+    certificatesPrevBtn: document.getElementById("certificatesPrevBtn"), certificatesNextBtn: document.getElementById("certificatesNextBtn"), certificatesPageInfo: document.getElementById("certificatesPageInfo"), certificatesExportBtn: document.getElementById("certificatesExportBtn"),
+    usersPrevBtn: document.getElementById("usersPrevBtn"), usersNextBtn: document.getElementById("usersNextBtn"), usersPageInfo: document.getElementById("usersPageInfo"), usersExportBtn: document.getElementById("usersExportBtn"),
     workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
     workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"), workerEditCompany: document.getElementById("workerEditCompany"), workerEditPosition: document.getElementById("workerEditPosition"),
@@ -339,6 +384,64 @@ function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","
 function buildQueryString(filters){ const p = new URLSearchParams(); Object.entries(filters).forEach(([k,v]) => { if(v!==null && v!==undefined && String(v).trim()!=="") p.set(k, String(v)); }); return p.toString(); }
 function canManageUsers(){ return Array.isArray(state.user?.roles) && state.user.roles.includes("ADMIN"); }
 function compactText(value){ const v = String(value ?? "").trim(); return v === "" ? null : v; }
+function normalizeFieldName(field){ return String(field || "").replaceAll("_"," "); }
+function extractApiErrorMessage(data, fallback){
+    if(data?.errors && typeof data.errors === "object"){
+        const firstKey = Object.keys(data.errors)[0];
+        const firstArray = firstKey ? data.errors[firstKey] : null;
+        const firstMessage = Array.isArray(firstArray) ? firstArray[0] : null;
+        if(firstMessage) return `${normalizeFieldName(firstKey)}: ${firstMessage}`;
+    }
+    return data?.message || fallback;
+}
+function normalizePageMeta(meta, fallbackPage=1, fallbackPerPage=10){
+    const page = Math.max(1, Number(meta?.page ?? fallbackPage) || fallbackPage);
+    const perPage = Math.max(1, Number(meta?.per_page ?? fallbackPerPage) || fallbackPerPage);
+    const total = Math.max(0, Number(meta?.total ?? 0) || 0);
+    const totalPages = Math.max(1, Number(meta?.total_pages ?? Math.ceil(total / perPage) || 1) || 1);
+    return {
+        page: Math.min(page, totalPages),
+        per_page: perPage,
+        total,
+        total_pages: totalPages,
+        has_next: page < totalPages,
+        has_prev: page > 1,
+    };
+}
+function applyPagerInfo(type){
+    const meta = state.pagination[type];
+    const map = {
+        workers:[refs.workersPrevBtn, refs.workersNextBtn, refs.workersPageInfo],
+        evaluations:[refs.evaluationsPrevBtn, refs.evaluationsNextBtn, refs.evaluationsPageInfo],
+        certificates:[refs.certificatesPrevBtn, refs.certificatesNextBtn, refs.certificatesPageInfo],
+        users:[refs.usersPrevBtn, refs.usersNextBtn, refs.usersPageInfo],
+    };
+    const [prevBtn, nextBtn, info] = map[type];
+    if(!prevBtn || !nextBtn || !info) return;
+    prevBtn.disabled = !meta.has_prev;
+    nextBtn.disabled = !meta.has_next;
+    info.textContent = `Pagina ${meta.page} de ${meta.total_pages} (${meta.total} registros)`;
+}
+function toCsvValue(value){
+    const raw = String(value ?? "");
+    const escaped = raw.replaceAll('"', '""');
+    return `"${escaped}"`;
+}
+function exportCsv(filename, headers, rows){
+    const lines = [];
+    lines.push(headers.map(toCsvValue).join(","));
+    rows.forEach(row => lines.push(row.map(toCsvValue).join(",")));
+    const csv = "\uFEFF" + lines.join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
 function applyAuthBootstrapView(){
     const bootstrapRequired = !!state.setupStatus?.bootstrap_required;
     refs.loginForm.classList.toggle("hidden", bootstrapRequired);
@@ -394,7 +497,12 @@ async function api(path, {method="GET", body=null, form=false}={}) {
     const res = await fetch(path, {method, headers, body:payload});
     const ctype = res.headers.get("content-type") || "";
     const data = ctype.includes("application/json") ? await res.json() : {message: await res.text()};
-    if (!res.ok) { const err = new Error(data.message || `HTTP ${res.status}`); err.status = res.status; throw err; }
+    if (!res.ok) {
+        const err = new Error(extractApiErrorMessage(data, `HTTP ${res.status}`));
+        err.status = res.status;
+        err.errors = data?.errors || null;
+        throw err;
+    }
     return data;
 }
 
@@ -408,26 +516,47 @@ async function loadAll(){
     const me = await api("/api/auth/me");
     state.user = me.data;
 
-    const workersQuery = buildQueryString({limit:25, q: state.workerQuery});
-    const evaluationsQuery = buildQueryString({limit:20, ...state.evaluationFilters});
-    const certificatesQuery = buildQueryString({limit:20, ...state.certificateFilters});
+    const workersQuery = buildQueryString({
+        q: state.workerQuery,
+        page: state.pagination.workers.page,
+        per_page: state.pagination.workers.per_page,
+    });
+    const evaluationsQuery = buildQueryString({
+        ...state.evaluationFilters,
+        page: state.pagination.evaluations.page,
+        per_page: state.pagination.evaluations.per_page,
+    });
+    const certificatesQuery = buildQueryString({
+        ...state.certificateFilters,
+        page: state.pagination.certificates.page,
+        per_page: state.pagination.certificates.per_page,
+    });
     const [dashboard, monthly, aptitude, workers, evaluations, certificates, companies, positions] = await Promise.all([
         api("/api/reports/dashboard"), api("/api/reports/monthly-activity?months=6"), api("/api/reports/aptitude-by-company?limit=8"),
         api(`/api/workers?${workersQuery}`), api(`/api/evaluations?${evaluationsQuery}`), api(`/api/certificates?${certificatesQuery}`), api("/api/catalog/companies"), api("/api/catalog/job-positions")
     ]);
     state.dashboard = dashboard.data; state.monthly = monthly.data || []; state.aptitude = aptitude.data || [];
     state.workers = workers.data || []; state.evaluations = evaluations.data || []; state.certificates = certificates.data || []; state.companies = companies.data || []; state.positions = positions.data || [];
+    state.pagination.workers = normalizePageMeta(workers.meta, state.pagination.workers.page, state.pagination.workers.per_page);
+    state.pagination.evaluations = normalizePageMeta(evaluations.meta, state.pagination.evaluations.page, state.pagination.evaluations.per_page);
+    state.pagination.certificates = normalizePageMeta(certificates.meta, state.pagination.certificates.page, state.pagination.certificates.per_page);
 
     if(canManageUsers()){
+        const usersQuery = buildQueryString({
+            page: state.pagination.users.page,
+            per_page: state.pagination.users.per_page,
+        });
         const [users, roles] = await Promise.all([
-            api("/api/users?limit=100"),
+            api(`/api/users?${usersQuery}`),
             api("/api/users/roles"),
         ]);
         state.users = users.data || [];
         state.roles = roles.data || [];
+        state.pagination.users = normalizePageMeta(users.meta, state.pagination.users.page, state.pagination.users.per_page);
     } else {
         state.users = [];
         state.roles = [];
+        state.pagination.users = normalizePageMeta({ page:1, per_page: state.pagination.users.per_page, total:0, total_pages:1 }, 1, state.pagination.users.per_page);
     }
 }
 
@@ -666,7 +795,21 @@ function fillSelects(){
     }
 }
 
-function renderAll(){ renderStats(); renderMonthly(); renderAptitude(); renderWorkers(); renderEvaluations(); renderCertificates(); renderUsers(); fillSelects(); renderWorkerHistory(); }
+function renderAll(){
+    renderStats();
+    renderMonthly();
+    renderAptitude();
+    renderWorkers();
+    renderEvaluations();
+    renderCertificates();
+    renderUsers();
+    fillSelects();
+    renderWorkerHistory();
+    applyPagerInfo("workers");
+    applyPagerInfo("evaluations");
+    applyPagerInfo("certificates");
+    applyPagerInfo("users");
+}
 function showApp(){ refs.loginSection.classList.add("hidden"); refs.appSection.classList.remove("hidden"); refs.refreshBtn.classList.remove("hidden"); refs.logoutBtn.classList.remove("hidden"); }
 function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); applyAuthBootstrapView(); }
 async function prepareLoginSection(){
@@ -948,8 +1091,50 @@ window.addEventListener("popstate", () => {
     setView(resolveViewFromPath(), false);
 });
 
+refs.workersPrevBtn.addEventListener("click", async () => {
+    if(!state.pagination.workers.has_prev) return;
+    state.pagination.workers.page -= 1;
+    await refreshData();
+});
+refs.workersNextBtn.addEventListener("click", async () => {
+    if(!state.pagination.workers.has_next) return;
+    state.pagination.workers.page += 1;
+    await refreshData();
+});
+refs.evaluationsPrevBtn.addEventListener("click", async () => {
+    if(!state.pagination.evaluations.has_prev) return;
+    state.pagination.evaluations.page -= 1;
+    await refreshData();
+});
+refs.evaluationsNextBtn.addEventListener("click", async () => {
+    if(!state.pagination.evaluations.has_next) return;
+    state.pagination.evaluations.page += 1;
+    await refreshData();
+});
+refs.certificatesPrevBtn.addEventListener("click", async () => {
+    if(!state.pagination.certificates.has_prev) return;
+    state.pagination.certificates.page -= 1;
+    await refreshData();
+});
+refs.certificatesNextBtn.addEventListener("click", async () => {
+    if(!state.pagination.certificates.has_next) return;
+    state.pagination.certificates.page += 1;
+    await refreshData();
+});
+refs.usersPrevBtn.addEventListener("click", async () => {
+    if(!state.pagination.users.has_prev) return;
+    state.pagination.users.page -= 1;
+    await refreshData();
+});
+refs.usersNextBtn.addEventListener("click", async () => {
+    if(!state.pagination.users.has_next) return;
+    state.pagination.users.page += 1;
+    await refreshData();
+});
+
 refs.workerSearchBtn.addEventListener("click", async () => {
     state.workerQuery = refs.workerSearchInput.value.trim();
+    state.pagination.workers.page = 1;
     await refreshData();
 });
 
@@ -957,6 +1142,7 @@ refs.workerSearchInput.addEventListener("keydown", async (e) => {
     if(e.key !== "Enter") return;
     e.preventDefault();
     state.workerQuery = refs.workerSearchInput.value.trim();
+    state.pagination.workers.page = 1;
     await refreshData();
 });
 
@@ -969,6 +1155,7 @@ refs.evaluationFilterForm.addEventListener("submit", async (e) => {
         date_from: fd.get("date_from") || "",
         date_to: fd.get("date_to") || ""
     };
+    state.pagination.evaluations.page = 1;
     await refreshData();
 });
 
@@ -980,7 +1167,66 @@ refs.certificateFilterForm.addEventListener("submit", async (e) => {
         date_from: fd.get("date_from") || "",
         date_to: fd.get("date_to") || ""
     };
+    state.pagination.certificates.page = 1;
     await refreshData();
+});
+
+refs.workersExportBtn.addEventListener("click", () => {
+    if(!state.workers.length){ status("No hay trabajadores para exportar en la pagina actual.", "error"); return; }
+    const rows = state.workers.map(w => [
+        w.document_number || "",
+        `${w.first_name || ""} ${w.last_name || ""}`.trim(),
+        w.company?.business_name || w.business_name || "",
+        w.history_number || "",
+        w.file_number || "",
+    ]);
+    exportCsv(`trabajadores-pagina-${state.pagination.workers.page}.csv`, ["Documento","Nombre","Empresa","Historia","Archivo"], rows);
+    status("Exportacion CSV de trabajadores completada.", "ok");
+});
+
+refs.evaluationsExportBtn.addEventListener("click", () => {
+    if(!state.evaluations.length){ status("No hay evaluaciones para exportar en la pagina actual.", "error"); return; }
+    const rows = state.evaluations.map(e => {
+        const w = e.worker || {};
+        return [
+            fmtDate(e.attention_date),
+            `${w.first_name || ""} ${w.last_name || ""}`.trim(),
+            e.evaluation_type || "",
+            e.medical_aptitude || "",
+            e.professional_name || "",
+        ];
+    });
+    exportCsv(`evaluaciones-pagina-${state.pagination.evaluations.page}.csv`, ["Fecha","Trabajador","Tipo","Aptitud","Profesional"], rows);
+    status("Exportacion CSV de evaluaciones completada.", "ok");
+});
+
+refs.certificatesExportBtn.addEventListener("click", () => {
+    if(!state.certificates.length){ status("No hay certificados para exportar en la pagina actual.", "error"); return; }
+    const rows = state.certificates.map(c => {
+        const w = c.worker || {};
+        return [
+            c.certificate_code || "",
+            fmtDate(c.issue_date),
+            `${w.first_name || ""} ${w.last_name || ""}`.trim(),
+            c.medical_aptitude || "",
+            c.observations || "",
+        ];
+    });
+    exportCsv(`certificados-pagina-${state.pagination.certificates.page}.csv`, ["Codigo","Fecha","Trabajador","Aptitud","Observaciones"], rows);
+    status("Exportacion CSV de certificados completada.", "ok");
+});
+
+refs.usersExportBtn.addEventListener("click", () => {
+    if(!state.users.length){ status("No hay usuarios para exportar en la pagina actual.", "error"); return; }
+    const rows = state.users.map(u => [
+        u.full_name || "",
+        u.email || "",
+        u.roles?.[0] || "",
+        u.is_active ? "Activo" : "Inactivo",
+        fmtDate(u.created_at),
+    ]);
+    exportCsv(`usuarios-pagina-${state.pagination.users.page}.csv`, ["Nombre","Email","Rol","Estado","Creado"], rows);
+    status("Exportacion CSV de usuarios completada.", "ok");
 });
 
 refs.workersBody.addEventListener("click", async (e)=>{

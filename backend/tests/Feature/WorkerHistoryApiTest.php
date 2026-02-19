@@ -26,14 +26,14 @@ class WorkerHistoryApiTest extends TestCase
         return $user;
     }
 
-    private function createWorker(): Worker
+    private function createWorker(string $seed = '01'): Worker
     {
         return Worker::query()->create([
             'id' => (string) Str::uuid(),
-            'history_number' => 'HC-010101-11',
-            'file_number' => 'AR-010101-11',
+            'history_number' => "HC-010101-{$seed}",
+            'file_number' => "AR-010101-{$seed}",
             'document_type' => 'CEDULA',
-            'document_number' => '1723456789',
+            'document_number' => "17234567{$seed}",
             'first_name' => 'Ana',
             'last_name' => 'Lopez',
             'birth_date' => '1992-01-10',
@@ -154,5 +154,27 @@ class WorkerHistoryApiTest extends TestCase
             ->assertJsonPath('ok', true)
             ->assertJsonPath('data.worker_id', $worker->id)
             ->assertJsonPath('data.longitudinal_notes', 'Control trimestral por medicina ocupacional');
+    }
+
+    public function test_workers_index_returns_pagination_meta(): void
+    {
+        $this->authenticateAsAdmin();
+
+        foreach (['11', '12', '13', '14', '15'] as $seed) {
+            $this->createWorker($seed);
+        }
+
+        $response = $this->getJson('/api/workers?limit=2&page=2');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('meta.page', 2)
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 5)
+            ->assertJsonPath('meta.total_pages', 3)
+            ->assertJsonPath('meta.has_next', true)
+            ->assertJsonPath('meta.has_prev', true)
+            ->assertJsonCount(2, 'data');
     }
 }

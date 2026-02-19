@@ -70,6 +70,9 @@ Funciones web actuales:
 - Gestion de usuarios desde interfaz web (crear, editar, activar/desactivar) para perfil `ADMIN`
 - Historia clinica ampliada por trabajador (antecedentes estructurados y notas de evolucion longitudinal)
 - Linea de tiempo clinica consolidada (evaluaciones y certificados) en ficha de trabajador
+- Paginacion en listados operativos (trabajadores, evaluaciones, certificados, usuarios)
+- Exportacion CSV basica (pagina actual) para trabajadores, evaluaciones, certificados y usuarios
+- Mensajes de validacion de API mostrados por campo en la UI
 
 ## Endpoints principales (MVP)
 
@@ -105,6 +108,11 @@ Funciones web actuales:
 - `GET /api/reports/aptitude-by-company`
 - `GET /api/reports/top-diagnoses`
 - `GET /api/reports/monthly-activity`
+
+Notas de paginacion en listados:
+
+- Endpoints de listado aceptan `page` y `per_page` (compatibles con `limit`).
+- Respuesta incluye `meta` con: `page`, `per_page`, `total`, `total_pages`, `has_next`, `has_prev`.
 
 ## Estado
 

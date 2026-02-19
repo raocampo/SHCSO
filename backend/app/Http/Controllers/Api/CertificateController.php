@@ -73,10 +73,13 @@ class CertificateController extends Controller
             'medical_aptitude' => ['nullable', 'in:APTO,APTO_OBSERVACION,APTO_LIMITACIONES,NO_APTO'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $limit = (int) ($validated['limit'] ?? 20);
+        $perPage = (int) ($validated['per_page'] ?? $validated['limit'] ?? 20);
+        $page = (int) ($validated['page'] ?? 1);
 
         $query = MedicalCertificate::query()
             ->with([
@@ -107,14 +110,29 @@ class CertificateController extends Controller
             fn ($builder) => $builder->whereDate('issue_date', '<=', $validated['date_to'])
         );
 
-        return response()->json([
-            'ok' => true,
-            'data' => $query->limit($limit)->get()->map(function (MedicalCertificate $certificate) {
+        $total = (clone $query)->count();
+        $certificates = $query
+            ->forPage($page, $perPage)
+            ->get()
+            ->map(function (MedicalCertificate $certificate) {
                 return [
                     ...$certificate->toArray(),
                     'pdf_url' => $certificate->pdf_path ? Storage::disk('public')->url($certificate->pdf_path) : null,
                 ];
-            }),
+            });
+        $totalPages = max(1, (int) ceil($total / $perPage));
+
+        return response()->json([
+            'ok' => true,
+            'data' => $certificates,
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+            ],
         ]);
     }
 

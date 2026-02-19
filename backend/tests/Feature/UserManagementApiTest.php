@@ -70,4 +70,30 @@ class UserManagementApiTest extends TestCase
             'role_name' => 'ENFERMERIA',
         ])->assertForbidden();
     }
+
+    public function test_users_index_returns_pagination_meta(): void
+    {
+        $this->authenticate('ADMIN');
+        $role = Role::query()->firstOrCreate(['name' => 'ENFERMERIA']);
+
+        for ($i = 1; $i <= 5; $i++) {
+            $user = User::factory()->create([
+                'email' => "user{$i}@shcso.local",
+            ]);
+            $user->roles()->syncWithoutDetaching([$role->id]);
+        }
+
+        $response = $this->getJson('/api/users?limit=2&page=2');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('meta.page', 2)
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 6)
+            ->assertJsonPath('meta.total_pages', 3)
+            ->assertJsonPath('meta.has_next', true)
+            ->assertJsonPath('meta.has_prev', true)
+            ->assertJsonCount(2, 'data');
+    }
 }

@@ -22,22 +22,43 @@ class WorkerController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = trim((string) $request->query('q', ''));
-        $limit = min(max((int) $request->query('limit', 20), 1), 100);
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
 
-        $workers = Worker::query()
+        $query = trim((string) ($validated['q'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? $validated['limit'] ?? 20);
+        $page = (int) ($validated['page'] ?? 1);
+
+        $workersQuery = Worker::query()
             ->with(['company:id,business_name', 'jobPosition:id,name'])
             ->when($query !== '', function ($builder) use ($query) {
                 $builder->where('document_number', 'like', "%{$query}%")
                     ->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
             })
-            ->latest()
-            ->limit($limit)
+            ->latest();
+
+        $total = (clone $workersQuery)->count();
+        $workers = $workersQuery
+            ->forPage($page, $perPage)
             ->get();
+
+        $totalPages = max(1, (int) ceil($total / $perPage));
 
         return response()->json([
             'ok' => true,
             'data' => $workers,
+            'meta' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_prev' => $page > 1,
+            ],
         ]);
     }
 
