@@ -443,7 +443,8 @@ function normalizePageMeta(meta, fallbackPage=1, fallbackPerPage=10){
     const page = Math.max(1, Number(meta?.page ?? fallbackPage) || fallbackPage);
     const perPage = Math.max(1, Number(meta?.per_page ?? fallbackPerPage) || fallbackPerPage);
     const total = Math.max(0, Number(meta?.total ?? 0) || 0);
-    const totalPages = Math.max(1, Number(meta?.total_pages ?? Math.ceil(total / perPage) || 1) || 1);
+    const defaultTotalPages = Math.max(1, Math.ceil(total / perPage));
+    const totalPages = Math.max(1, Number(meta?.total_pages ?? defaultTotalPages) || 1);
     return {
         page: Math.min(page, totalPages),
         per_page: perPage,
