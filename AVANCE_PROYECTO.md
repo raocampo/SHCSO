@@ -187,3 +187,28 @@
 - Entorno/documentacion:
   - agregado `backend/.env.example` con variables de PostgreSQL y variables institucionales del PDF
   - `README.md` actualizado con seccion de personalizacion institucional del certificado
+
+## Actualizacion ejecutada (2026-02-19 - estabilizacion final de jornada)
+
+### Implementado
+
+- Assets institucionales temporales para certificacion PDF:
+  - `backend/public/assets/pdf/logo.svg`
+  - `backend/public/assets/pdf/sello.svg`
+  - `backend/public/assets/pdf/firma.svg`
+- Configuracion local validada para PDF institucional en `backend/.env` con variables `SHCSO_*`.
+- Prueba funcional de generacion de certificado:
+  - PDF generado correctamente en `backend/storage/app/public/certificates/`.
+- Correccion de bloqueo de ingreso en `/sistema`:
+  - fix JS en `normalizePageMeta` por conflicto de operadores `??` y `||`.
+  - validacion de sintaxis de script y despliegue de correccion en `master`.
+
+### Pendiente para manana
+
+1. Reemplazar assets temporales (`logo/sello/firma`) por imagenes institucionales oficiales del cliente.
+2. Ejecutar QA rapido de interfaz en `/sistema`, `/sistema/trabajadores`, `/sistema/operacion`, `/sistema/usuarios`.
+3. Validar flujo completo en ambiente local:
+   - crear evaluacion
+   - emitir certificado
+   - generar/descargar PDF con branding oficial
+4. Definir cierre de sprint y preparar mini acta de entrega tecnica (alcance implementado + riesgos remanentes).
