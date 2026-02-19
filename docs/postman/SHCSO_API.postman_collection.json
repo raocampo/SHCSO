@@ -1,0 +1,663 @@
+{
+  "info": {
+    "_postman_id": "f7f1622c-302f-44f9-85b4-3f9bdb7a85a7",
+    "name": "SHCSO API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleccion base para probar el MVP Laravel de SHCSO."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth - Register Admin",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Admin SHCSO\",\n  \"email\": \"admin@shcso.local\",\n  \"password\": \"PasswordSeguro123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register-admin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register-admin"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const res = pm.response.json();",
+              "if (pm.response.code === 200 && res?.data?.token) {",
+              "  pm.environment.set('token', res.data.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@shcso.local\",\n  \"password\": \"PasswordSeguro123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth - Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Catalog - Create Company",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ruc\": \"0999999999002\",\n  \"ciiu\": \"Q8621.01\",\n  \"business_name\": \"Empresa Nueva\",\n  \"work_center\": \"Sucursal Norte\",\n  \"address\": \"Direccion X\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/catalog/companies",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "catalog",
+            "companies"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Catalog - Create Job Position",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ciuo_code\": \"2261\",\n  \"name\": \"Medico Ocupacional\",\n  \"description\": \"Responsable de evaluaciones\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/catalog/job-positions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "catalog",
+            "job-positions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Workers - Create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const res = pm.response.json();",
+              "if (pm.response.code === 201 && res?.data?.id) {",
+              "  pm.environment.set('worker_id', res.data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_type\": \"CEDULA\",\n  \"document_number\": \"1723456790\",\n  \"first_name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"birth_date\": \"1990-05-10\",\n  \"sex\": \"M\",\n  \"email\": \"juan@example.com\",\n  \"phone\": \"0999999999\",\n  \"blood_type\": \"O+\",\n  \"laterality\": \"DIESTRO\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/workers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "workers"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Evaluations - Create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const res = pm.response.json();",
+              "if (pm.response.code === 201 && res?.data?.id) {",
+              "  pm.environment.set('evaluation_id', res.data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"evaluation_type\": \"INGRESO\",\n  \"consultation_reason\": \"Evaluacion de ingreso\",\n  \"medical_aptitude\": \"APTO\",\n  \"professional_name\": \"Dra. Maria Lopez\",\n  \"professional_code\": \"MED-12345\",\n  \"vital_signs\": {\n    \"pa\": \"120/80\",\n    \"fc\": 72\n  },\n  \"diagnoses\": [\n    {\n      \"code\": \"Z00.0\",\n      \"diagnosis_type\": \"DEF\",\n      \"notes\": \"Sin hallazgos relevantes\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/evaluations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "evaluations"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Certificates - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/certificates?limit=10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "certificates"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Certificates - Create from Evaluation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const res = pm.response.json();",
+              "if (pm.response.code === 201 && res?.data?.id) {",
+              "  pm.environment.set('certificate_id', res.data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"observations\": \"Apto para labores\",\n  \"recommendations\": \"Control anual\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/certificates/from-evaluation/{{evaluation_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "certificates",
+            "from-evaluation",
+            "{{evaluation_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Certificates - Get by Id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/certificates/{{certificate_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "certificates",
+            "{{certificate_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Certificates - Generate PDF",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/certificates/{{certificate_id}}/generate-pdf",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "certificates",
+            "{{certificate_id}}",
+            "generate-pdf"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Certificates - Download PDF",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/pdf"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/certificates/{{certificate_id}}/download-pdf",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "certificates",
+            "{{certificate_id}}",
+            "download-pdf"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Evaluations - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/evaluations?limit=20",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "evaluations"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Evaluations - Upload Attachment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/evaluations/{{evaluation_id}}/attachments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "evaluations",
+            "{{evaluation_id}}",
+            "attachments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Evaluations - List Attachments",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/evaluations/{{evaluation_id}}/attachments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "evaluations",
+            "{{evaluation_id}}",
+            "attachments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reports - Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/dashboard",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "dashboard"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reports - Aptitude by Company",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/aptitude-by-company?limit=20",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "aptitude-by-company"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reports - Top Diagnoses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/top-diagnoses?limit=10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "top-diagnoses"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reports - Monthly Activity",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/reports/monthly-activity?months=12",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "monthly-activity"
+          ],
+          "query": [
+            {
+              "key": "months",
+              "value": "12"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "worker_id",
+      "value": ""
+    },
+    {
+      "key": "evaluation_id",
+      "value": ""
+    },
+    {
+      "key": "certificate_id",
+      "value": ""
+    }
+  ]
+}
