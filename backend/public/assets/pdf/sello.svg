@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">
+  <rect width="280" height="280" fill="#ffffff"/>
+  <circle cx="140" cy="140" r="116" fill="none" stroke="#0f8b8d" stroke-width="8"/>
+  <circle cx="140" cy="140" r="92" fill="none" stroke="#0f8b8d" stroke-width="3"/>
+  <text x="140" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#115f61">SHCSO</text>
+  <text x="140" y="116" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#115f61">SALUD OCUPACIONAL</text>
+  <path d="M80 160c22-30 42-46 60-46 18 0 30 13 39 25 6 8 10 15 17 15 9 0 17-8 26-24l10 8c-12 22-25 34-40 34-18 0-27-12-35-24-8-10-14-16-22-16-11 0-25 12-41 37z" fill="#115f61"/>
+  <text x="140" y="214" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#115f61">ECUADOR</text>
+</svg>
