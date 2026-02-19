@@ -52,7 +52,7 @@ php artisan storage:link
 http://127.0.0.1:8000/sistema
 ```
 
-Puedes iniciar sesion con un usuario creado por API (`/api/auth/register-admin`).
+Si no existe un usuario `ADMIN`, la pantalla de login muestra automaticamente el formulario para crear el primer administrador.
 
 Vistas web disponibles:
 
@@ -68,10 +68,13 @@ Funciones web actuales:
 - Filtros de evaluaciones por tipo, aptitud y rango de fechas
 - Filtros de certificados por aptitud y rango de fechas
 - Gestion de usuarios desde interfaz web (crear, editar, activar/desactivar) para perfil `ADMIN`
+- Historia clinica ampliada por trabajador (antecedentes estructurados y notas de evolucion longitudinal)
+- Linea de tiempo clinica consolidada (evaluaciones y certificados) en ficha de trabajador
 
 ## Endpoints principales (MVP)
 
 - `POST /api/auth/register-admin`
+- `GET /api/auth/setup-status`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
@@ -85,6 +88,8 @@ Funciones web actuales:
 - `GET|POST /api/workers`
 - `PUT /api/workers/{workerId}`
 - `GET /api/workers/{workerId}`
+- `GET /api/workers/{workerId}/clinical-history`
+- `PUT /api/workers/{workerId}/clinical-history`
 - `GET /api/workers/{workerId}/history`
 - `POST /api/evaluations`
 - `GET /api/evaluations` (filtros por `company_id`, `medical_aptitude`, fechas, etc.)

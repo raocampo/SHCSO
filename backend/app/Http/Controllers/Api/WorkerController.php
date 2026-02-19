@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MedicalCertificate;
 use App\Models\OccupationalEvaluation;
 use App\Models\Worker;
+use App\Models\WorkerClinicalHistory;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -138,6 +139,66 @@ class WorkerController extends Controller
         ]);
     }
 
+    public function clinicalHistory(string $workerId): JsonResponse
+    {
+        $worker = Worker::query()->findOrFail($workerId);
+
+        $clinicalHistory = WorkerClinicalHistory::query()
+            ->where('worker_id', $worker->id)
+            ->first();
+
+        return response()->json([
+            'ok' => true,
+            'data' => $clinicalHistory ?? [
+                'worker_id' => $worker->id,
+                'personal_background' => null,
+                'family_background' => null,
+                'allergies' => null,
+                'current_medication' => null,
+                'pathological_history' => null,
+                'surgical_history' => null,
+                'occupational_history' => null,
+                'lifestyle_notes' => null,
+                'longitudinal_notes' => null,
+            ],
+        ]);
+    }
+
+    public function upsertClinicalHistory(Request $request, string $workerId): JsonResponse
+    {
+        $worker = Worker::query()->findOrFail($workerId);
+
+        $validated = $request->validate([
+            'personal_background' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'family_background' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'allergies' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'current_medication' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'pathological_history' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'surgical_history' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'occupational_history' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'lifestyle_notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'longitudinal_notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
+        ]);
+
+        $clinicalHistory = WorkerClinicalHistory::query()->updateOrCreate(
+            ['worker_id' => $worker->id],
+            $validated
+        );
+
+        AuditLogger::log(
+            $request->user(),
+            'UPDATE_WORKER_CLINICAL_HISTORY',
+            'worker',
+            $worker->id,
+            ['updated_fields' => array_keys($validated)]
+        );
+
+        return response()->json([
+            'ok' => true,
+            'data' => $clinicalHistory,
+        ]);
+    }
+
     public function history(string $workerId): JsonResponse
     {
         $worker = Worker::query()
@@ -161,10 +222,44 @@ class WorkerController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $clinicalHistory = WorkerClinicalHistory::query()
+            ->where('worker_id', $worker->id)
+            ->first();
+
+        $clinicalTimeline = $evaluations
+            ->map(function (OccupationalEvaluation $evaluation) {
+                return [
+                    'event_type' => 'EVALUATION',
+                    'event_date' => $evaluation->attention_date?->toDateString(),
+                    'reference_id' => $evaluation->id,
+                    'title' => 'Evaluacion ' . $evaluation->evaluation_type,
+                    'subtitle' => $evaluation->medical_aptitude,
+                    'notes' => $evaluation->consultation_reason,
+                    'created_at' => $evaluation->created_at?->toISOString(),
+                ];
+            })
+            ->concat(
+                $certificates->map(function (MedicalCertificate $certificate) {
+                    return [
+                        'event_type' => 'CERTIFICATE',
+                        'event_date' => $certificate->issue_date?->toDateString(),
+                        'reference_id' => $certificate->id,
+                        'title' => 'Certificado ' . $certificate->certificate_code,
+                        'subtitle' => $certificate->medical_aptitude,
+                        'notes' => $certificate->observations,
+                        'created_at' => $certificate->created_at?->toISOString(),
+                    ];
+                })
+            )
+            ->sortByDesc(fn (array $event) => sprintf('%s|%s', $event['event_date'] ?? '', $event['created_at'] ?? ''))
+            ->values();
+
         return response()->json([
             'ok' => true,
             'data' => [
                 'worker' => $worker,
+                'clinical_history' => $clinicalHistory,
+                'clinical_timeline' => $clinicalTimeline,
                 'evaluations' => $evaluations,
                 'certificates' => $certificates,
             ],

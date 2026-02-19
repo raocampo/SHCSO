@@ -15,6 +15,7 @@ Route::get('/health', fn () => response()->json([
     'timestamp' => now()->toISOString(),
 ]));
 
+Route::get('/auth/setup-status', [AuthController::class, 'setupStatus']);
 Route::post('/auth/register-admin', [AuthController::class, 'registerAdmin']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -48,6 +49,10 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::get('/workers/{workerId}', [WorkerController::class, 'show'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::get('/workers/{workerId}/clinical-history', [WorkerController::class, 'clinicalHistory'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::put('/workers/{workerId}/clinical-history', [WorkerController::class, 'upsertClinicalHistory'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::get('/workers/{workerId}/history', [WorkerController::class, 'history'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
 

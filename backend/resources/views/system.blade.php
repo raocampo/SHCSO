@@ -95,8 +95,30 @@
                 <input name="password" type="password" value="PasswordSeguro123" required>
             </div>
             <button class="btn primary" type="submit">Entrar</button>
-            <p class="hint">Si es tu primer ingreso y no tienes cuenta activa, solicita al administrador del sistema la habilitacion de usuario.</p>
+            <p id="loginHint" class="hint">Si es tu primer ingreso y no tienes cuenta activa, solicita al administrador del sistema la habilitacion de usuario.</p>
         </form>
+        <div id="firstAdminBox" class="hidden">
+            <p class="hint">No existe un usuario administrador. Crea el primer usuario para iniciar el sistema.</p>
+            <form id="firstAdminForm">
+                <div class="field">
+                    <label>Nombre completo</label>
+                    <input name="full_name" type="text" required>
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input name="email" type="email" required>
+                </div>
+                <div class="field">
+                    <label>Contrasena</label>
+                    <input name="password" type="password" minlength="8" required>
+                </div>
+                <div class="field">
+                    <label>Confirmar contrasena</label>
+                    <input name="password_confirm" type="password" minlength="8" required>
+                </div>
+                <button class="btn primary" type="submit">Crear primer administrador</button>
+            </form>
+        </div>
     </section>
 
     <section id="appSection" class="hidden">
@@ -213,6 +235,21 @@
                     <div class="field"><label>Puesto</label><select id="workerEditPosition" name="job_position_id"></select></div>
                     <button class="btn" type="submit">Actualizar trabajador</button>
                 </form>
+                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+                <h3 class="section" style="font-size:.9rem;">Historia clinica ampliada</h3>
+                <form id="workerClinicalForm">
+                    <input type="hidden" name="worker_id">
+                    <div class="field"><label>Antecedentes personales</label><textarea name="personal_background" placeholder="Antecedentes personales relevantes"></textarea></div>
+                    <div class="field"><label>Antecedentes familiares</label><textarea name="family_background" placeholder="Antecedentes familiares"></textarea></div>
+                    <div class="field"><label>Alergias</label><textarea name="allergies" placeholder="Alergias conocidas"></textarea></div>
+                    <div class="field"><label>Medicacion habitual</label><textarea name="current_medication" placeholder="Medicacion actual"></textarea></div>
+                    <div class="field"><label>Patologias previas</label><textarea name="pathological_history" placeholder="Patologias previas"></textarea></div>
+                    <div class="field"><label>Antecedentes quirurgicos</label><textarea name="surgical_history" placeholder="Cirugias previas"></textarea></div>
+                    <div class="field"><label>Historia ocupacional</label><textarea name="occupational_history" placeholder="Antecedentes laborales relevantes"></textarea></div>
+                    <div class="field"><label>Habitos y estilo de vida</label><textarea name="lifestyle_notes" placeholder="Habitos, deporte, consumo"></textarea></div>
+                    <div class="field"><label>Evolucion longitudinal</label><textarea name="longitudinal_notes" placeholder="Notas de seguimiento clinico"></textarea></div>
+                    <button class="btn" type="submit">Guardar historia clinica</button>
+                </form>
             </article>
 
             <article class="card view-workers">
@@ -220,6 +257,9 @@
                 <div id="workerHistoryEval" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
                 <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
                 <div id="workerHistoryCert" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
+                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+                <h3 class="section" style="font-size:.9rem;">Linea de tiempo clinica</h3>
+                <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
             </article>
         </div>
 
@@ -272,6 +312,7 @@
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
     selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerQuery:"",
+    setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     evaluationFilters:{ evaluation_type:"", medical_aptitude:"", date_from:"", date_to:"" },
     certificateFilters:{ medical_aptitude:"", date_from:"", date_to:"" }
 };
@@ -285,9 +326,10 @@ const refs = {
     workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
     workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"), workerEditCompany: document.getElementById("workerEditCompany"), workerEditPosition: document.getElementById("workerEditPosition"),
-    workerDetailBox: document.getElementById("workerDetailBox"), workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"),
+    workerDetailBox: document.getElementById("workerDetailBox"), workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerClinicalForm: document.getElementById("workerClinicalForm"),
     evaluationWorker: document.getElementById("evaluationWorker"), certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
-    userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect")
+    userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect"),
+    loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm")
 };
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
@@ -296,6 +338,17 @@ function makeOpt(value,label){ const o=document.createElement("option"); o.value
 function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function buildQueryString(filters){ const p = new URLSearchParams(); Object.entries(filters).forEach(([k,v]) => { if(v!==null && v!==undefined && String(v).trim()!=="") p.set(k, String(v)); }); return p.toString(); }
 function canManageUsers(){ return Array.isArray(state.user?.roles) && state.user.roles.includes("ADMIN"); }
+function compactText(value){ const v = String(value ?? "").trim(); return v === "" ? null : v; }
+function applyAuthBootstrapView(){
+    const bootstrapRequired = !!state.setupStatus?.bootstrap_required;
+    refs.loginForm.classList.toggle("hidden", bootstrapRequired);
+    refs.firstAdminBox.classList.toggle("hidden", !bootstrapRequired);
+    if(refs.loginHint){
+        refs.loginHint.textContent = bootstrapRequired
+            ? "Crea el primer usuario ADMIN para habilitar el acceso."
+            : "Ingresa con tu usuario para continuar.";
+    }
+}
 
 function resolveViewFromPath(){
     const p = window.location.pathname;
@@ -343,6 +396,12 @@ async function api(path, {method="GET", body=null, form=false}={}) {
     const data = ctype.includes("application/json") ? await res.json() : {message: await res.text()};
     if (!res.ok) { const err = new Error(data.message || `HTTP ${res.status}`); err.status = res.status; throw err; }
     return data;
+}
+
+async function loadSetupStatus(){
+    const res = await api("/api/auth/setup-status");
+    state.setupStatus = res.data || { admin_exists:true, bootstrap_required:false, users_count:0 };
+    applyAuthBootstrapView();
 }
 
 async function loadAll(){
@@ -435,12 +494,30 @@ function fillWorkerEditForm(worker){
     form.job_position_id.value = worker.job_position_id || "";
 }
 
+function fillWorkerClinicalForm(clinicalHistory, workerId){
+    const form = refs.workerClinicalForm;
+    if(!form) return;
+    const data = clinicalHistory || {};
+    form.worker_id.value = workerId || "";
+    form.personal_background.value = data.personal_background || "";
+    form.family_background.value = data.family_background || "";
+    form.allergies.value = data.allergies || "";
+    form.current_medication.value = data.current_medication || "";
+    form.pathological_history.value = data.pathological_history || "";
+    form.surgical_history.value = data.surgical_history || "";
+    form.occupational_history.value = data.occupational_history || "";
+    form.lifestyle_notes.value = data.lifestyle_notes || "";
+    form.longitudinal_notes.value = data.longitudinal_notes || "";
+}
+
 function renderWorkerHistory(){
     const history = state.selectedWorkerHistory;
     if(!history || !history.worker){
         refs.workerDetailBox.innerHTML = `<p class="empty">Selecciona un trabajador para ver ficha completa.</p>`;
         refs.workerHistoryEval.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
         refs.workerHistoryCert.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
+        refs.workerTimeline.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
+        fillWorkerClinicalForm(null, "");
         return;
     }
 
@@ -456,6 +533,7 @@ function renderWorkerHistory(){
     `;
 
     fillWorkerEditForm(w);
+    fillWorkerClinicalForm(history.clinical_history, w.id);
 
     refs.workerHistoryEval.innerHTML = "";
     const evals = history.evaluations || [];
@@ -487,6 +565,22 @@ function renderWorkerHistory(){
             <p class="meta"><strong>Observaciones:</strong> ${esc(c.observations || "-")}</p>
             <p class="meta"><strong>Recomendaciones:</strong> ${esc(c.recommendations || "-")}</p>`;
             refs.workerHistoryCert.appendChild(card);
+        });
+    }
+
+    refs.workerTimeline.innerHTML = "";
+    const timeline = history.clinical_timeline || [];
+    if(!timeline.length){
+        refs.workerTimeline.innerHTML = `<p class="empty">Sin eventos clinicos en la linea de tiempo.</p>`;
+    } else {
+        timeline.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "historyCard";
+            const typeLabel = item.event_type === "CERTIFICATE" ? "Certificado" : "Evaluacion";
+            card.innerHTML = `<p class="meta"><strong>${typeLabel}</strong> - ${fmtDate(item.event_date)} <span class="pill">${esc(item.subtitle || "-")}</span></p>
+            <p class="meta"><strong>${esc(item.title || "-")}</strong></p>
+            <p class="meta"><strong>Detalle:</strong> ${esc(item.notes || "-")}</p>`;
+            refs.workerTimeline.appendChild(card);
         });
     }
 }
@@ -574,7 +668,16 @@ function fillSelects(){
 
 function renderAll(){ renderStats(); renderMonthly(); renderAptitude(); renderWorkers(); renderEvaluations(); renderCertificates(); renderUsers(); fillSelects(); renderWorkerHistory(); }
 function showApp(){ refs.loginSection.classList.add("hidden"); refs.appSection.classList.remove("hidden"); refs.refreshBtn.classList.remove("hidden"); refs.logoutBtn.classList.remove("hidden"); }
-function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); }
+function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); applyAuthBootstrapView(); }
+async function prepareLoginSection(){
+    showLogin();
+    try{
+        await loadSetupStatus();
+    } catch {
+        state.setupStatus = { admin_exists:true, bootstrap_required:false, users_count:0 };
+        applyAuthBootstrapView();
+    }
+}
 
 async function refreshData(){
     status("Cargando datos...");
@@ -600,10 +703,14 @@ async function refreshData(){
 }
 
 async function login(email,password){ const res = await api("/api/auth/login",{method:"POST", body:{email,password}}); state.token = res.data.token; localStorage.setItem("shcso_token", state.token); }
-async function logout(){ try{ await api("/api/auth/logout",{method:"POST"}); } catch{} state.token=null; localStorage.removeItem("shcso_token"); showLogin(); status("Sesion cerrada.", "ok"); }
+async function logout(){ try{ await api("/api/auth/logout",{method:"POST"}); } catch{} state.token=null; localStorage.removeItem("shcso_token"); await prepareLoginSection(); status("Sesion cerrada.", "ok"); }
 
 document.getElementById("loginForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
+    if(state.setupStatus?.bootstrap_required){
+        status("Primero crea el primer usuario administrador.", "error");
+        return;
+    }
     const fd = new FormData(e.target);
     status("Validando credenciales...");
     try{
@@ -612,6 +719,38 @@ document.getElementById("loginForm").addEventListener("submit", async (e)=>{
         setView(resolveViewFromPath(), false);
     }
     catch(err){ status(err.message || "No se pudo iniciar sesion.", "error"); }
+});
+
+refs.firstAdminForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const fullName = String(fd.get("full_name") || "").trim();
+    const email = String(fd.get("email") || "").trim().toLowerCase();
+    const password = String(fd.get("password") || "");
+    const passwordConfirm = String(fd.get("password_confirm") || "");
+
+    if(fullName.length < 3){ status("Nombre invalido: minimo 3 caracteres.", "error"); return; }
+    if(password.length < 8){ status("Contrasena invalida: minimo 8 caracteres.", "error"); return; }
+    if(password !== passwordConfirm){ status("Las contrasenas no coinciden.", "error"); return; }
+
+    status("Creando primer administrador...");
+    try{
+        await api("/api/auth/register-admin", {
+            method:"POST",
+            body:{ full_name: fullName, email, password }
+        });
+        status("Administrador creado. Iniciando sesion...", "ok");
+        await login(email, password);
+        await refreshData();
+        setView(resolveViewFromPath(), false);
+    } catch(err){
+        if(err.status === 409){
+            await loadSetupStatus();
+            status("Ya existe un administrador. Inicia sesion con tus credenciales.", "error");
+            return;
+        }
+        status(err.message || "No se pudo crear el primer administrador.", "error");
+    }
 });
 
 document.getElementById("workerForm").addEventListener("submit", async (e)=>{
@@ -664,6 +803,30 @@ document.getElementById("workerEditForm").addEventListener("submit", async (e)=>
         status("Trabajador actualizado.", "ok");
         await refreshData();
     } catch(err){ status(err.message || "No se pudo actualizar trabajador.", "error"); }
+});
+
+refs.workerClinicalForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const workerId = f.get("worker_id");
+    if(!workerId){ status("Primero selecciona un trabajador para historia clinica.", "error"); return; }
+    const payload = {
+        personal_background: compactText(f.get("personal_background")),
+        family_background: compactText(f.get("family_background")),
+        allergies: compactText(f.get("allergies")),
+        current_medication: compactText(f.get("current_medication")),
+        pathological_history: compactText(f.get("pathological_history")),
+        surgical_history: compactText(f.get("surgical_history")),
+        occupational_history: compactText(f.get("occupational_history")),
+        lifestyle_notes: compactText(f.get("lifestyle_notes")),
+        longitudinal_notes: compactText(f.get("longitudinal_notes")),
+    };
+    try{
+        await api(`/api/workers/${workerId}/clinical-history`, { method:"PUT", body:payload });
+        await loadWorkerHistory(workerId);
+        renderWorkerHistory();
+        status("Historia clinica ampliada guardada.", "ok");
+    } catch(err){ status(err.message || "No se pudo guardar historia clinica.", "error"); }
 });
 
 document.getElementById("evaluationForm").addEventListener("submit", async (e)=>{
@@ -849,7 +1012,7 @@ refs.logoutBtn.addEventListener("click", logout);
 (async function init(){
     setView(resolveViewFromPath(), false);
     const t = localStorage.getItem("shcso_token");
-    if(!t){ showLogin(); return; }
+    if(!t){ await prepareLoginSection(); return; }
     state.token=t;
     await refreshData();
     setView(resolveViewFromPath(), false);

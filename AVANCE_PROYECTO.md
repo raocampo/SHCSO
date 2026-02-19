@@ -41,7 +41,7 @@
   - `php artisan test` (incluyendo pruebas de historial/edicion de trabajador)
 - [ ] Ajustes finales de UX/UI (tablas paginadas, mensajes de validacion mas completos y exportaciones)
 - [x] Modulo de usuarios en interfaz (crear/editar/desactivar usuarios y roles desde web)
-- [ ] Historia clinica ampliada (antecedentes estructurados y evolucion longitudinal)
+- [x] Historia clinica ampliada (antecedentes estructurados y evolucion longitudinal)
 
 ## Decisiones tecnicas
 
@@ -60,10 +60,7 @@
 
 ### Pendiente critico (producto cliente)
 
-1. Historia clinica ampliada del trabajador:
-   - antecedentes personales, familiares, alergias, medicacion habitual
-   - linea de tiempo clinica (seguimiento longitudinal)
-2. Mejoras de UX:
+1. Mejoras de UX:
    - paginacion en tablas
    - validaciones y mensajes mas claros en formularios
    - exportaciones basicas (CSV/PDF) en listados clave
@@ -92,6 +89,7 @@
 - Login:
   - se retiro el texto orientado a Postman
   - se reemplazo por mensaje de flujo interno para usuario final
+  - se agrego deteccion de estado inicial y formulario de primer administrador en la propia UI
 - Pruebas:
   - se agrego `backend/tests/Feature/UserManagementApiTest.php`
   - ejecucion local bloqueada por falta de `pdo_sqlite` en PHP CLI del entorno actual
@@ -130,6 +128,25 @@
    - guardar/consultar historia clinica extendida por trabajador
 3. UI:
    - seccion dedicada en `/sistema/trabajadores` para edicion y consulta
+
+## Actualizacion ejecutada (2026-02-19 - bloque historia clinica)
+
+### Implementado
+
+- Modelo de datos:
+  - nueva tabla `worker_clinical_histories` (migracion aplicada)
+- API trabajadores:
+  - `GET /api/workers/{workerId}/clinical-history`
+  - `PUT /api/workers/{workerId}/clinical-history`
+  - `GET /api/workers/{workerId}/history` extendido con:
+    - `clinical_history`
+    - `clinical_timeline` (eventos de evaluaciones y certificados)
+- Frontend:
+  - formulario de historia clinica ampliada en `/sistema/trabajadores`
+  - visualizacion de linea de tiempo clinica en ficha del trabajador
+- Pruebas:
+  - `WorkerHistoryApiTest` ampliado para guardar/consultar historia clinica
+  - validacion local completa: `11 passed (54 assertions)`
 
 ### Bloque 3 - Cierre de sprint (prioridad media)
 

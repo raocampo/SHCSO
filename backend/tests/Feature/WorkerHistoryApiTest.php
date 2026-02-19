@@ -103,9 +103,56 @@ class WorkerHistoryApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('ok', true)
             ->assertJsonPath('data.worker.id', $worker->id)
+            ->assertJsonPath('data.clinical_history', null)
+            ->assertJsonCount(2, 'data.clinical_timeline')
             ->assertJsonCount(1, 'data.evaluations')
             ->assertJsonCount(1, 'data.certificates')
             ->assertJsonPath('data.evaluations.0.id', $evaluation->id)
             ->assertJsonPath('data.certificates.0.id', $certificate->id);
+    }
+
+    public function test_can_upsert_worker_clinical_history(): void
+    {
+        $this->authenticateAsAdmin();
+        $worker = $this->createWorker();
+
+        $response = $this->putJson("/api/workers/{$worker->id}/clinical-history", [
+            'personal_background' => 'Antecedentes personales relevantes',
+            'family_background' => 'Padre con hipertension',
+            'allergies' => 'Penicilina',
+            'current_medication' => 'Losartan',
+            'pathological_history' => 'Hipertension arterial',
+            'surgical_history' => 'Apendicectomia 2018',
+            'occupational_history' => 'Operario en planta industrial',
+            'lifestyle_notes' => 'Actividad fisica 3 veces por semana',
+            'longitudinal_notes' => 'Control trimestral por medicina ocupacional',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.worker_id', $worker->id)
+            ->assertJsonPath('data.allergies', 'Penicilina');
+
+        $this->assertDatabaseHas('worker_clinical_histories', [
+            'worker_id' => $worker->id,
+            'allergies' => 'Penicilina',
+        ]);
+
+        $historyResponse = $this->getJson("/api/workers/{$worker->id}/history");
+
+        $historyResponse
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.clinical_history.worker_id', $worker->id)
+            ->assertJsonPath('data.clinical_history.pathological_history', 'Hipertension arterial');
+
+        $clinicalResponse = $this->getJson("/api/workers/{$worker->id}/clinical-history");
+
+        $clinicalResponse
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.worker_id', $worker->id)
+            ->assertJsonPath('data.longitudinal_notes', 'Control trimestral por medicina ocupacional');
     }
 }

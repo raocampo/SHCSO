@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
@@ -65,5 +66,10 @@ class Worker extends Model
     public function certificates(): HasMany
     {
         return $this->hasMany(MedicalCertificate::class);
+    }
+
+    public function clinicalHistory(): HasOne
+    {
+        return $this->hasOne(WorkerClinicalHistory::class, 'worker_id');
     }
 }

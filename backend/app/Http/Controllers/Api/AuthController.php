@@ -13,6 +13,22 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function setupStatus(): JsonResponse
+    {
+        $adminExists = User::query()
+            ->whereHas('roles', fn ($query) => $query->where('name', 'ADMIN'))
+            ->exists();
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'admin_exists' => $adminExists,
+                'bootstrap_required' => !$adminExists,
+                'users_count' => User::query()->count(),
+            ],
+        ]);
+    }
+
     public function registerAdmin(Request $request): JsonResponse
     {
         $validated = $request->validate([
