@@ -108,3 +108,8 @@ El MVP backend Laravel ya está implementado y probado localmente con:
 - `php artisan migrate:fresh --seed`
 - `php artisan route:list`
 - `php artisan test`
+
+## Nota de testing
+
+- Los tests están configurados para PostgreSQL en `backend/phpunit.xml` con base `shcso_test`.
+- Crea la base `shcso_test` antes de ejecutar `php artisan test` para no usar la base operativa `shcso`.
