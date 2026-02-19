@@ -60,9 +60,9 @@
 
 ### Pendiente critico (producto cliente)
 
-1. Ajustes complementarios de cierre:
-   - afinar diseno visual en modulos de operacion
-   - preparar ajustes institucionales del PDF (logo/sello/firma)
+1. Sin pendientes criticos abiertos en este corte.
+   - cerrado: ajuste visual del modulo de operacion
+   - cerrado: parametrizacion institucional del PDF (logo/sello/firma)
 
 ## Actualizacion ejecutada (2026-02-19)
 
@@ -168,3 +168,22 @@
 1. Paginacion y filtros avanzados en tablas grandes.
 2. Ajustes de PDF institucional (logo/sello/firma).
 3. Actualizacion de `README.md` y bitacora con evidencias del avance.
+
+## Actualizacion ejecutada (2026-02-19 - cierre operativo y PDF institucional)
+
+### Implementado
+
+- UI operacion:
+  - panel "Pulso operativo" con indicadores de evaluaciones/certificados filtrados y pendientes por emitir
+  - tarjetas de operacion con jerarquia visual y guia de flujo `1/2` y `2/2`
+  - codificacion visual por aptitud (`APTO`, `APTO_OBSERVACION`, `APTO_LIMITACIONES`, `NO_APTO`) en historiales y tablas
+- PDF institucional:
+  - nueva configuracion `backend/config/shcso.php`
+  - plantilla `pdf/certificate.blade.php` mejorada con:
+    - datos institucionales
+    - soporte de logo/sello/firma desde `.env`
+    - placeholders cuando no existen imagenes
+  - controlador de certificados actualizado para resolver rutas de assets publicos
+- Entorno/documentacion:
+  - agregado `backend/.env.example` con variables de PostgreSQL y variables institucionales del PDF
+  - `README.md` actualizado con seccion de personalizacion institucional del certificado

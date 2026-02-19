@@ -60,13 +60,26 @@
         .historyCard { border:1px solid #e4ece9; border-radius:10px; padding:10px; background:#fbfefd; }
         .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
         .chip { display:inline-block; border:1px solid #cfe0da; border-radius:999px; padding:2px 8px; font-size:.72rem; background:#f0f7f4; color:#115f61; }
+        .sectionBadge { font-family:"IBM Plex Mono",monospace; font-size:.66rem; background:#e9f5f0; border:1px solid #b6d9cd; color:#115f61; border-radius:999px; padding:2px 8px; vertical-align:middle; margin-left:6px; }
+        .operationPulse { margin-bottom:12px; }
+        .operationKpi { border-color:#b6d9cd; background:linear-gradient(145deg,#ffffff,#edf7f3); }
+        .operationKpiGrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        .operationKpiItem { border:1px solid #c8ddd5; border-radius:12px; padding:9px 10px; background:#fff; }
+        .operationKpiItem p { margin:0; color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+        .operationKpiItem strong { display:block; margin-top:7px; font-size:1.25rem; line-height:1; }
+        .operationCard { border-color:#c3ddd4; background:linear-gradient(160deg,#ffffff,#f4fbf8); }
+        .operationHint { margin:-3px 0 10px; font-size:.78rem; color:#3f5f67; }
+        .pill.apt-apto { background:#d9f7e7; color:#166534; border:1px solid #93d7b0; }
+        .pill.apt-observacion { background:#fff4d8; color:#8a5a00; border:1px solid #f3c777; }
+        .pill.apt-limitaciones { background:#ffe9d8; color:#9a3412; border:1px solid #f1b58d; }
+        .pill.apt-no-apto { background:#ffe0e7; color:#9f1239; border:1px solid #f3a4b8; }
         .toolbar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
         .toolbar.compact { grid-template-columns:2fr repeat(3,minmax(0,1fr)) auto; align-items:end; }
         .toolbar .btn { padding:9px 10px; }
         .pager { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
         .pager .hint { margin:0; }
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
-        @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .workerSplit{grid-template-columns:1fr;} }
+        @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .workerSplit{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
         @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} }
         @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} }
     </style>
@@ -134,6 +147,26 @@
 
         <div id="statsGrid" class="stats view-dashboard"></div>
 
+        <div class="operationPulse view-operations">
+            <article class="card operationKpi">
+                <h2 class="section">Pulso operativo <span class="sectionBadge">tiempo real</span></h2>
+                <div class="operationKpiGrid">
+                    <div class="operationKpiItem">
+                        <p>Evaluaciones filtradas</p>
+                        <strong id="operationsEvalTotal">0</strong>
+                    </div>
+                    <div class="operationKpiItem">
+                        <p>Certificados filtrados</p>
+                        <strong id="operationsCertTotal">0</strong>
+                    </div>
+                    <div class="operationKpiItem">
+                        <p>Pendientes por emitir</p>
+                        <strong id="operationsPendingTotal">0</strong>
+                    </div>
+                </div>
+            </article>
+        </div>
+
         <div class="grid2 view-dashboard">
             <article class="card">
                 <h2 class="section">Actividad mensual</h2>
@@ -165,8 +198,9 @@
                 </form>
             </article>
 
-            <article class="card view-operations">
-                <h2 class="section">Nueva evaluacion</h2>
+            <article class="card view-operations operationCard">
+                <h2 class="section">Nueva evaluacion <span class="sectionBadge">flujo 1/2</span></h2>
+                <p class="operationHint">Registra primero la evaluacion del trabajador para habilitar certificado y adjuntos.</p>
                 <form id="evaluationForm">
                     <div class="field"><label>Trabajador</label><select id="evaluationWorker" name="worker_id" required></select></div>
                     <div class="field"><label>Tipo</label><select name="evaluation_type"><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
@@ -178,8 +212,9 @@
                 </form>
             </article>
 
-            <article class="card view-operations">
-                <h2 class="section">Certificado y adjunto</h2>
+            <article class="card view-operations operationCard">
+                <h2 class="section">Certificado y adjunto <span class="sectionBadge">flujo 2/2</span></h2>
+                <p class="operationHint">Genera el certificado desde una evaluacion y luego carga evidencia documental.</p>
                 <form id="certificateForm">
                     <div class="field"><label>Evaluacion</label><select id="certificateEvaluation" name="evaluation_id" required></select></div>
                     <div class="field"><label>Observaciones</label><textarea name="observations">Apto para labores</textarea></div>
@@ -212,8 +247,8 @@
                     <p id="workersPageInfo" class="hint">Pagina 1 de 1</p>
                 </div>
             </article>
-            <article class="card view-operations">
-                <h2 class="section">Evaluaciones recientes</h2>
+            <article class="card view-operations operationCard">
+                <h2 class="section">Evaluaciones recientes <span class="sectionBadge">operacion</span></h2>
                 <form id="evaluationFilterForm" class="toolbar">
                     <div class="field"><label>Tipo</label><select name="evaluation_type"><option value="">Todos</option><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
                     <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option value="">Todas</option><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
@@ -282,8 +317,8 @@
             </article>
         </div>
 
-        <article class="card view-operations">
-            <h2 class="section">Certificados recientes</h2>
+        <article class="card view-operations operationCard">
+            <h2 class="section">Certificados recientes <span class="sectionBadge">documental</span></h2>
             <form id="certificateFilterForm" class="toolbar">
                 <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option value="">Todas</option><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
                 <div class="field"><label>Desde</label><input type="date" name="date_from"></div>
@@ -363,6 +398,7 @@ const refs = {
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
     dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
+    operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
     workersPrevBtn: document.getElementById("workersPrevBtn"), workersNextBtn: document.getElementById("workersNextBtn"), workersPageInfo: document.getElementById("workersPageInfo"), workersExportBtn: document.getElementById("workersExportBtn"),
     evaluationsPrevBtn: document.getElementById("evaluationsPrevBtn"), evaluationsNextBtn: document.getElementById("evaluationsNextBtn"), evaluationsPageInfo: document.getElementById("evaluationsPageInfo"), evaluationsExportBtn: document.getElementById("evaluationsExportBtn"),
@@ -385,6 +421,15 @@ function buildQueryString(filters){ const p = new URLSearchParams(); Object.entr
 function canManageUsers(){ return Array.isArray(state.user?.roles) && state.user.roles.includes("ADMIN"); }
 function compactText(value){ const v = String(value ?? "").trim(); return v === "" ? null : v; }
 function normalizeFieldName(field){ return String(field || "").replaceAll("_"," "); }
+function aptitudePillClass(aptitude){
+    switch(String(aptitude || "").toUpperCase()){
+        case "APTO": return "apt-apto";
+        case "APTO_OBSERVACION": return "apt-observacion";
+        case "APTO_LIMITACIONES": return "apt-limitaciones";
+        case "NO_APTO": return "apt-no-apto";
+        default: return "";
+    }
+}
 function extractApiErrorMessage(data, fallback){
     if(data?.errors && typeof data.errors === "object"){
         const firstKey = Object.keys(data.errors)[0];
@@ -573,6 +618,13 @@ function renderStats(){
     cards.forEach(([k,v]) => { const el = document.createElement("article"); el.className="stat"; el.innerHTML=`<h4>${k}</h4><p>${v}</p>`; refs.statsGrid.appendChild(el); });
 }
 
+function renderOperationKpi(){
+    if(!refs.operationsEvalTotal || !refs.operationsCertTotal || !refs.operationsPendingTotal) return;
+    refs.operationsEvalTotal.textContent = String(state.pagination.evaluations.total ?? 0);
+    refs.operationsCertTotal.textContent = String(state.pagination.certificates.total ?? 0);
+    refs.operationsPendingTotal.textContent = String(state.dashboard?.totals?.pending_certificates ?? 0);
+}
+
 function renderMonthly(){
     refs.monthlyChart.innerHTML = "";
     if(!state.monthly.length){ refs.monthlyChart.innerHTML = `<p class="empty">Sin datos.</p>`; return; }
@@ -673,7 +725,7 @@ function renderWorkerHistory(){
             const card = document.createElement("div");
             const diagnoses = (e.diagnoses || []).map(d => `<span class="chip">${esc(d.diagnosis_code)} (${esc(d.diagnosis_type)})</span>`).join("");
             card.className = "historyCard";
-            card.innerHTML = `<p class="meta"><strong>${esc(e.evaluation_type)}</strong> - ${fmtDate(e.attention_date)} <span class="pill">${esc(e.medical_aptitude)}</span></p>
+            card.innerHTML = `<p class="meta"><strong>${esc(e.evaluation_type)}</strong> - ${fmtDate(e.attention_date)} <span class="pill ${aptitudePillClass(e.medical_aptitude)}">${esc(e.medical_aptitude)}</span></p>
             <p class="meta"><strong>Motivo:</strong> ${esc(e.consultation_reason || "-")}</p>
             <p class="meta"><strong>Profesional:</strong> ${esc(e.professional_name || "-")} (${esc(e.professional_code || "-")})</p>
             <p class="meta"><strong>Adjuntos:</strong> ${(e.attachments || []).length}</p>
@@ -690,7 +742,7 @@ function renderWorkerHistory(){
         certs.forEach(c => {
             const card = document.createElement("div");
             card.className = "historyCard";
-            card.innerHTML = `<p class="meta"><strong>${esc(c.certificate_code)}</strong> - ${fmtDate(c.issue_date)} <span class="pill">${esc(c.medical_aptitude)}</span></p>
+            card.innerHTML = `<p class="meta"><strong>${esc(c.certificate_code)}</strong> - ${fmtDate(c.issue_date)} <span class="pill ${aptitudePillClass(c.medical_aptitude)}">${esc(c.medical_aptitude)}</span></p>
             <p class="meta"><strong>Observaciones:</strong> ${esc(c.observations || "-")}</p>
             <p class="meta"><strong>Recomendaciones:</strong> ${esc(c.recommendations || "-")}</p>`;
             refs.workerHistoryCert.appendChild(card);
@@ -720,7 +772,7 @@ function renderEvaluations(){
     state.evaluations.forEach(e => {
         const w = e.worker || {};
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${fmtDate(e.attention_date)}</td><td>${esc(w.first_name || "")} ${esc(w.last_name || "")}</td><td>${esc(e.evaluation_type)}</td><td><span class="pill">${esc(e.medical_aptitude)}</span></td>`;
+        row.innerHTML = `<td>${fmtDate(e.attention_date)}</td><td>${esc(w.first_name || "")} ${esc(w.last_name || "")}</td><td>${esc(e.evaluation_type)}</td><td><span class="pill ${aptitudePillClass(e.medical_aptitude)}">${esc(e.medical_aptitude)}</span></td>`;
         refs.evaluationsBody.appendChild(row);
     });
 }
@@ -731,7 +783,7 @@ function renderCertificates(){
     state.certificates.forEach(c => {
         const w = c.worker || {};
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${esc(c.certificate_code)}</td><td>${fmtDate(c.issue_date)}</td><td>${esc(w.first_name || "")} ${esc(w.last_name || "")}</td><td><span class="pill">${esc(c.medical_aptitude)}</span></td>
+        row.innerHTML = `<td>${esc(c.certificate_code)}</td><td>${fmtDate(c.issue_date)}</td><td>${esc(w.first_name || "")} ${esc(w.last_name || "")}</td><td><span class="pill ${aptitudePillClass(c.medical_aptitude)}">${esc(c.medical_aptitude)}</span></td>
         <td><div class="rowActions"><button class="btn" data-act="gen" data-id="${c.id}" type="button">Generar PDF</button><button class="btn" data-act="down" data-id="${c.id}" type="button">Descargar</button></div></td>`;
         refs.certificatesBody.appendChild(row);
     });
@@ -797,6 +849,7 @@ function fillSelects(){
 
 function renderAll(){
     renderStats();
+    renderOperationKpi();
     renderMonthly();
     renderAptitude();
     renderWorkers();

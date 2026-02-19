@@ -20,33 +20,40 @@ Sistema de Historias Clinicas y Salud Ocupacional, implementado en:
 ## Configuración rápida (Laragon + DBeaver)
 
 1. Crear base de datos `shcso` en DBeaver.
-2. En `backend/.env` configurar:
+2. Crear archivo de entorno del backend:
+
+```bash
+cd backend
+copy .env.example .env
+```
+
+3. En `backend/.env` configurar:
    - `DB_CONNECTION=pgsql`
    - `DB_HOST=127.0.0.1`
    - `DB_PORT=5432`
    - `DB_DATABASE=shcso`
    - `DB_USERNAME=postgres` (o tu usuario)
    - `DB_PASSWORD=...`
-3. Ejecutar migraciones y seed:
+4. Ejecutar migraciones y seed:
 
 ```bash
 cd backend
 php artisan migrate --seed
 ```
 
-4. Levantar API:
+5. Levantar API:
 
 ```bash
 php artisan serve
 ```
 
-5. Crear enlace publico de archivos (adjuntos/PDF):
+6. Crear enlace publico de archivos (adjuntos/PDF):
 
 ```bash
 php artisan storage:link
 ```
 
-6. Abrir vista web del sistema:
+7. Abrir vista web del sistema:
 
 ```text
 http://127.0.0.1:8000/sistema
@@ -113,6 +120,26 @@ Notas de paginacion en listados:
 
 - Endpoints de listado aceptan `page` y `per_page` (compatibles con `limit`).
 - Respuesta incluye `meta` con: `page`, `per_page`, `total`, `total_pages`, `has_next`, `has_prev`.
+
+## PDF institucional (logo, sello, firma)
+
+El certificado PDF ya acepta configuracion institucional por `.env` del backend:
+
+- `SHCSO_INSTITUTION_NAME`
+- `SHCSO_INSTITUTION_SUBTITLE`
+- `SHCSO_INSTITUTION_CITY`
+- `SHCSO_CERTIFICATE_LOGO_PATH`
+- `SHCSO_CERTIFICATE_SEAL_PATH`
+- `SHCSO_CERTIFICATE_SIGNATURE_PATH`
+- `SHCSO_CERTIFICATE_SIGNATURE_NAME`
+- `SHCSO_CERTIFICATE_SIGNATURE_TITLE`
+- `SHCSO_CERTIFICATE_FOOTER_NOTE`
+
+Rutas recomendadas para imagenes (relativas a `backend/public/`):
+
+- `assets/pdf/logo.png`
+- `assets/pdf/sello.png`
+- `assets/pdf/firma.png`
 
 ## Estado
 

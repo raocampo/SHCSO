@@ -136,6 +136,33 @@ class CertificateController extends Controller
         ]);
     }
 
+    private function resolvePublicAssetPath(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        $normalizedPath = ltrim(str_replace('\\', '/', $relativePath), '/');
+        $fullPath = public_path($normalizedPath);
+
+        return is_file($fullPath) ? $fullPath : null;
+    }
+
+    private function certificateInstitutionData(): array
+    {
+        return [
+            'name' => config('shcso.institution.name'),
+            'subtitle' => config('shcso.institution.subtitle'),
+            'city' => config('shcso.institution.city'),
+            'footer_note' => config('shcso.pdf_certificate.footer_note'),
+            'signature_name' => config('shcso.pdf_certificate.signature_name'),
+            'signature_title' => config('shcso.pdf_certificate.signature_title'),
+            'logo_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.logo_path')),
+            'seal_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.seal_path')),
+            'signature_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.signature_path')),
+        ];
+    }
+
     private function ensurePdfGenerated(MedicalCertificate $certificate): string
     {
         $disk = Storage::disk('public');
@@ -153,6 +180,7 @@ class CertificateController extends Controller
         $path = "certificates/{$certificate->certificate_code}.pdf";
         $pdf = Pdf::loadView('pdf.certificate', [
             'certificate' => $certificate,
+            'institution' => $this->certificateInstitutionData(),
         ])->setPaper('a4');
 
         $disk->put($path, $pdf->output());
