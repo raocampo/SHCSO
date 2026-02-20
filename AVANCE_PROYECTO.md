@@ -293,3 +293,30 @@
 1. Sustituir branding temporal por archivos institucionales oficiales.
 2. Validar visualmente PDF institucional final.
 3. UAT final con cliente (incluyendo flujo de adjuntos DICOM y recuperacion de contrasena).
+
+## Actualizacion ejecutada (2026-02-20 - flujo por vinetas en modulo trabajadores)
+
+### Implementado
+
+- Frontend `/sistema/trabajadores` reorganizado en flujo paso a paso por vinetas:
+  - `1. Nuevo trabajador`
+  - `2. Trabajadores recientes`
+  - `3. Ficha y edicion`
+  - `4. Historia clinica ampliada`
+  - `5. Historial clinico`
+- Separacion de secciones que antes estaban en una sola tarjeta:
+  - ficha/edicion en panel independiente
+  - historia clinica ampliada en panel independiente
+  - historial clinico en panel independiente
+- Comportamiento guiado:
+  - al crear trabajador se avanza automaticamente a "Trabajadores recientes"
+  - al usar "Ver historial" se abre automaticamente la vineta "Historial clinico"
+- Validaciones:
+  - `php artisan test`
+  - resultado: `22 passed (124 assertions)`.
+
+### Pendiente actual
+
+1. Sustituir branding temporal por archivos institucionales oficiales.
+2. Validar visualmente PDF institucional final.
+3. UAT final con cliente (incluyendo flujo de adjuntos DICOM, recuperacion de contrasena y navegacion por vinetas en trabajadores).

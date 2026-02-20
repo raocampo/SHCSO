@@ -24,6 +24,9 @@
         .tabs { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
         .tab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700; }
         .tab.active { background:var(--ink); border-color:var(--ink); color:#fff; }
+        .workerFlow { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+        .workerFlowTab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700; }
+        .workerFlowTab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
         .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 8px 18px rgba(16,33,39,.05); }
         .status { min-height:40px; display:flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin-bottom:12px; background:#fff; }
         .status.ok { border-color:#9cd8be; color:#14573b; background:#ecf9f2; }
@@ -53,7 +56,7 @@
         .pill { display:inline-block; background:#d9f1ec; color:#115f61; border-radius:999px; padding:2px 8px; font-size:.72rem; font-weight:700; }
         .rowActions { display:flex; gap:6px; flex-wrap:wrap; }
         .btn.small { padding:6px 8px; border-radius:8px; font-size:.78rem; }
-        .workerSplit { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+        .workerStepPanel { margin-bottom:12px; }
         .meta { margin:4px 0; color:var(--muted); font-size:.86rem; }
         .meta strong { color:var(--ink); }
         .historyList { display:grid; gap:8px; }
@@ -79,7 +82,7 @@
         .pager { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
         .pager .hint { margin:0; }
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
-        @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .workerSplit{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
+        @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
         @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} }
         @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} }
     </style>
@@ -186,6 +189,13 @@
             <button class="tab" data-view="operations" type="button">Operacion</button>
             <button class="tab" data-view="users" type="button">Usuarios</button>
         </nav>
+        <nav class="workerFlow view-workers">
+            <button class="workerFlowTab active" data-worker-step="create" type="button">1. Nuevo trabajador</button>
+            <button class="workerFlowTab" data-worker-step="recent" type="button">2. Trabajadores recientes</button>
+            <button class="workerFlowTab" data-worker-step="profile" type="button">3. Ficha y edicion</button>
+            <button class="workerFlowTab" data-worker-step="clinical" type="button">4. Historia clinica ampliada</button>
+            <button class="workerFlowTab" data-worker-step="history" type="button">5. Historial clinico</button>
+        </nav>
 
         <div id="statsGrid" class="stats view-dashboard"></div>
 
@@ -225,8 +235,8 @@
             </article>
         </div>
 
-        <div class="grid3">
-            <article class="card view-workers">
+        <div class="grid3" data-worker-panel-host>
+            <article class="card view-workers workerStepPanel" data-worker-panel="create">
                 <h2 class="section">Nuevo trabajador</h2>
                 <form id="workerForm">
                     <div class="field"><label>Documento</label><input name="document_number" value="1723456701" required></div>
@@ -285,8 +295,8 @@
             </article>
         </div>
 
-        <div class="grid2">
-            <article class="card view-workers">
+        <div class="grid2" data-worker-panel-host>
+            <article class="card view-workers workerStepPanel" data-worker-panel="recent">
                 <h2 class="section">Trabajadores recientes</h2>
                 <div class="toolbar compact">
                     <div class="field"><label>Buscar</label><input id="workerSearchInput" placeholder="Documento o nombre"></div>
@@ -323,54 +333,54 @@
             </article>
         </div>
 
-        <div class="workerSplit view-workers">
-            <article class="card view-workers">
-                <h2 class="section">Ficha y edicion de trabajador</h2>
-                <div id="workerDetailBox" class="empty">Selecciona un trabajador para ver ficha completa.</div>
-                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
-                <form id="workerEditForm">
-                    <input type="hidden" name="worker_id">
-                    <div class="field"><label>Tipo documento</label><select name="document_type"><option>CEDULA</option><option>PASAPORTE</option></select></div>
-                    <div class="field"><label>Documento</label><input name="document_number" required></div>
-                    <div class="field"><label>Nombres</label><input name="first_name" required></div>
-                    <div class="field"><label>Apellidos</label><input name="last_name" required></div>
-                    <div class="field"><label>Nacimiento</label><input type="date" name="birth_date" required></div>
-                    <div class="field"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
-                    <div class="field"><label>Email</label><input name="email" type="email"></div>
-                    <div class="field"><label>Telefono</label><input name="phone"></div>
-                    <div class="field"><label>Tipo de sangre</label><input name="blood_type"></div>
-                    <div class="field"><label>Lateralidad</label><input name="laterality"></div>
-                    <div class="field"><label>Empresa</label><select id="workerEditCompany" name="company_id"></select></div>
-                    <div class="field"><label>Puesto</label><select id="workerEditPosition" name="job_position_id"></select></div>
-                    <button class="btn" type="submit">Actualizar trabajador</button>
-                </form>
-                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
-                <h3 class="section" style="font-size:.9rem;">Historia clinica ampliada</h3>
-                <form id="workerClinicalForm">
-                    <input type="hidden" name="worker_id">
-                    <div class="field"><label>Antecedentes personales</label><textarea name="personal_background" placeholder="Antecedentes personales relevantes"></textarea></div>
-                    <div class="field"><label>Antecedentes familiares</label><textarea name="family_background" placeholder="Antecedentes familiares"></textarea></div>
-                    <div class="field"><label>Alergias</label><textarea name="allergies" placeholder="Alergias conocidas"></textarea></div>
-                    <div class="field"><label>Medicacion habitual</label><textarea name="current_medication" placeholder="Medicacion actual"></textarea></div>
-                    <div class="field"><label>Patologias previas</label><textarea name="pathological_history" placeholder="Patologias previas"></textarea></div>
-                    <div class="field"><label>Antecedentes quirurgicos</label><textarea name="surgical_history" placeholder="Cirugias previas"></textarea></div>
-                    <div class="field"><label>Historia ocupacional</label><textarea name="occupational_history" placeholder="Antecedentes laborales relevantes"></textarea></div>
-                    <div class="field"><label>Habitos y estilo de vida</label><textarea name="lifestyle_notes" placeholder="Habitos, deporte, consumo"></textarea></div>
-                    <div class="field"><label>Evolucion longitudinal</label><textarea name="longitudinal_notes" placeholder="Notas de seguimiento clinico"></textarea></div>
-                    <button class="btn" type="submit">Guardar historia clinica</button>
-                </form>
-            </article>
+        <article class="card view-workers workerStepPanel" data-worker-panel="profile">
+            <h2 class="section">Ficha y edicion de trabajador</h2>
+            <div id="workerDetailBox" class="empty">Selecciona un trabajador para ver ficha completa.</div>
+            <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+            <form id="workerEditForm">
+                <input type="hidden" name="worker_id">
+                <div class="field"><label>Tipo documento</label><select name="document_type"><option>CEDULA</option><option>PASAPORTE</option></select></div>
+                <div class="field"><label>Documento</label><input name="document_number" required></div>
+                <div class="field"><label>Nombres</label><input name="first_name" required></div>
+                <div class="field"><label>Apellidos</label><input name="last_name" required></div>
+                <div class="field"><label>Nacimiento</label><input type="date" name="birth_date" required></div>
+                <div class="field"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
+                <div class="field"><label>Email</label><input name="email" type="email"></div>
+                <div class="field"><label>Telefono</label><input name="phone"></div>
+                <div class="field"><label>Tipo de sangre</label><input name="blood_type"></div>
+                <div class="field"><label>Lateralidad</label><input name="laterality"></div>
+                <div class="field"><label>Empresa</label><select id="workerEditCompany" name="company_id"></select></div>
+                <div class="field"><label>Puesto</label><select id="workerEditPosition" name="job_position_id"></select></div>
+                <button class="btn" type="submit">Actualizar trabajador</button>
+            </form>
+        </article>
 
-            <article class="card view-workers">
-                <h2 class="section">Historial clinico del trabajador</h2>
-                <div id="workerHistoryEval" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
-                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
-                <div id="workerHistoryCert" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
-                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
-                <h3 class="section" style="font-size:.9rem;">Linea de tiempo clinica</h3>
-                <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
-            </article>
-        </div>
+        <article class="card view-workers workerStepPanel" data-worker-panel="clinical">
+            <h2 class="section">Historia clinica ampliada</h2>
+            <form id="workerClinicalForm">
+                <input type="hidden" name="worker_id">
+                <div class="field"><label>Antecedentes personales</label><textarea name="personal_background" placeholder="Antecedentes personales relevantes"></textarea></div>
+                <div class="field"><label>Antecedentes familiares</label><textarea name="family_background" placeholder="Antecedentes familiares"></textarea></div>
+                <div class="field"><label>Alergias</label><textarea name="allergies" placeholder="Alergias conocidas"></textarea></div>
+                <div class="field"><label>Medicacion habitual</label><textarea name="current_medication" placeholder="Medicacion actual"></textarea></div>
+                <div class="field"><label>Patologias previas</label><textarea name="pathological_history" placeholder="Patologias previas"></textarea></div>
+                <div class="field"><label>Antecedentes quirurgicos</label><textarea name="surgical_history" placeholder="Cirugias previas"></textarea></div>
+                <div class="field"><label>Historia ocupacional</label><textarea name="occupational_history" placeholder="Antecedentes laborales relevantes"></textarea></div>
+                <div class="field"><label>Habitos y estilo de vida</label><textarea name="lifestyle_notes" placeholder="Habitos, deporte, consumo"></textarea></div>
+                <div class="field"><label>Evolucion longitudinal</label><textarea name="longitudinal_notes" placeholder="Notas de seguimiento clinico"></textarea></div>
+                <button class="btn" type="submit">Guardar historia clinica</button>
+            </form>
+        </article>
+
+        <article class="card view-workers workerStepPanel" data-worker-panel="history">
+            <h2 class="section">Historial clinico del trabajador</h2>
+            <div id="workerHistoryEval" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
+            <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+            <div id="workerHistoryCert" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
+            <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+            <h3 class="section" style="font-size:.9rem;">Linea de tiempo clinica</h3>
+            <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
+        </article>
 
         <article class="card view-operations operationCard">
             <h2 class="section">Certificados recientes <span class="sectionBadge">documental</span></h2>
@@ -436,7 +446,7 @@
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
-    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerQuery:"",
+    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"create", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     pagination:{
         workers:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
@@ -451,6 +461,7 @@ const refs = {
     status: document.getElementById("statusBox"), loginSection: document.getElementById("loginSection"), appSection: document.getElementById("appSection"),
     refreshBtn: document.getElementById("refreshBtn"), logoutBtn: document.getElementById("logoutBtn"),
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
+    workerFlowTabs: document.querySelectorAll(".workerFlowTab"), workerStepPanels: document.querySelectorAll("[data-worker-panel]"), workerPanelHosts: document.querySelectorAll("[data-worker-panel-host]"),
     dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
@@ -609,6 +620,29 @@ function resolveViewFromPath(){
     return "dashboard";
 }
 
+function applyWorkerStepVisibility(){
+    const workersView = state.activeView === "workers";
+    refs.workerFlowTabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-worker-step") === state.workerStep));
+    refs.workerStepPanels.forEach(panel => {
+        const panelStep = panel.getAttribute("data-worker-panel");
+        panel.classList.toggle("hidden", !workersView || panelStep !== state.workerStep);
+    });
+    refs.workerPanelHosts.forEach(host => {
+        if(!workersView){
+            host.classList.toggle("hidden", state.activeView !== "operations");
+            return;
+        }
+        const hasStepPanel = !!host.querySelector(`[data-worker-panel="${state.workerStep}"]`);
+        host.classList.toggle("hidden", !hasStepPanel);
+    });
+}
+
+function setWorkerStep(step){
+    const allowed = new Set(["create","recent","profile","clinical","history"]);
+    state.workerStep = allowed.has(step) ? step : "create";
+    applyWorkerStepVisibility();
+}
+
 function applyViewVisibility(){
     const dashboard = state.activeView === "dashboard";
     const workers = state.activeView === "workers";
@@ -620,6 +654,7 @@ function applyViewVisibility(){
     refs.userViews.forEach(el => el.classList.toggle("hidden", !users));
     if(refs.userTab) refs.userTab.classList.toggle("hidden", !canManageUsers());
     refs.tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-view") === state.activeView));
+    applyWorkerStepVisibility();
 }
 
 function setView(view, updateHistory=true){
@@ -1161,6 +1196,7 @@ document.getElementById("workerForm").addEventListener("submit", async (e)=>{
         const res = await api("/api/workers",{method:"POST", body:payload});
         status("Trabajador creado.", "ok");
         if(res?.data?.id){ await loadWorkerHistory(res.data.id); }
+        setWorkerStep("recent");
         await refreshData();
     } catch(err){ status(err.message || "No se pudo crear trabajador.", "error"); }
 });
@@ -1354,6 +1390,13 @@ refs.tabs.forEach(tab => {
     });
 });
 
+refs.workerFlowTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        const nextStep = tab.getAttribute("data-worker-step");
+        if(nextStep) setWorkerStep(nextStep);
+    });
+});
+
 window.addEventListener("popstate", () => {
     setView(resolveViewFromPath(), false);
 });
@@ -1502,6 +1545,7 @@ refs.workersBody.addEventListener("click", async (e)=>{
     try{
         await loadWorkerHistory(b.getAttribute("data-worker-id"));
         renderWorkerHistory();
+        setWorkerStep("history");
         status("Historial cargado.", "ok");
     } catch(err){ status(err.message || "No se pudo cargar historial.", "error"); }
 });
