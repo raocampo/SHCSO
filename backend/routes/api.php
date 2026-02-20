@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::put('/workers/{workerId}', [WorkerController::class, 'update'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
+    Route::delete('/workers/{workerId}', [WorkerController::class, 'destroy'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::get('/workers/{workerId}', [WorkerController::class, 'show'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
     Route::get('/workers/{workerId}/clinical-history', [WorkerController::class, 'clinicalHistory'])

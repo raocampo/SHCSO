@@ -67,6 +67,22 @@ class WorkerHistoryApiTest extends TestCase
         ]);
     }
 
+    public function test_can_delete_worker(): void
+    {
+        $this->authenticateAsAdmin();
+        $worker = $this->createWorker();
+
+        $response = $this->deleteJson("/api/workers/{$worker->id}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->assertDatabaseMissing('workers', [
+            'id' => $worker->id,
+        ]);
+    }
+
     public function test_can_get_worker_history(): void
     {
         $user = $this->authenticateAsAdmin();

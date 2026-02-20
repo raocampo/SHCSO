@@ -320,3 +320,40 @@
 1. Sustituir branding temporal por archivos institucionales oficiales.
 2. Validar visualmente PDF institucional final.
 3. UAT final con cliente (incluyendo flujo de adjuntos DICOM, recuperacion de contrasena y navegacion por vinetas en trabajadores).
+
+## Actualizacion ejecutada (2026-02-20 - reorganizacion avanzada del modulo trabajadores)
+
+### Implementado
+
+- Reorden de flujo por vinetas en `/sistema/trabajadores`:
+  - `1. Trabajadores recientes`
+  - `2. Nuevo trabajador`
+  - `3. Historia clinica ampliada`
+  - `4. Historial clinico`
+- Eliminacion de redundancia de "Ficha y edicion" como tab separado:
+  - se unifico en la vineta `2. Nuevo trabajador` con formulario unico crear/editar.
+- Vineta `2. Nuevo trabajador` ahora incluye:
+  - lista de trabajadores con acciones `Ver`, `Editar`, `Eliminar`
+  - boton `Crear trabajador`
+  - formulario unificado de datos personales/laborales para alta y edicion.
+- Mejora de distribucion en escritorio del formulario:
+  - grilla de campos por filas (2-6 inputs por fila segun tamano del campo)
+  - en movil se conserva vista vertical.
+- Backend API:
+  - nuevo endpoint `DELETE /api/workers/{workerId}`.
+- Pruebas:
+  - `WorkerHistoryApiTest` ampliado con eliminacion de trabajador.
+  - validacion local completa: `23 passed (127 assertions)`.
+
+## Actualizacion ejecutada (2026-02-20 - ajuste visual de nuevo trabajador)
+
+### Implementado
+
+- Mejora visual del paso `2. Nuevo trabajador` en `/sistema/trabajadores`:
+  - panel de trabajo con mayor ancho util y mejor distribucion en escritorio
+  - espaciado y jerarquia visual mejorados en toolbar, tabla y formulario
+  - formulario con grilla mas respirada para evitar campos "apretados"
+  - mantenimiento de comportamiento vertical en movil
+- La experiencia conserva el flujo operativo actual:
+  - crear/editar desde formulario unificado
+  - acciones `Ver`, `Editar`, `Eliminar` por trabajador

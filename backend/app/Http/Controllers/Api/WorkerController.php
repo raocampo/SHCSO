@@ -160,6 +160,27 @@ class WorkerController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, string $workerId): JsonResponse
+    {
+        $worker = Worker::query()->findOrFail($workerId);
+        $documentNumber = $worker->document_number;
+
+        $worker->delete();
+
+        AuditLogger::log(
+            $request->user(),
+            'DELETE_WORKER',
+            'worker',
+            $workerId,
+            ['document_number' => $documentNumber]
+        );
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Trabajador eliminado correctamente.',
+        ]);
+    }
+
     public function clinicalHistory(string $workerId): JsonResponse
     {
         $worker = Worker::query()->findOrFail($workerId);

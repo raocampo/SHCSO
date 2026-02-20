@@ -71,7 +71,13 @@ Vistas web disponibles:
 Funciones web actuales:
 
 - Navegacion por modulos con tabs y rutas directas (`dashboard`, `trabajadores`, `operacion`, `usuarios`)
+- Flujo guiado en modulo trabajadores por vinetas:
+  - `1. Trabajadores recientes`
+  - `2. Nuevo trabajador` (lista + crear/editar en formulario unificado)
+  - `3. Historia clinica ampliada`
+  - `4. Historial clinico`
 - Busqueda de trabajadores por documento o nombre en UI
+- Acciones de trabajador en UI: `Ver`, `Editar`, `Eliminar`
 - Filtros de evaluaciones por tipo, aptitud y rango de fechas
 - Filtros de certificados por aptitud y rango de fechas
 - Gestion de usuarios desde interfaz web (crear, editar, activar/desactivar) para perfil `ADMIN`
@@ -110,6 +116,7 @@ Funciones web actuales:
 - `GET|POST /api/catalog/job-positions`
 - `GET|POST /api/workers`
 - `PUT /api/workers/{workerId}`
+- `DELETE /api/workers/{workerId}`
 - `GET /api/workers/{workerId}`
 - `GET /api/workers/{workerId}/clinical-history`
 - `PUT /api/workers/{workerId}/clinical-history`

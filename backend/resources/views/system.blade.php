@@ -37,6 +37,14 @@
         .field label { display:block; margin-bottom:5px; font-size:.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
         input, select, textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:"Space Grotesk",sans-serif; }
         textarea { min-height:70px; resize:vertical; }
+        .workerFormGrid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:12px; }
+        .workerFormGrid .field { margin-bottom:0; }
+        .workerFormGrid .span-1 { grid-column:span 1; }
+        .workerFormGrid .span-2 { grid-column:span 2; }
+        .workerFormGrid .span-3 { grid-column:span 3; }
+        .workerFormGrid .span-4 { grid-column:span 4; }
+        .workerFormGrid .span-6 { grid-column:span 6; }
+        .workerFormGrid .span-12 { grid-column:span 12; }
         .hint { font-family:"IBM Plex Mono",monospace; font-size:.75rem; color:var(--muted); }
         .stats { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:10px; margin-bottom:12px; }
         .stat { border:1px solid #c5d8d3; border-radius:12px; padding:10px; background:linear-gradient(160deg,#fff,#f0f7f4); }
@@ -57,6 +65,15 @@
         .rowActions { display:flex; gap:6px; flex-wrap:wrap; }
         .btn.small { padding:6px 8px; border-radius:8px; font-size:.78rem; }
         .workerStepPanel { margin-bottom:12px; }
+        .workerStepPanel[data-worker-panel="manage"], .workerStepPanel[data-worker-panel="recent"] { grid-column:1 / -1; }
+        .workerManagePanel { padding:18px 20px; }
+        .workerManageToolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+        .workerManageToolbar .hint { font-size:.8rem; }
+        .workerDetail { border:1px dashed #cfe0da; border-radius:12px; background:#f8fcfa; padding:10px 12px; }
+        .workerManagePanel .tableWrap { border:1px solid #dce8e4; border-radius:12px; background:#fff; padding:4px; }
+        .workerManagePanel table { min-width:900px; }
+        .workerFormActions { margin-top:12px; }
+        .workerManagePanel .rowActions .btn.small { min-width:80px; }
         .meta { margin:4px 0; color:var(--muted); font-size:.86rem; }
         .meta strong { color:var(--ink); }
         .historyList { display:grid; gap:8px; }
@@ -84,7 +101,7 @@
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
         @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
         @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} }
-        @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} }
+        @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} .workerFormGrid{grid-template-columns:1fr;} .workerFormGrid [class*="span-"]{grid-column:span 1;} .workerManagePanel{padding:14px;} .workerManagePanel table{min-width:680px;} }
     </style>
 </head>
 <body>
@@ -190,11 +207,10 @@
             <button class="tab" data-view="users" type="button">Usuarios</button>
         </nav>
         <nav class="workerFlow view-workers">
-            <button class="workerFlowTab active" data-worker-step="create" type="button">1. Nuevo trabajador</button>
-            <button class="workerFlowTab" data-worker-step="recent" type="button">2. Trabajadores recientes</button>
-            <button class="workerFlowTab" data-worker-step="profile" type="button">3. Ficha y edicion</button>
-            <button class="workerFlowTab" data-worker-step="clinical" type="button">4. Historia clinica ampliada</button>
-            <button class="workerFlowTab" data-worker-step="history" type="button">5. Historial clinico</button>
+            <button class="workerFlowTab active" data-worker-step="recent" type="button">1. Trabajadores recientes</button>
+            <button class="workerFlowTab" data-worker-step="manage" type="button">2. Nuevo trabajador</button>
+            <button class="workerFlowTab" data-worker-step="clinical" type="button">3. Historia clinica ampliada</button>
+            <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
         </nav>
 
         <div id="statsGrid" class="stats view-dashboard"></div>
@@ -236,17 +252,42 @@
         </div>
 
         <div class="grid3" data-worker-panel-host>
-            <article class="card view-workers workerStepPanel" data-worker-panel="create">
-                <h2 class="section">Nuevo trabajador</h2>
+            <article class="card view-workers workerStepPanel workerManagePanel" data-worker-panel="manage">
+                <h2 class="section">Nuevo trabajador y ficha/edicion</h2>
+                <p class="operationHint">Selecciona un trabajador para ver/editar o usa "Crear trabajador" para un nuevo registro.</p>
+                <div class="rowActions workerManageToolbar">
+                    <button id="workerCreateBtn" class="btn accent" type="button">Crear trabajador</button>
+                    <span id="workerFormModeHint" class="hint">Modo nuevo trabajador.</span>
+                </div>
+                <div id="workerDetailBox" class="empty workerDetail">Selecciona un trabajador para ver ficha completa.</div>
+                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+                <div class="tableWrap">
+                    <table>
+                        <thead><tr><th>Documento</th><th>Nombre</th><th>Empresa</th><th>Historia</th><th>Acciones</th></tr></thead>
+                        <tbody id="workersManageBody"></tbody>
+                    </table>
+                </div>
+                <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
                 <form id="workerForm">
-                    <div class="field"><label>Documento</label><input name="document_number" value="1723456701" required></div>
-                    <div class="field"><label>Nombres</label><input name="first_name" value="Juan" required></div>
-                    <div class="field"><label>Apellidos</label><input name="last_name" value="Perez" required></div>
-                    <div class="field"><label>Nacimiento</label><input type="date" name="birth_date" value="1990-05-10" required></div>
-                    <div class="field"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
-                    <div class="field"><label>Empresa</label><select id="workerCompany" name="company_id"></select></div>
-                    <div class="field"><label>Puesto</label><select id="workerPosition" name="job_position_id"></select></div>
-                    <button class="btn accent" type="submit">Guardar trabajador</button>
+                    <input type="hidden" name="worker_id">
+                    <div class="workerFormGrid">
+                        <div class="field span-2"><label>Tipo documento</label><select name="document_type"><option>CEDULA</option><option>PASAPORTE</option></select></div>
+                        <div class="field span-3"><label>Documento</label><input name="document_number" required></div>
+                        <div class="field span-3"><label>Nombres</label><input name="first_name" required></div>
+                        <div class="field span-4"><label>Apellidos</label><input name="last_name" required></div>
+                        <div class="field span-2"><label>Nacimiento</label><input type="date" name="birth_date" required></div>
+                        <div class="field span-1"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
+                        <div class="field span-3"><label>Email</label><input name="email" type="email"></div>
+                        <div class="field span-2"><label>Telefono</label><input name="phone"></div>
+                        <div class="field span-2"><label>Tipo de sangre</label><input name="blood_type"></div>
+                        <div class="field span-2"><label>Lateralidad</label><input name="laterality"></div>
+                        <div class="field span-6"><label>Empresa</label><select id="workerCompany" name="company_id"></select></div>
+                        <div class="field span-6"><label>Puesto</label><select id="workerPosition" name="job_position_id"></select></div>
+                    </div>
+                    <div class="rowActions workerFormActions">
+                        <button id="workerFormSubmitBtn" class="btn accent" type="submit">Guardar trabajador</button>
+                        <button id="workerFormResetBtn" class="btn small hidden" type="button">Cancelar edicion</button>
+                    </div>
                 </form>
             </article>
 
@@ -303,7 +344,7 @@
                     <button id="workerSearchBtn" class="btn" type="button">Buscar</button>
                     <button id="workersExportBtn" class="btn" type="button">Exportar CSV</button>
                 </div>
-                <div class="tableWrap"><table><thead><tr><th>Documento</th><th>Nombre</th><th>Empresa</th><th>Historia</th><th>Accion</th></tr></thead><tbody id="workersBody"></tbody></table></div>
+                <div class="tableWrap"><table><thead><tr><th>Documento</th><th>Nombre</th><th>Empresa</th><th>Historia</th><th>Acciones</th></tr></thead><tbody id="workersBody"></tbody></table></div>
                 <div class="pager">
                     <div class="rowActions">
                         <button id="workersPrevBtn" class="btn small" type="button">Anterior</button>
@@ -332,28 +373,6 @@
                 </div>
             </article>
         </div>
-
-        <article class="card view-workers workerStepPanel" data-worker-panel="profile">
-            <h2 class="section">Ficha y edicion de trabajador</h2>
-            <div id="workerDetailBox" class="empty">Selecciona un trabajador para ver ficha completa.</div>
-            <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
-            <form id="workerEditForm">
-                <input type="hidden" name="worker_id">
-                <div class="field"><label>Tipo documento</label><select name="document_type"><option>CEDULA</option><option>PASAPORTE</option></select></div>
-                <div class="field"><label>Documento</label><input name="document_number" required></div>
-                <div class="field"><label>Nombres</label><input name="first_name" required></div>
-                <div class="field"><label>Apellidos</label><input name="last_name" required></div>
-                <div class="field"><label>Nacimiento</label><input type="date" name="birth_date" required></div>
-                <div class="field"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
-                <div class="field"><label>Email</label><input name="email" type="email"></div>
-                <div class="field"><label>Telefono</label><input name="phone"></div>
-                <div class="field"><label>Tipo de sangre</label><input name="blood_type"></div>
-                <div class="field"><label>Lateralidad</label><input name="laterality"></div>
-                <div class="field"><label>Empresa</label><select id="workerEditCompany" name="company_id"></select></div>
-                <div class="field"><label>Puesto</label><select id="workerEditPosition" name="job_position_id"></select></div>
-                <button class="btn" type="submit">Actualizar trabajador</button>
-            </form>
-        </article>
 
         <article class="card view-workers workerStepPanel" data-worker-panel="clinical">
             <h2 class="section">Historia clinica ampliada</h2>
@@ -446,7 +465,7 @@
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
-    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"create", workerQuery:"",
+    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"recent", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     pagination:{
         workers:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
@@ -472,8 +491,9 @@ const refs = {
     usersPrevBtn: document.getElementById("usersPrevBtn"), usersNextBtn: document.getElementById("usersNextBtn"), usersPageInfo: document.getElementById("usersPageInfo"), usersExportBtn: document.getElementById("usersExportBtn"),
     workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
-    workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"), workerEditCompany: document.getElementById("workerEditCompany"), workerEditPosition: document.getElementById("workerEditPosition"),
-    workerDetailBox: document.getElementById("workerDetailBox"), workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerClinicalForm: document.getElementById("workerClinicalForm"),
+    workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
+    workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
+    workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     evaluationWorker: document.getElementById("evaluationWorker"), certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
     userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect"),
     loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm"),
@@ -638,8 +658,8 @@ function applyWorkerStepVisibility(){
 }
 
 function setWorkerStep(step){
-    const allowed = new Set(["create","recent","profile","clinical","history"]);
-    state.workerStep = allowed.has(step) ? step : "create";
+    const allowed = new Set(["recent","manage","clinical","history"]);
+    state.workerStep = allowed.has(step) ? step : "recent";
     applyWorkerStepVisibility();
 }
 
@@ -786,18 +806,50 @@ function renderAptitude(){
 }
 
 function renderWorkers(){
-    refs.workersBody.innerHTML = "";
-    if(!state.workers.length){ refs.workersBody.innerHTML = `<tr><td colspan="5" class="empty">Sin trabajadores.</td></tr>`; return; }
-    state.workers.forEach(w => {
-        const row = document.createElement("tr"); const company = w.company?.business_name || w.business_name || "N/A";
-        row.innerHTML = `<td>${esc(w.document_number)}</td><td>${esc(w.first_name)} ${esc(w.last_name)}</td><td>${esc(company)}</td><td><span class="pill">${esc(w.history_number)}</span></td>
-        <td><button class="btn small" data-act="open-worker" data-worker-id="${w.id}" type="button">Ver historial</button></td>`;
-        refs.workersBody.appendChild(row);
-    });
+    const renderTableBody = (bodyEl) => {
+        if(!bodyEl) return;
+        bodyEl.innerHTML = "";
+        if(!state.workers.length){
+            bodyEl.innerHTML = `<tr><td colspan="5" class="empty">Sin trabajadores.</td></tr>`;
+            return;
+        }
+        state.workers.forEach(w => {
+            const row = document.createElement("tr");
+            const company = w.company?.business_name || w.business_name || "N/A";
+            row.innerHTML = `<td>${esc(w.document_number)}</td><td>${esc(w.first_name)} ${esc(w.last_name)}</td><td>${esc(company)}</td><td><span class="pill">${esc(w.history_number)}</span></td>
+            <td><div class="rowActions"><button class="btn small" data-act="view-worker" data-worker-id="${w.id}" type="button">Ver</button><button class="btn small" data-act="edit-worker" data-worker-id="${w.id}" type="button">Editar</button><button class="btn small" data-act="delete-worker" data-worker-id="${w.id}" type="button">Eliminar</button></div></td>`;
+            bodyEl.appendChild(row);
+        });
+    };
+    renderTableBody(refs.workersBody);
+    renderTableBody(refs.workersManageBody);
 }
 
-function fillWorkerEditForm(worker){
-    const form = document.getElementById("workerEditForm");
+function setWorkerFormMode(mode){
+    const editMode = mode === "edit";
+    if(refs.workerFormSubmitBtn) refs.workerFormSubmitBtn.textContent = editMode ? "Actualizar trabajador" : "Guardar trabajador";
+    if(refs.workerFormResetBtn) refs.workerFormResetBtn.classList.toggle("hidden", !editMode);
+    if(refs.workerFormModeHint) refs.workerFormModeHint.textContent = editMode ? "Modo edicion de trabajador." : "Modo nuevo trabajador.";
+}
+
+function resetWorkerForm(keepHistory=false){
+    const form = document.getElementById("workerForm");
+    if(!form) return;
+    form.reset();
+    form.worker_id.value = "";
+    form.document_type.value = "CEDULA";
+    form.sex.value = "M";
+    form.company_id.value = "";
+    form.job_position_id.value = "";
+    setWorkerFormMode("create");
+    if(!keepHistory){
+        refs.workerDetailBox.innerHTML = `<p class="empty">Selecciona un trabajador para ver ficha completa.</p>`;
+    }
+}
+
+function fillWorkerForm(worker){
+    const form = document.getElementById("workerForm");
+    if(!form) return;
     form.worker_id.value = worker.id || "";
     form.document_type.value = worker.document_type || "CEDULA";
     form.document_number.value = worker.document_number || "";
@@ -811,6 +863,7 @@ function fillWorkerEditForm(worker){
     form.laterality.value = worker.laterality || "";
     form.company_id.value = worker.company_id || "";
     form.job_position_id.value = worker.job_position_id || "";
+    setWorkerFormMode("edit");
 }
 
 function fillWorkerClinicalForm(clinicalHistory, workerId){
@@ -836,6 +889,7 @@ function renderWorkerHistory(){
         refs.workerHistoryEval.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
         refs.workerHistoryCert.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
         refs.workerTimeline.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`;
+        resetWorkerForm(true);
         fillWorkerClinicalForm(null, "");
         return;
     }
@@ -851,7 +905,7 @@ function renderWorkerHistory(){
         <div class="chips"><span class="chip">Evaluaciones: ${(history.evaluations || []).length}</span><span class="chip">Certificados: ${(history.certificates || []).length}</span></div>
     `;
 
-    fillWorkerEditForm(w);
+    fillWorkerForm(w);
     fillWorkerClinicalForm(history.clinical_history, w.id);
 
     refs.workerHistoryEval.innerHTML = "";
@@ -981,8 +1035,6 @@ function renderUsers(){
 function fillSelects(){
     refs.workerCompany.innerHTML = ""; refs.workerCompany.appendChild(makeOpt("", "Sin empresa")); state.companies.forEach(c=>refs.workerCompany.appendChild(makeOpt(c.id, c.business_name)));
     refs.workerPosition.innerHTML = ""; refs.workerPosition.appendChild(makeOpt("", "Sin puesto")); state.positions.forEach(p=>refs.workerPosition.appendChild(makeOpt(p.id, p.name)));
-    refs.workerEditCompany.innerHTML = ""; refs.workerEditCompany.appendChild(makeOpt("", "Sin empresa")); state.companies.forEach(c=>refs.workerEditCompany.appendChild(makeOpt(c.id, c.business_name)));
-    refs.workerEditPosition.innerHTML = ""; refs.workerEditPosition.appendChild(makeOpt("", "Sin puesto")); state.positions.forEach(p=>refs.workerEditPosition.appendChild(makeOpt(p.id, p.name)));
     refs.evaluationWorker.innerHTML = ""; state.workers.forEach(w=>refs.evaluationWorker.appendChild(makeOpt(w.id, `${w.first_name} ${w.last_name} (${w.document_number})`)));
     [refs.certificateEvaluation, refs.attachmentEvaluation].forEach(sel => { sel.innerHTML=""; state.evaluations.forEach(e=>{ const w=e.worker||{}; sel.appendChild(makeOpt(e.id, `${e.evaluation_type} - ${w.first_name || ""} ${w.last_name || ""}`)); }); });
     if(refs.userRoleSelect && refs.userEditRoleSelect){
@@ -1180,55 +1232,82 @@ refs.firstAdminForm.addEventListener("submit", async (e) => {
 document.getElementById("workerForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const f = new FormData(e.target);
+    const workerId = String(f.get("worker_id") || "").trim();
     const doc = String(f.get("document_number") || "").trim();
     if(doc.length < 8){ status("Documento invalido: usa al menos 8 caracteres.", "error"); return; }
     const payload = {
-        document_type:"CEDULA",
+        document_type:f.get("document_type") || "CEDULA",
         document_number:doc,
         first_name:f.get("first_name"),
         last_name:f.get("last_name"),
         birth_date:f.get("birth_date"),
         sex:f.get("sex"),
+        email:compactText(f.get("email")),
+        phone:compactText(f.get("phone")),
+        blood_type:compactText(f.get("blood_type")),
+        laterality:compactText(f.get("laterality")),
         company_id:f.get("company_id")||null,
         job_position_id:f.get("job_position_id")||null
     };
     try{
-        const res = await api("/api/workers",{method:"POST", body:payload});
-        status("Trabajador creado.", "ok");
-        if(res?.data?.id){ await loadWorkerHistory(res.data.id); }
-        setWorkerStep("recent");
+        if(workerId){
+            await api(`/api/workers/${workerId}`,{method:"PUT", body:payload});
+            await loadWorkerHistory(workerId);
+            status("Trabajador actualizado.", "ok");
+            setWorkerStep("manage");
+        } else {
+            const res = await api("/api/workers",{method:"POST", body:payload});
+            status("Trabajador creado.", "ok");
+            if(res?.data?.id){ await loadWorkerHistory(res.data.id); }
+            resetWorkerForm(true);
+            setWorkerStep("recent");
+        }
+        renderWorkerHistory();
         await refreshData();
-    } catch(err){ status(err.message || "No se pudo crear trabajador.", "error"); }
+    } catch(err){ status(err.message || "No se pudo guardar trabajador.", "error"); }
 });
 
-document.getElementById("workerEditForm").addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const workerId = f.get("worker_id");
-    if(!workerId){ status("Primero selecciona un trabajador.", "error"); return; }
-    const doc = String(f.get("document_number") || "").trim();
-    if(doc.length < 8){ status("Documento invalido: usa al menos 8 caracteres.", "error"); return; }
-    const payload = {
-        document_type:f.get("document_type"),
-        document_number:doc,
-        first_name:f.get("first_name"),
-        last_name:f.get("last_name"),
-        birth_date:f.get("birth_date"),
-        sex:f.get("sex"),
-        email:f.get("email") || null,
-        phone:f.get("phone") || null,
-        blood_type:f.get("blood_type") || null,
-        laterality:f.get("laterality") || null,
-        company_id:f.get("company_id") || null,
-        job_position_id:f.get("job_position_id") || null
-    };
-    try{
-        await api(`/api/workers/${workerId}`,{method:"PUT", body:payload});
-        await loadWorkerHistory(workerId);
-        status("Trabajador actualizado.", "ok");
-        await refreshData();
-    } catch(err){ status(err.message || "No se pudo actualizar trabajador.", "error"); }
+refs.workerCreateBtn.addEventListener("click", () => {
+    resetWorkerForm();
+    setWorkerStep("manage");
 });
+
+refs.workerFormResetBtn.addEventListener("click", () => {
+    resetWorkerForm(true);
+    status("Edicion cancelada. Puedes crear un nuevo trabajador.", "ok");
+});
+
+async function handleWorkerAction(workerId, action){
+    if(!workerId) return;
+    if(action === "view-worker"){
+        await loadWorkerHistory(workerId);
+        renderWorkerHistory();
+        setWorkerStep("history");
+        status("Historial cargado.", "ok");
+        return;
+    }
+    if(action === "edit-worker"){
+        await loadWorkerHistory(workerId);
+        renderWorkerHistory();
+        setWorkerStep("manage");
+        status("Trabajador listo para edicion.", "ok");
+        return;
+    }
+    if(action === "delete-worker"){
+        const ok = window.confirm("Se eliminara el trabajador y su historial asociado. Continuar?");
+        if(!ok) return;
+        await api(`/api/workers/${workerId}`, { method:"DELETE" });
+        if(state.selectedWorkerId === workerId){
+            state.selectedWorkerId = null;
+            state.selectedWorkerHistory = null;
+            renderWorkerHistory();
+        }
+        status("Trabajador eliminado.", "ok");
+        state.pagination.workers.page = 1;
+        await refreshData();
+        setWorkerStep("recent");
+    }
+}
 
 refs.workerClinicalForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1539,16 +1618,20 @@ refs.usersExportBtn.addEventListener("click", () => {
     status("Exportacion CSV de usuarios completada.", "ok");
 });
 
-refs.workersBody.addEventListener("click", async (e)=>{
-    const b = e.target.closest("button[data-act='open-worker']");
-    if(!b) return;
+async function onWorkerTableClick(e){
+    const btn = e.target.closest("button[data-act]");
+    if(!btn) return;
+    const workerId = btn.getAttribute("data-worker-id");
+    const action = btn.getAttribute("data-act");
     try{
-        await loadWorkerHistory(b.getAttribute("data-worker-id"));
-        renderWorkerHistory();
-        setWorkerStep("history");
-        status("Historial cargado.", "ok");
-    } catch(err){ status(err.message || "No se pudo cargar historial.", "error"); }
-});
+        await handleWorkerAction(workerId, action);
+    } catch(err){
+        status(err.message || "No se pudo completar la accion del trabajador.", "error");
+    }
+}
+
+refs.workersBody.addEventListener("click", onWorkerTableClick);
+refs.workersManageBody.addEventListener("click", onWorkerTableClick);
 
 refs.workerHistoryEval.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-act='download-attachment']");
