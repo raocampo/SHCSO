@@ -60,6 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
     Route::get('/evaluations', [EvaluationController::class, 'index'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::get('/evaluations/attachments/{attachmentId}/download', [EvaluationController::class, 'downloadAttachment'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/evaluations/{evaluationId}', [EvaluationController::class, 'show'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::post('/evaluations/{evaluationId}/attachments', [EvaluationController::class, 'uploadAttachment'])

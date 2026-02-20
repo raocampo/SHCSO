@@ -235,3 +235,33 @@
 1. Reemplazar assets temporales por logo/sello/firma oficiales del cliente.
 2. Ejecutar validacion visual final del PDF con branding oficial.
 3. Cerrar UAT final con cliente y registrar aceptacion funcional.
+
+## Actualizacion ejecutada (2026-02-20 - adjuntos clinicos y soporte DICOM)
+
+### Implementado
+
+- Backend evaluaciones:
+  - ampliacion de adjuntos para examenes clinicos y radiologia (incluye DICOM)
+  - validacion de formatos: `pdf`, `jpg`, `jpeg`, `png`, `dcm`, `dicom`, `ima`, `zip`
+  - metadatos en adjunto:
+    - `attachment_type`
+    - `exam_date`
+    - `notes`
+    - `file_size_bytes`
+    - `original_extension`
+  - nuevo endpoint de descarga segura:
+    - `GET /api/evaluations/attachments/{attachmentId}/download`
+- Frontend `/sistema`:
+  - formulario de adjuntos ampliado con tipo de examen, fecha y notas
+  - soporte de seleccion de archivos DICOM/ZIP desde UI
+  - listado de adjuntos por evaluacion en historial del trabajador con boton de descarga
+- Pruebas:
+  - nuevo `EvaluationAttachmentApiTest` para:
+    - carga de DICOM con metadatos
+    - descarga de adjunto
+
+### Pendiente actual
+
+1. Sustituir branding temporal por archivos institucionales oficiales.
+2. Validar visualmente PDF institucional final.
+3. UAT final con cliente (incluyendo flujo de adjuntos DICOM en operacion real).

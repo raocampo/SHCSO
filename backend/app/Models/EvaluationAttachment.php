@@ -12,8 +12,21 @@ class EvaluationAttachment extends Model
         'file_name',
         'file_path',
         'mime_type',
+        'attachment_type',
+        'exam_date',
+        'notes',
+        'file_size_bytes',
+        'original_extension',
         'uploaded_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'exam_date' => 'date',
+            'file_size_bytes' => 'integer',
+        ];
+    }
 
     public function evaluation(): BelongsTo
     {

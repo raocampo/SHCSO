@@ -77,6 +77,11 @@ Funciones web actuales:
 - Gestion de usuarios desde interfaz web (crear, editar, activar/desactivar) para perfil `ADMIN`
 - Historia clinica ampliada por trabajador (antecedentes estructurados y notas de evolucion longitudinal)
 - Linea de tiempo clinica consolidada (evaluaciones y certificados) en ficha de trabajador
+- Carga de examenes/adjuntos por evaluacion con metadatos:
+  - tipo de adjunto (laboratorio, imagen, DICOM, etc.)
+  - fecha del estudio
+  - notas clinicas del examen
+  - descarga segura del adjunto desde API
 - Paginacion en listados operativos (trabajadores, evaluaciones, certificados, usuarios)
 - Exportacion CSV basica (pagina actual) para trabajadores, evaluaciones, certificados y usuarios
 - Mensajes de validacion de API mostrados por campo en la UI
@@ -106,6 +111,7 @@ Funciones web actuales:
 - `GET /api/evaluations/{evaluationId}`
 - `POST /api/evaluations/{evaluationId}/attachments` (multipart/form-data, campo `file`)
 - `GET /api/evaluations/{evaluationId}/attachments`
+- `GET /api/evaluations/attachments/{attachmentId}/download`
 - `POST /api/certificates/from-evaluation/{evaluationId}`
 - `GET /api/certificates`
 - `GET /api/certificates/{certificateId}`
@@ -140,6 +146,19 @@ Rutas recomendadas para imagenes (relativas a `backend/public/`):
 - `assets/pdf/logo.png`
 - `assets/pdf/sello.png`
 - `assets/pdf/firma.png`
+
+## Adjuntos de examenes y DICOM
+
+La carga de adjuntos en evaluaciones acepta formatos:
+
+- `pdf`, `jpg`, `jpeg`, `png`, `dcm`, `dicom`, `ima`, `zip`
+
+Campos adicionales soportados en `POST /api/evaluations/{evaluationId}/attachments`:
+
+- `attachment_type`: `GENERAL`, `LAB_EXAM`, `IMAGING`, `DICOM`, `AUDIO`, `OTHER`
+- `exam_date` (opcional)
+- `notes` (opcional)
+- `file` (obligatorio, max 50 MB)
 
 ## Estado
 

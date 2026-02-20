@@ -224,7 +224,20 @@
                 <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
                 <form id="attachmentForm">
                     <div class="field"><label>Evaluacion para adjunto</label><select id="attachmentEvaluation" name="evaluation_id" required></select></div>
-                    <div class="field"><label>Archivo</label><input name="file" type="file" required></div>
+                    <div class="field">
+                        <label>Tipo de examen/adjunto</label>
+                        <select name="attachment_type">
+                            <option value="GENERAL">General</option>
+                            <option value="LAB_EXAM">Laboratorio</option>
+                            <option value="IMAGING">Imagen</option>
+                            <option value="DICOM">DICOM</option>
+                            <option value="OTHER">Otro</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Fecha del estudio (opcional)</label><input name="exam_date" type="date"></div>
+                    <div class="field"><label>Notas del examen (opcional)</label><textarea name="notes" placeholder="Detalle relevante del examen"></textarea></div>
+                    <div class="field"><label>Archivo</label><input name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.dcm,.dicom,.ima,.zip" required></div>
+                    <p class="hint">Formatos: PDF, JPG, PNG, DCM, DICOM, IMA, ZIP. Max 50 MB.</p>
                     <button class="btn" type="submit">Subir adjunto</button>
                 </form>
             </article>
@@ -415,6 +428,15 @@ const refs = {
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
 function fmtDate(v){ if(!v) return "-"; try { return new Date(v).toLocaleDateString(); } catch { return v; } }
+function formatBytes(value){
+    const bytes = Number(value || 0);
+    if(!Number.isFinite(bytes) || bytes <= 0) return "-";
+    if(bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if(kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(2)} MB`;
+}
 function makeOpt(value,label){ const o=document.createElement("option"); o.value=value; o.textContent=label; return o; }
 function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function buildQueryString(filters){ const p = new URLSearchParams(); Object.entries(filters).forEach(([k,v]) => { if(v!==null && v!==undefined && String(v).trim()!=="") p.set(k, String(v)); }); return p.toString(); }
@@ -483,6 +505,19 @@ function exportCsv(filename, headers, rows){
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+async function downloadWithToken(path, filename){
+    const res = await fetch(path, { headers:{ Authorization:`Bearer ${state.token}` } });
+    if(!res.ok) throw new Error("No se pudo descargar archivo.");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "archivo";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -725,11 +760,20 @@ function renderWorkerHistory(){
         evals.forEach(e => {
             const card = document.createElement("div");
             const diagnoses = (e.diagnoses || []).map(d => `<span class="chip">${esc(d.diagnosis_code)} (${esc(d.diagnosis_type)})</span>`).join("");
+            const attachments = e.attachments || [];
+            const attachmentRows = attachments.map((a) => {
+                const type = a.attachment_type || "GENERAL";
+                const examDate = a.exam_date ? fmtDate(a.exam_date) : "-";
+                const notes = a.notes ? ` | ${esc(a.notes)}` : "";
+                return `<p class="meta"><strong>${esc(type)}</strong> | ${esc(a.file_name || "archivo")} | ${examDate} | ${formatBytes(a.file_size_bytes)}${notes}
+                <button class="btn small" data-act="download-attachment" data-attachment-id="${a.id}" data-file-name="${esc(a.file_name || "archivo")}" type="button">Descargar</button></p>`;
+            }).join("");
             card.className = "historyCard";
             card.innerHTML = `<p class="meta"><strong>${esc(e.evaluation_type)}</strong> - ${fmtDate(e.attention_date)} <span class="pill ${aptitudePillClass(e.medical_aptitude)}">${esc(e.medical_aptitude)}</span></p>
             <p class="meta"><strong>Motivo:</strong> ${esc(e.consultation_reason || "-")}</p>
             <p class="meta"><strong>Profesional:</strong> ${esc(e.professional_name || "-")} (${esc(e.professional_code || "-")})</p>
-            <p class="meta"><strong>Adjuntos:</strong> ${(e.attachments || []).length}</p>
+            <p class="meta"><strong>Adjuntos:</strong> ${attachments.length}</p>
+            ${attachmentRows || '<p class="meta">Sin adjuntos de examenes.</p>'}
             <div class="chips">${diagnoses || '<span class="chip">Sin diagnosticos</span>'}</div>`;
             refs.workerHistoryEval.appendChild(card);
         });
@@ -1062,9 +1106,13 @@ document.getElementById("attachmentForm").addEventListener("submit", async (e)=>
     const f = new FormData(e.target);
     const data = new FormData();
     data.append("file", f.get("file"));
+    data.append("attachment_type", f.get("attachment_type") || "GENERAL");
+    data.append("exam_date", f.get("exam_date") || "");
+    data.append("notes", f.get("notes") || "");
     try{
         await api(`/api/evaluations/${f.get("evaluation_id")}/attachments`,{method:"POST", body:data, form:true});
-        status("Adjunto cargado.", "ok");
+        status("Examen/adjunto cargado.", "ok");
+        e.target.reset();
         await refreshData();
     } catch(err){ status(err.message || "No se pudo subir adjunto.", "error"); }
 });
@@ -1293,15 +1341,26 @@ refs.workersBody.addEventListener("click", async (e)=>{
     } catch(err){ status(err.message || "No se pudo cargar historial.", "error"); }
 });
 
+refs.workerHistoryEval.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act='download-attachment']");
+    if(!btn) return;
+    const attachmentId = btn.getAttribute("data-attachment-id");
+    const fileName = btn.getAttribute("data-file-name") || `adjunto-${attachmentId}`;
+    if(!attachmentId) return;
+    try{
+        await downloadWithToken(`/api/evaluations/attachments/${attachmentId}/download`, fileName);
+        status("Adjunto descargado.", "ok");
+    } catch(err){ status(err.message || "No se pudo descargar adjunto.", "error"); }
+});
+
 refs.certificatesBody.addEventListener("click", async (e)=>{
     const b = e.target.closest("button[data-act]"); if(!b) return;
     const id = b.getAttribute("data-id"); const act = b.getAttribute("data-act");
     try{
         if(act==="gen"){ await api(`/api/certificates/${id}/generate-pdf`,{method:"POST"}); status("PDF generado.", "ok"); await refreshData(); return; }
         if(act==="down"){
-            const res = await fetch(`/api/certificates/${id}/download-pdf`, {headers:{Authorization:`Bearer ${state.token}`}});
-            if(!res.ok) throw new Error("No se pudo descargar PDF.");
-            const blob = await res.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=url; a.download=`certificado-${id}.pdf`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); status("PDF descargado.", "ok");
+            await downloadWithToken(`/api/certificates/${id}/download-pdf`, `certificado-${id}.pdf`);
+            status("PDF descargado.", "ok");
         }
     } catch(err){ status(err.message || "Operacion no completada.", "error"); }
 });

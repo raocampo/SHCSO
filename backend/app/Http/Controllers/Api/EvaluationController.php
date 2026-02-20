@@ -13,9 +13,47 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EvaluationController extends Controller
 {
+    private const ATTACHMENT_TYPES = [
+        'GENERAL',
+        'LAB_EXAM',
+        'IMAGING',
+        'DICOM',
+        'AUDIO',
+        'OTHER',
+    ];
+
+    private const ALLOWED_ATTACHMENT_EXTENSIONS = [
+        'pdf',
+        'jpg',
+        'jpeg',
+        'png',
+        'dcm',
+        'dicom',
+        'ima',
+        'zip',
+    ];
+
+    private const DICOM_EXTENSIONS = [
+        'dcm',
+        'dicom',
+        'ima',
+        'zip',
+    ];
+
+    private function mapAttachment(EvaluationAttachment $attachment): array
+    {
+        return [
+            ...$attachment->toArray(),
+            'file_url' => Storage::disk('public')->url($attachment->file_path),
+            'download_path' => "/api/evaluations/attachments/{$attachment->id}/download",
+        ];
+    }
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -190,19 +228,48 @@ class EvaluationController extends Controller
     public function uploadAttachment(Request $request, string $evaluationId): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:12288'],
+            'file' => ['required', 'file', 'max:51200'],
+            'attachment_type' => ['nullable', 'in:' . implode(',', self::ATTACHMENT_TYPES)],
+            'exam_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $evaluation = OccupationalEvaluation::query()->findOrFail($evaluationId);
         $file = $request->file('file');
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        $attachmentType = strtoupper((string) ($request->input('attachment_type') ?: 'GENERAL'));
 
-        $storedPath = $file->store("evaluation-attachments/{$evaluation->id}", 'public');
+        if (!in_array($extension, self::ALLOWED_ATTACHMENT_EXTENSIONS, true)) {
+            throw ValidationException::withMessages([
+                'file' => [
+                    'Formato no permitido. Usa PDF, JPG, PNG, DCM, DICOM, IMA o ZIP.',
+                ],
+            ]);
+        }
+
+        if ($attachmentType === 'DICOM' && !in_array($extension, self::DICOM_EXTENSIONS, true)) {
+            throw ValidationException::withMessages([
+                'file' => [
+                    'Para tipo DICOM usa archivos .dcm, .dicom, .ima o .zip.',
+                ],
+            ]);
+        }
+
+        $categoryFolder = strtolower($attachmentType);
+        $storedPath = $file->store("evaluation-attachments/{$evaluation->id}/{$categoryFolder}", 'public');
+        $examDate = trim((string) $request->input('exam_date'));
+        $notes = trim((string) $request->input('notes'));
 
         $attachment = EvaluationAttachment::query()->create([
             'evaluation_id' => $evaluation->id,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $storedPath,
             'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'attachment_type' => $attachmentType,
+            'exam_date' => $examDate !== '' ? $examDate : null,
+            'notes' => $notes !== '' ? $notes : null,
+            'file_size_bytes' => $file->getSize(),
+            'original_extension' => $extension,
             'uploaded_by' => $request->user()?->id,
         ]);
 
@@ -216,10 +283,7 @@ class EvaluationController extends Controller
 
         return response()->json([
             'ok' => true,
-            'data' => [
-                ...$attachment->toArray(),
-                'file_url' => Storage::disk('public')->url($attachment->file_path),
-            ],
+            'data' => $this->mapAttachment($attachment),
         ], 201);
     }
 
@@ -230,15 +294,32 @@ class EvaluationController extends Controller
         $attachments = $evaluation->attachments()
             ->latest()
             ->get()
-            ->map(fn ($attachment) => [
-                ...$attachment->toArray(),
-                'file_url' => Storage::disk('public')->url($attachment->file_path),
-            ]);
+            ->map(fn ($attachment) => $this->mapAttachment($attachment));
 
         return response()->json([
             'ok' => true,
             'data' => $attachments,
         ]);
+    }
+
+    public function downloadAttachment(Request $request, string $attachmentId): StreamedResponse
+    {
+        $attachment = EvaluationAttachment::query()->findOrFail($attachmentId);
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($attachment->file_path)) {
+            abort(404, 'Archivo no encontrado.');
+        }
+
+        AuditLogger::log(
+            $request->user(),
+            'DOWNLOAD_EVALUATION_ATTACHMENT',
+            'evaluation_attachment',
+            (string) $attachment->id,
+            ['evaluation_id' => $attachment->evaluation_id]
+        );
+
+        return $disk->download($attachment->file_path, $attachment->file_name);
     }
 
     public function show(string $evaluationId): JsonResponse
@@ -248,14 +329,11 @@ class EvaluationController extends Controller
                 'worker:id,first_name,last_name,document_number',
                 'diagnoses:id,evaluation_id,diagnosis_code,diagnosis_type,notes',
                 'diagnoses.diagnosisCatalog:code,description',
-                'attachments:id,evaluation_id,file_name,file_path,mime_type,uploaded_by,created_at',
+                'attachments:id,evaluation_id,file_name,file_path,mime_type,attachment_type,exam_date,notes,file_size_bytes,original_extension,uploaded_by,created_at',
             ])
             ->findOrFail($evaluationId);
 
-        $attachments = $evaluation->attachments->map(fn ($attachment) => [
-            ...$attachment->toArray(),
-            'file_url' => Storage::disk('public')->url($attachment->file_path),
-        ]);
+        $attachments = $evaluation->attachments->map(fn ($attachment) => $this->mapAttachment($attachment));
 
         return response()->json([
             'ok' => true,

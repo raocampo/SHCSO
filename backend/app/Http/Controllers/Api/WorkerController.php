@@ -230,7 +230,7 @@ class WorkerController extends Controller
             ->with([
                 'diagnoses:id,evaluation_id,diagnosis_code,diagnosis_type,notes',
                 'diagnoses.diagnosisCatalog:code,description',
-                'attachments:id,evaluation_id,file_name,file_path,mime_type,created_at',
+                'attachments:id,evaluation_id,file_name,file_path,mime_type,attachment_type,exam_date,notes,file_size_bytes,original_extension,created_at',
             ])
             ->where('worker_id', $worker->id)
             ->orderByDesc('attention_date')
