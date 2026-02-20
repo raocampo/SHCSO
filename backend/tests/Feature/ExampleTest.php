@@ -30,4 +30,11 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_the_system_users_route_returns_successful_response(): void
+    {
+        $response = $this->get('/sistema/usuarios');
+
+        $response->assertStatus(200);
+    }
 }

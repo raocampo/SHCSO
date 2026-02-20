@@ -212,3 +212,26 @@
    - emitir certificado
    - generar/descargar PDF con branding oficial
 4. Definir cierre de sprint y preparar mini acta de entrega tecnica (alcance implementado + riesgos remanentes).
+
+## Actualizacion ejecutada (2026-02-20 - QA tecnico y acta de cierre)
+
+### Implementado
+
+- QA tecnico automatizado reforzado:
+  - nueva prueba `CertificateFlowApiTest` para flujo completo:
+    - crear evaluacion
+    - emitir certificado
+    - generar PDF
+    - descargar PDF
+  - ampliacion de prueba web para incluir `/sistema/usuarios`.
+- Validacion local de regresion:
+  - `php artisan test`
+  - resultado: `15 passed (89 assertions)`.
+- Documento de cierre tecnico agregado:
+  - `ACTA_CIERRE_TECNICO.md` con alcance validado, evidencia, riesgos remanentes y pendientes de cierre con cliente.
+
+### Pendiente actual
+
+1. Reemplazar assets temporales por logo/sello/firma oficiales del cliente.
+2. Ejecutar validacion visual final del PDF con branding oficial.
+3. Cerrar UAT final con cliente y registrar aceptacion funcional.
