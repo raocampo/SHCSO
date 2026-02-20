@@ -265,3 +265,30 @@
 1. Sustituir branding temporal por archivos institucionales oficiales.
 2. Validar visualmente PDF institucional final.
 3. UAT final con cliente (incluyendo flujo de adjuntos DICOM en operacion real).
+
+## Actualizacion ejecutada (2026-02-20 - recuperacion de contrasena y reset administrativo)
+
+### Implementado
+
+- Opcion 1 (usuario final):
+  - `POST /api/auth/forgot-password` para solicitud de token por correo.
+  - `POST /api/auth/reset-password` para definir nueva contrasena con token.
+  - UI en login con formularios:
+    - "Olvide mi contrasena"
+    - "Ya tengo token"
+- Opcion 2 (administrador):
+  - `PUT /api/users/{userId}/reset-password` para generar clave temporal.
+  - boton "Reset clave" en tabla de usuarios del modulo `/sistema/usuarios`.
+- Seguridad y operacion:
+  - al resetear contrasena se invalidan tokens API activos del usuario.
+  - eventos de auditoria registrados para solicitud/reset de contrasena.
+- Pruebas:
+  - nuevo `AuthPasswordRecoveryApiTest` (forgot + reset con token valido/invalido).
+  - `UserManagementApiTest` ampliado para reset administrativo.
+  - validacion completa: `22 passed (120 assertions)`.
+
+### Pendiente actual
+
+1. Sustituir branding temporal por archivos institucionales oficiales.
+2. Validar visualmente PDF institucional final.
+3. UAT final con cliente (incluyendo flujo de adjuntos DICOM y recuperacion de contrasena).

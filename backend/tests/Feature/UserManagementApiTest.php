@@ -69,6 +69,10 @@ class UserManagementApiTest extends TestCase
             'password' => 'PasswordSeguro123',
             'role_name' => 'ENFERMERIA',
         ])->assertForbidden();
+
+        $target = User::factory()->create();
+        $this->putJson("/api/users/{$target->id}/reset-password")
+            ->assertForbidden();
     }
 
     public function test_users_index_returns_pagination_meta(): void
@@ -95,5 +99,24 @@ class UserManagementApiTest extends TestCase
             ->assertJsonPath('meta.has_next', true)
             ->assertJsonPath('meta.has_prev', true)
             ->assertJsonCount(2, 'data');
+    }
+
+    public function test_admin_can_reset_user_password_with_temporary_value(): void
+    {
+        $this->authenticate('ADMIN');
+        $target = User::factory()->create([
+            'email' => 'clave-reset@shcso.local',
+        ]);
+
+        $response = $this->putJson("/api/users/{$target->id}/reset-password", []);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.email', 'clave-reset@shcso.local');
+
+        $temporaryPassword = (string) $response->json('data.temporary_password');
+        $this->assertNotEmpty($temporaryPassword);
+        $this->assertTrue(password_verify($temporaryPassword, $target->fresh()->password));
     }
 }

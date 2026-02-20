@@ -113,6 +113,48 @@
             <button class="btn primary" type="submit">Entrar</button>
             <p id="loginHint" class="hint">Si es tu primer ingreso y no tienes cuenta activa, solicita al administrador del sistema la habilitacion de usuario.</p>
         </form>
+        <div id="authRecoveryActions" class="rowActions" style="margin-top:8px;">
+            <button id="showForgotPasswordBtn" class="btn small" type="button">Olvide mi contrasena</button>
+            <button id="showResetPasswordBtn" class="btn small" type="button">Ya tengo token</button>
+        </div>
+        <div id="forgotPasswordBox" class="hidden" style="margin-top:10px;">
+            <p class="hint">Opcion 1: solicita un token de recuperacion con tu correo.</p>
+            <form id="forgotPasswordForm">
+                <div class="field">
+                    <label>Email de acceso</label>
+                    <input name="email" type="email" required>
+                </div>
+                <div class="rowActions">
+                    <button class="btn" type="submit">Solicitar token</button>
+                    <button id="cancelForgotPasswordBtn" class="btn small" type="button">Cancelar</button>
+                </div>
+            </form>
+        </div>
+        <div id="resetPasswordBox" class="hidden" style="margin-top:10px;">
+            <p class="hint">Opcion 2: ingresa token y define nueva contrasena.</p>
+            <form id="resetPasswordForm">
+                <div class="field">
+                    <label>Email</label>
+                    <input name="email" type="email" required>
+                </div>
+                <div class="field">
+                    <label>Token</label>
+                    <input name="token" type="text" required>
+                </div>
+                <div class="field">
+                    <label>Nueva contrasena</label>
+                    <input name="password" type="password" minlength="8" required>
+                </div>
+                <div class="field">
+                    <label>Confirmar contrasena</label>
+                    <input name="password_confirmation" type="password" minlength="8" required>
+                </div>
+                <div class="rowActions">
+                    <button class="btn primary" type="submit">Actualizar contrasena</button>
+                    <button id="cancelResetPasswordBtn" class="btn small" type="button">Cancelar</button>
+                </div>
+            </form>
+        </div>
         <div id="firstAdminBox" class="hidden">
             <p class="hint">No existe un usuario administrador. Crea el primer usuario para iniciar el sistema.</p>
             <form id="firstAdminForm">
@@ -423,7 +465,10 @@ const refs = {
     workerDetailBox: document.getElementById("workerDetailBox"), workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerClinicalForm: document.getElementById("workerClinicalForm"),
     evaluationWorker: document.getElementById("evaluationWorker"), certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
     userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect"),
-    loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm")
+    loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm"),
+    authRecoveryActions: document.getElementById("authRecoveryActions"), showForgotPasswordBtn: document.getElementById("showForgotPasswordBtn"), showResetPasswordBtn: document.getElementById("showResetPasswordBtn"),
+    forgotPasswordBox: document.getElementById("forgotPasswordBox"), forgotPasswordForm: document.getElementById("forgotPasswordForm"), cancelForgotPasswordBtn: document.getElementById("cancelForgotPasswordBtn"),
+    resetPasswordBox: document.getElementById("resetPasswordBox"), resetPasswordForm: document.getElementById("resetPasswordForm"), cancelResetPasswordBtn: document.getElementById("cancelResetPasswordBtn")
 };
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
@@ -523,14 +568,36 @@ async function downloadWithToken(path, filename){
     a.remove();
     URL.revokeObjectURL(url);
 }
+function showRecoveryMode(mode){
+    if(!refs.forgotPasswordBox || !refs.resetPasswordBox) return;
+    refs.forgotPasswordBox.classList.toggle("hidden", mode !== "forgot");
+    refs.resetPasswordBox.classList.toggle("hidden", mode !== "reset");
+}
 function applyAuthBootstrapView(){
     const bootstrapRequired = !!state.setupStatus?.bootstrap_required;
     refs.loginForm.classList.toggle("hidden", bootstrapRequired);
     refs.firstAdminBox.classList.toggle("hidden", !bootstrapRequired);
+    if(refs.authRecoveryActions){
+        refs.authRecoveryActions.classList.toggle("hidden", bootstrapRequired);
+    }
+    if(bootstrapRequired){
+        showRecoveryMode("none");
+    }
     if(refs.loginHint){
         refs.loginHint.textContent = bootstrapRequired
             ? "Crea el primer usuario ADMIN para habilitar el acceso."
             : "Ingresa con tu usuario para continuar.";
+    }
+}
+function applyResetQueryFromUrl(){
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token") || params.get("reset_token");
+    const email = params.get("email");
+    if(!token && !email) return;
+    showRecoveryMode("reset");
+    if(refs.resetPasswordForm){
+        if(email) refs.resetPasswordForm.email.value = email;
+        if(token) refs.resetPasswordForm.token.value = token;
     }
 }
 
@@ -868,6 +935,7 @@ function renderUsers(){
             <td>
                 <div class="rowActions">
                     <button class="btn small" data-act="edit-user" data-id="${u.id}" type="button">Editar</button>
+                    <button class="btn small" data-act="reset-user-password" data-id="${u.id}" data-email="${esc(u.email)}" type="button">Reset clave</button>
                     <button class="btn small" data-act="toggle-user" data-id="${u.id}" data-next="${u.is_active ? "0" : "1"}" type="button">${toggleLabel}</button>
                 </div>
             </td>`;
@@ -909,7 +977,7 @@ function renderAll(){
     applyPagerInfo("users");
 }
 function showApp(){ refs.loginSection.classList.add("hidden"); refs.appSection.classList.remove("hidden"); refs.refreshBtn.classList.remove("hidden"); refs.logoutBtn.classList.remove("hidden"); }
-function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); applyAuthBootstrapView(); }
+function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); showRecoveryMode("none"); applyAuthBootstrapView(); applyResetQueryFromUrl(); }
 async function prepareLoginSection(){
     showLogin();
     try{
@@ -960,6 +1028,82 @@ document.getElementById("loginForm").addEventListener("submit", async (e)=>{
         setView(resolveViewFromPath(), false);
     }
     catch(err){ status(err.message || "No se pudo iniciar sesion.", "error"); }
+});
+
+refs.showForgotPasswordBtn.addEventListener("click", () => {
+    showRecoveryMode("forgot");
+});
+
+refs.showResetPasswordBtn.addEventListener("click", () => {
+    showRecoveryMode("reset");
+});
+
+refs.cancelForgotPasswordBtn.addEventListener("click", () => {
+    showRecoveryMode("none");
+});
+
+refs.cancelResetPasswordBtn.addEventListener("click", () => {
+    showRecoveryMode("none");
+});
+
+refs.forgotPasswordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const email = String(fd.get("email") || "").trim().toLowerCase();
+    if(email === ""){ status("Ingresa un correo valido.", "error"); return; }
+
+    status("Solicitando token de recuperacion...");
+    try{
+        const res = await api("/api/auth/forgot-password", { method:"POST", body:{ email } });
+        const debugToken = res?.data?.reset_token;
+        if(debugToken){
+            status(`Token generado (modo local): ${debugToken}`, "ok");
+            showRecoveryMode("reset");
+            refs.resetPasswordForm.email.value = email;
+            refs.resetPasswordForm.token.value = debugToken;
+        } else {
+            status(res?.message || "Si el correo existe, se envio token de recuperacion.", "ok");
+            showRecoveryMode("reset");
+            refs.resetPasswordForm.email.value = email;
+        }
+    } catch(err){
+        status(err.message || "No se pudo solicitar recuperacion de contrasena.", "error");
+    }
+});
+
+refs.resetPasswordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const email = String(fd.get("email") || "").trim().toLowerCase();
+    const token = String(fd.get("token") || "").trim();
+    const password = String(fd.get("password") || "");
+    const passwordConfirm = String(fd.get("password_confirmation") || "");
+
+    if(email === "" || token === ""){ status("Email y token son obligatorios.", "error"); return; }
+    if(password.length < 8){ status("Contrasena invalida: minimo 8 caracteres.", "error"); return; }
+    if(password !== passwordConfirm){ status("Las contrasenas no coinciden.", "error"); return; }
+
+    status("Actualizando contrasena...");
+    try{
+        await api("/api/auth/reset-password", {
+            method:"POST",
+            body:{
+                email,
+                token,
+                password,
+                password_confirmation: passwordConfirm,
+            },
+        });
+        status("Contrasena actualizada. Ahora inicia sesion.", "ok");
+        showRecoveryMode("none");
+        refs.loginForm.email.value = email;
+        refs.loginForm.password.value = "";
+        refs.resetPasswordForm.reset();
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+    } catch(err){
+        status(err.message || "No se pudo restablecer contrasena.", "error");
+    }
 });
 
 refs.firstAdminForm.addEventListener("submit", async (e) => {
@@ -1179,6 +1323,23 @@ refs.usersBody.addEventListener("click", async (e) => {
             status(next ? "Usuario activado." : "Usuario desactivado.", "ok");
             await refreshData();
         } catch(err){ status(err.message || "No se pudo actualizar estado del usuario.", "error"); }
+        return;
+    }
+
+    if(act === "reset-user-password"){
+        const email = btn.getAttribute("data-email") || "";
+        const ok = window.confirm(`Se generara una clave temporal para ${email}. Continuar?`);
+        if(!ok) return;
+        try{
+            const res = await api(`/api/users/${userId}/reset-password`, { method:"PUT", body:{} });
+            const temp = res?.data?.temporary_password;
+            if(temp){
+                window.prompt(`Clave temporal para ${email}. Copiala y compartela de forma segura:`, temp);
+                status(`Clave temporal generada para ${email}.`, "ok");
+            } else {
+                status(`Contrasena restablecida para ${email}.`, "ok");
+            }
+        } catch(err){ status(err.message || "No se pudo restablecer contrasena del usuario.", "error"); }
     }
 });
 

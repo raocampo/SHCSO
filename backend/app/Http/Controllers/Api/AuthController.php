@@ -6,13 +6,33 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditLogger;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private function passwordRecoveryMessage(string $fullName, string $email, string $token, int $expireMinutes): string
+    {
+        return implode(PHP_EOL, [
+            "Hola {$fullName},",
+            '',
+            'Recibimos una solicitud para recuperar tu contrasena en SHCSO.',
+            "Correo: {$email}",
+            "Token de recuperacion: {$token}",
+            "Vigencia: {$expireMinutes} minutos",
+            '',
+            'Ingresa al modulo de acceso de SHCSO y usa la opcion "Ya tengo token" para establecer una nueva contrasena.',
+            '',
+            'Si no solicitaste este cambio, ignora este mensaje.',
+        ]);
+    }
+
     public function setupStatus(): JsonResponse
     {
         $adminExists = User::query()
@@ -110,6 +130,109 @@ class AuthController extends Controller
                     'roles' => $user->roles->pluck('name')->values(),
                 ],
             ],
+        ]);
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:180'],
+        ]);
+
+        $email = strtolower(trim((string) $validated['email']));
+        $genericMessage = 'Si el correo existe y esta activo, se envio un token de recuperacion.';
+
+        /** @var User|null $user */
+        $user = User::query()
+            ->where('email', $email)
+            ->first();
+
+        if (!$user || !$user->is_active) {
+            return response()->json([
+                'ok' => true,
+                'message' => $genericMessage,
+            ]);
+        }
+
+        $token = Password::broker()->createToken($user);
+        $expireMinutes = (int) config('auth.passwords.users.expire', 60);
+
+        Mail::raw(
+            $this->passwordRecoveryMessage($user->full_name, $user->email, $token, $expireMinutes),
+            function ($message) use ($user) {
+                $message
+                    ->to($user->email, $user->full_name)
+                    ->subject('SHCSO - Recuperacion de contrasena');
+            }
+        );
+
+        AuditLogger::log(
+            $user,
+            'REQUEST_PASSWORD_RESET',
+            'user',
+            $user->id,
+            ['email' => $user->email]
+        );
+
+        $response = [
+            'ok' => true,
+            'message' => $genericMessage,
+        ];
+
+        if ((bool) config('app.debug')) {
+            $response['data'] = [
+                'email' => $user->email,
+                'reset_token' => $token,
+                'expires_in_minutes' => $expireMinutes,
+            ];
+        }
+
+        return response()->json($response);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:180'],
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::broker()->reset(
+            [
+                'email' => strtolower(trim((string) $validated['email'])),
+                'token' => $validated['token'],
+                'password' => $validated['password'],
+                'password_confirmation' => $validated['password_confirmation'] ?? '',
+            ],
+            function (User $user, string $password): void {
+                $user->forceFill([
+                    'password' => $password,
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                $user->tokens()->delete();
+                event(new PasswordReset($user));
+
+                AuditLogger::log(
+                    $user,
+                    'RESET_PASSWORD',
+                    'user',
+                    $user->id
+                );
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return response()->json([
+                'ok' => false,
+                'message' => __($status),
+            ], 422);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Contrasena actualizada correctamente.',
         ]);
     }
 

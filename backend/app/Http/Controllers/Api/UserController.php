@@ -8,10 +8,20 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    private function temporaryPassword(): string
+    {
+        return sprintf(
+            'Tmp%s%s',
+            random_int(1000, 9999),
+            strtoupper(Str::random(4))
+        );
+    }
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -196,6 +206,41 @@ class UserController extends Controller
         return response()->json([
             'ok' => true,
             'data' => $this->serializeUser($user),
+        ]);
+    }
+
+    public function resetPassword(Request $request, string $userId): JsonResponse
+    {
+        $validated = $request->validate([
+            'new_password' => ['nullable', 'string', 'min:8', 'max:120'],
+        ]);
+
+        $user = User::query()->with('roles:id,name')->findOrFail($userId);
+        $generated = empty($validated['new_password']);
+        $newPassword = $generated ? $this->temporaryPassword() : (string) $validated['new_password'];
+
+        $user->password = $newPassword;
+        $user->save();
+        $user->tokens()->delete();
+
+        AuditLogger::log(
+            $request->user(),
+            'ADMIN_RESET_PASSWORD',
+            'user',
+            $user->id,
+            [
+                'generated' => $generated,
+                'target_email' => $user->email,
+            ]
+        );
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Contrasena restablecida.',
+            'data' => [
+                ...$this->serializeUser($user),
+                'temporary_password' => $generated ? $newPassword : null,
+            ],
         ]);
     }
 

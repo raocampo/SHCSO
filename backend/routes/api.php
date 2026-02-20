@@ -18,6 +18,8 @@ Route::get('/health', fn () => response()->json([
 Route::get('/auth/setup-status', [AuthController::class, 'setupStatus']);
 Route::post('/auth/register-admin', [AuthController::class, 'registerAdmin']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -32,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/users/{userId}', [UserController::class, 'update'])
         ->middleware('role:ADMIN');
     Route::put('/users/{userId}/status', [UserController::class, 'updateStatus'])
+        ->middleware('role:ADMIN');
+    Route::put('/users/{userId}/reset-password', [UserController::class, 'resetPassword'])
         ->middleware('role:ADMIN');
 
     Route::get('/catalog/companies', [CatalogController::class, 'listCompanies']);

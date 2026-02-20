@@ -82,6 +82,10 @@ Funciones web actuales:
   - fecha del estudio
   - notas clinicas del examen
   - descarga segura del adjunto desde API
+- Recuperacion de contrasena:
+  - opcion "Olvide mi contrasena" con token de recuperacion
+  - opcion "Ya tengo token" para establecer nueva clave
+  - reseteo administrativo de clave temporal desde modulo de usuarios
 - Paginacion en listados operativos (trabajadores, evaluaciones, certificados, usuarios)
 - Exportacion CSV basica (pagina actual) para trabajadores, evaluaciones, certificados y usuarios
 - Mensajes de validacion de API mostrados por campo en la UI
@@ -91,6 +95,8 @@ Funciones web actuales:
 - `POST /api/auth/register-admin`
 - `GET /api/auth/setup-status`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 - `GET /api/users` (`ADMIN`)
@@ -98,6 +104,7 @@ Funciones web actuales:
 - `POST /api/users` (`ADMIN`)
 - `PUT /api/users/{userId}` (`ADMIN`)
 - `PUT /api/users/{userId}/status` (`ADMIN`)
+- `PUT /api/users/{userId}/reset-password` (`ADMIN`)
 - `GET|POST /api/catalog/companies`
 - `GET|POST /api/catalog/job-positions`
 - `GET|POST /api/workers`
