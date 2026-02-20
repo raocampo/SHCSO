@@ -84,6 +84,7 @@ Funciones web actuales:
   - descarga segura del adjunto desde API
 - Recuperacion de contrasena:
   - opcion "Olvide mi contrasena" con token de recuperacion
+  - generacion de enlace directo clickeable a `/sistema` con `email` + `reset_token`
   - opcion "Ya tengo token" para establecer nueva clave
   - reseteo administrativo de clave temporal desde modulo de usuarios
 - Paginacion en listados operativos (trabajadores, evaluaciones, certificados, usuarios)

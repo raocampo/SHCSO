@@ -17,7 +17,24 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private function passwordRecoveryMessage(string $fullName, string $email, string $token, int $expireMinutes): string
+    private function passwordResetUiUrl(string $email, string $token): string
+    {
+        $baseUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/');
+        $query = http_build_query([
+            'email' => $email,
+            'reset_token' => $token,
+        ]);
+
+        return "{$baseUrl}/sistema?{$query}";
+    }
+
+    private function passwordRecoveryMessage(
+        string $fullName,
+        string $email,
+        string $token,
+        int $expireMinutes,
+        string $resetUrl
+    ): string
     {
         return implode(PHP_EOL, [
             "Hola {$fullName},",
@@ -25,6 +42,7 @@ class AuthController extends Controller
             'Recibimos una solicitud para recuperar tu contrasena en SHCSO.',
             "Correo: {$email}",
             "Token de recuperacion: {$token}",
+            "Enlace directo de recuperacion: {$resetUrl}",
             "Vigencia: {$expireMinutes} minutos",
             '',
             'Ingresa al modulo de acceso de SHCSO y usa la opcion "Ya tengo token" para establecer una nueva contrasena.',
@@ -156,9 +174,10 @@ class AuthController extends Controller
 
         $token = Password::broker()->createToken($user);
         $expireMinutes = (int) config('auth.passwords.users.expire', 60);
+        $resetUrl = $this->passwordResetUiUrl($user->email, $token);
 
         Mail::raw(
-            $this->passwordRecoveryMessage($user->full_name, $user->email, $token, $expireMinutes),
+            $this->passwordRecoveryMessage($user->full_name, $user->email, $token, $expireMinutes, $resetUrl),
             function ($message) use ($user) {
                 $message
                     ->to($user->email, $user->full_name)
@@ -183,6 +202,7 @@ class AuthController extends Controller
             $response['data'] = [
                 'email' => $user->email,
                 'reset_token' => $token,
+                'reset_url' => $resetUrl,
                 'expires_in_minutes' => $expireMinutes,
             ];
         }

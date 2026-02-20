@@ -1055,12 +1055,16 @@ refs.forgotPasswordForm.addEventListener("submit", async (e) => {
     status("Solicitando token de recuperacion...");
     try{
         const res = await api("/api/auth/forgot-password", { method:"POST", body:{ email } });
+        const resetUrl = res?.data?.reset_url;
         const debugToken = res?.data?.reset_token;
-        if(debugToken){
-            status(`Token generado (modo local): ${debugToken}`, "ok");
+        if(debugToken || resetUrl){
+            if(resetUrl){
+                window.prompt("Enlace de recuperacion (modo local). Copialo y abrelo:", resetUrl);
+            }
+            status(`Recuperacion generada (modo local).`, "ok");
             showRecoveryMode("reset");
             refs.resetPasswordForm.email.value = email;
-            refs.resetPasswordForm.token.value = debugToken;
+            if(debugToken) refs.resetPasswordForm.token.value = debugToken;
         } else {
             status(res?.message || "Si el correo existe, se envio token de recuperacion.", "ok");
             showRecoveryMode("reset");

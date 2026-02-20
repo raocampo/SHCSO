@@ -273,6 +273,7 @@
 - Opcion 1 (usuario final):
   - `POST /api/auth/forgot-password` para solicitud de token por correo.
   - `POST /api/auth/reset-password` para definir nueva contrasena con token.
+  - enlace de recuperacion directo generado hacia `/sistema` con `email` y `reset_token`.
   - UI en login con formularios:
     - "Olvide mi contrasena"
     - "Ya tengo token"

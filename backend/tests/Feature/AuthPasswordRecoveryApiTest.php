@@ -15,6 +15,9 @@ class AuthPasswordRecoveryApiTest extends TestCase
 
     public function test_can_request_password_reset_token_for_existing_user(): void
     {
+        config()->set('app.debug', true);
+        config()->set('app.url', 'http://127.0.0.1:8000');
+
         $user = User::factory()->create([
             'email' => 'recuperacion@shcso.local',
             'is_active' => true,
@@ -27,6 +30,12 @@ class AuthPasswordRecoveryApiTest extends TestCase
         $response
             ->assertOk()
             ->assertJsonPath('ok', true);
+
+        $resetUrl = (string) $response->json('data.reset_url');
+        $this->assertNotSame('', $resetUrl);
+        $this->assertStringStartsWith('http://127.0.0.1:8000/sistema?', $resetUrl);
+        $this->assertStringContainsString('email=recuperacion%40shcso.local', $resetUrl);
+        $this->assertStringContainsString('reset_token=', $resetUrl);
 
         $this->assertDatabaseHas('password_reset_tokens', [
             'email' => $user->email,
