@@ -74,6 +74,8 @@
         .workerManagePanel table { min-width:900px; }
         .workerFormActions { margin-top:12px; }
         .workerManagePanel .rowActions .btn.small { min-width:80px; }
+        .workerFormLocked { opacity:.78; }
+        .workerFormLocked .field label { color:#7a8a90; }
         .meta { margin:4px 0; color:var(--muted); font-size:.86rem; }
         .meta strong { color:var(--ink); }
         .historyList { display:grid; gap:8px; }
@@ -491,7 +493,7 @@ const refs = {
     usersPrevBtn: document.getElementById("usersPrevBtn"), usersNextBtn: document.getElementById("usersNextBtn"), usersPageInfo: document.getElementById("usersPageInfo"), usersExportBtn: document.getElementById("usersExportBtn"),
     workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
-    workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
+    workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     evaluationWorker: document.getElementById("evaluationWorker"), certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
@@ -832,38 +834,53 @@ function setWorkerFormMode(mode){
     if(refs.workerFormModeHint) refs.workerFormModeHint.textContent = editMode ? "Modo edicion de trabajador." : "Modo nuevo trabajador.";
 }
 
+function setWorkerFormEnabled(enabled){
+    if(!refs.workerForm) return;
+    refs.workerForm.classList.toggle("workerFormLocked", !enabled);
+    refs.workerForm.querySelectorAll("input,select,textarea,button").forEach((control) => {
+        if(control.getAttribute("name") === "worker_id") return;
+        control.disabled = !enabled;
+    });
+    if(!enabled && refs.workerFormModeHint){
+        refs.workerFormModeHint.textContent = "Formulario desactivado. Usa Crear trabajador o Editar.";
+    }
+}
+
 function resetWorkerForm(keepHistory=false){
-    const form = document.getElementById("workerForm");
-    if(!form) return;
-    form.reset();
-    form.worker_id.value = "";
-    form.document_type.value = "CEDULA";
-    form.sex.value = "M";
-    form.company_id.value = "";
-    form.job_position_id.value = "";
+    if(!refs.workerForm) return;
+    refs.workerForm.reset();
+    refs.workerForm.worker_id.value = "";
+    refs.workerForm.document_type.value = "CEDULA";
+    refs.workerForm.sex.value = "M";
+    refs.workerForm.company_id.value = "";
+    refs.workerForm.job_position_id.value = "";
     setWorkerFormMode("create");
+    setWorkerFormEnabled(false);
     if(!keepHistory){
         refs.workerDetailBox.innerHTML = `<p class="empty">Selecciona un trabajador para ver ficha completa.</p>`;
     }
 }
 
-function fillWorkerForm(worker){
-    const form = document.getElementById("workerForm");
-    if(!form) return;
-    form.worker_id.value = worker.id || "";
-    form.document_type.value = worker.document_type || "CEDULA";
-    form.document_number.value = worker.document_number || "";
-    form.first_name.value = worker.first_name || "";
-    form.last_name.value = worker.last_name || "";
-    form.birth_date.value = worker.birth_date || "";
-    form.sex.value = worker.sex || "M";
-    form.email.value = worker.email || "";
-    form.phone.value = worker.phone || "";
-    form.blood_type.value = worker.blood_type || "";
-    form.laterality.value = worker.laterality || "";
-    form.company_id.value = worker.company_id || "";
-    form.job_position_id.value = worker.job_position_id || "";
+function fillWorkerForm(worker, enableEditing=false){
+    if(!refs.workerForm) return;
+    refs.workerForm.worker_id.value = worker.id || "";
+    refs.workerForm.document_type.value = worker.document_type || "CEDULA";
+    refs.workerForm.document_number.value = worker.document_number || "";
+    refs.workerForm.first_name.value = worker.first_name || "";
+    refs.workerForm.last_name.value = worker.last_name || "";
+    refs.workerForm.birth_date.value = worker.birth_date || "";
+    refs.workerForm.sex.value = worker.sex || "M";
+    refs.workerForm.email.value = worker.email || "";
+    refs.workerForm.phone.value = worker.phone || "";
+    refs.workerForm.blood_type.value = worker.blood_type || "";
+    refs.workerForm.laterality.value = worker.laterality || "";
+    refs.workerForm.company_id.value = worker.company_id || "";
+    refs.workerForm.job_position_id.value = worker.job_position_id || "";
     setWorkerFormMode("edit");
+    setWorkerFormEnabled(enableEditing);
+    if(!enableEditing && refs.workerFormModeHint){
+        refs.workerFormModeHint.textContent = "Ficha cargada en solo lectura. Usa Editar para habilitar.";
+    }
 }
 
 function fillWorkerClinicalForm(clinicalHistory, workerId){
@@ -905,7 +922,7 @@ function renderWorkerHistory(){
         <div class="chips"><span class="chip">Evaluaciones: ${(history.evaluations || []).length}</span><span class="chip">Certificados: ${(history.certificates || []).length}</span></div>
     `;
 
-    fillWorkerForm(w);
+    fillWorkerForm(w, false);
     fillWorkerClinicalForm(history.clinical_history, w.id);
 
     refs.workerHistoryEval.innerHTML = "";
@@ -1269,7 +1286,10 @@ document.getElementById("workerForm").addEventListener("submit", async (e)=>{
 
 refs.workerCreateBtn.addEventListener("click", () => {
     resetWorkerForm();
+    setWorkerFormEnabled(true);
+    if(refs.workerFormModeHint) refs.workerFormModeHint.textContent = "Modo nuevo trabajador. Completa y guarda.";
     setWorkerStep("manage");
+    if(refs.workerForm?.document_number) refs.workerForm.document_number.focus();
 });
 
 refs.workerFormResetBtn.addEventListener("click", () => {
@@ -1289,8 +1309,11 @@ async function handleWorkerAction(workerId, action){
     if(action === "edit-worker"){
         await loadWorkerHistory(workerId);
         renderWorkerHistory();
+        setWorkerFormEnabled(true);
+        setWorkerFormMode("edit");
         setWorkerStep("manage");
         status("Trabajador listo para edicion.", "ok");
+        if(refs.workerForm?.first_name) refs.workerForm.first_name.focus();
         return;
     }
     if(action === "delete-worker"){
