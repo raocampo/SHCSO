@@ -93,6 +93,12 @@ Funciones web actuales:
   - generacion de enlace directo clickeable a `/sistema` con `email` + `reset_token`
   - opcion "Ya tengo token" para establecer nueva clave
   - reseteo administrativo de clave temporal desde modulo de usuarios
+- Consulta medica estructurada en UI de operacion:
+  - datos de paciente y filtro rapido por nombre/cedula
+  - captura de signos vitales
+  - secciones SOAP (Subjetivo, Objetivo, Analisis, Plan)
+  - buscador CIE-10 en linea para seleccionar diagnosticos
+  - receta medica opcional con multiples medicamentos por consulta
 - Paginacion en listados operativos (trabajadores, evaluaciones, certificados, usuarios)
 - Exportacion CSV basica (pagina actual) para trabajadores, evaluaciones, certificados y usuarios
 - Mensajes de validacion de API mostrados por campo en la UI
@@ -114,6 +120,7 @@ Funciones web actuales:
 - `PUT /api/users/{userId}/reset-password` (`ADMIN`)
 - `GET|POST /api/catalog/companies`
 - `GET|POST /api/catalog/job-positions`
+- `GET /api/catalog/diagnoses` (busqueda CIE-10)
 - `GET|POST /api/workers`
 - `PUT /api/workers/{workerId}`
 - `DELETE /api/workers/{workerId}`
@@ -174,6 +181,21 @@ Campos adicionales soportados en `POST /api/evaluations/{evaluationId}/attachmen
 - `exam_date` (opcional)
 - `notes` (opcional)
 - `file` (obligatorio, max 50 MB)
+
+## Consulta medica (SOAP + receta)
+
+El endpoint `POST /api/evaluations` soporta ahora, ademas de los campos existentes:
+
+- `vital_signs`: objeto con signos vitales (`blood_pressure`, `temperature_c`, `heart_rate`, etc.)
+- `physical_exam`: objeto para hallazgos objetivos (ej. `soap_o`)
+- `exam_results`: objeto para analisis/documentacion de resultados (ej. `soap_a`)
+- `diagnoses`: arreglo con CIE-10 (`code`, `description`, `diagnosis_type`, `notes`)
+- `prescriptions`: arreglo opcional de receta:
+  - `medication` (obligatorio)
+  - `dosage` (obligatorio)
+  - `frequency` (opcional)
+  - `duration` (opcional)
+  - `indications` (opcional)
 
 ## Estado
 

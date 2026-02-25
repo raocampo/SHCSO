@@ -91,6 +91,19 @@
         .operationKpiItem strong { display:block; margin-top:7px; font-size:1.25rem; line-height:1; }
         .operationCard { border-color:#c3ddd4; background:linear-gradient(160deg,#ffffff,#f4fbf8); }
         .operationHint { margin:-3px 0 10px; font-size:.78rem; color:#3f5f67; }
+        .consultBlock { border:1px solid #d7e4df; border-radius:12px; padding:12px; background:#fbfefd; margin-bottom:10px; }
+        .consultHead { margin:0 0 10px; font-size:.86rem; text-transform:uppercase; letter-spacing:.04em; color:#0e5a5e; }
+        .consultGrid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .consultGrid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .consultGridVitals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .diagnosisSearchWrap { border:1px solid #d3dfec; border-radius:10px; background:#f5f8ff; padding:10px; }
+        .diagnosisResults { margin-top:8px; display:grid; gap:6px; }
+        .diagnosisResultItem { display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid #d7e4ef; border-radius:8px; background:#fff; padding:7px 8px; }
+        .diagnosisSelected { display:grid; gap:8px; }
+        .diagnosisSelectedItem { border:1px solid #d7e4ef; border-radius:8px; background:#fff; padding:8px; display:grid; grid-template-columns:1.5fr 1fr auto; gap:8px; align-items:end; }
+        .prescriptionGrid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:10px; }
+        .prescriptionList { display:grid; gap:8px; margin-top:10px; }
+        .prescriptionItem { border:1px solid #d7e4df; border-radius:8px; background:#fff; padding:8px; display:grid; grid-template-columns:2fr 1fr 1fr 1fr 2fr auto; gap:8px; align-items:center; }
         .pill.apt-apto { background:#d9f7e7; color:#166534; border:1px solid #93d7b0; }
         .pill.apt-observacion { background:#fff4d8; color:#8a5a00; border:1px solid #f3c777; }
         .pill.apt-limitaciones { background:#ffe9d8; color:#9a3412; border:1px solid #f1b58d; }
@@ -102,7 +115,7 @@
         .pager .hint { margin:0; }
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
         @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
-        @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} }
+        @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} .consultGrid2{grid-template-columns:1fr;} .consultGrid3{grid-template-columns:1fr;} .consultGridVitals{grid-template-columns:1fr 1fr;} .prescriptionGrid{grid-template-columns:1fr 1fr;} .prescriptionItem{grid-template-columns:1fr 1fr;} .diagnosisSelectedItem{grid-template-columns:1fr;} }
         @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} .workerFormGrid{grid-template-columns:1fr;} .workerFormGrid [class*="span-"]{grid-column:span 1;} .workerManagePanel{padding:14px;} .workerManagePanel table{min-width:680px;} }
     </style>
 </head>
@@ -294,16 +307,59 @@
             </article>
 
             <article class="card view-operations operationCard">
-                <h2 class="section">Nueva evaluacion <span class="sectionBadge">flujo 1/2</span></h2>
-                <p class="operationHint">Registra primero la evaluacion del trabajador para habilitar certificado y adjuntos.</p>
+                <h2 class="section">Nueva consulta medica <span class="sectionBadge">flujo 1/2</span></h2>
+                <p class="operationHint">Registra la consulta estructurada (SOAP) para habilitar certificado y adjuntos.</p>
                 <form id="evaluationForm">
-                    <div class="field"><label>Trabajador</label><select id="evaluationWorker" name="worker_id" required></select></div>
-                    <div class="field"><label>Tipo</label><select name="evaluation_type"><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
-                    <div class="field"><label>Motivo</label><textarea name="consultation_reason" required>Evaluacion de ingreso</textarea></div>
-                    <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
-                    <div class="field"><label>Profesional</label><input name="professional_name" value="Dra. Maria Lopez" required></div>
-                    <div class="field"><label>Codigo</label><input name="professional_code" value="MED-12345" required></div>
-                    <button class="btn accent" type="submit">Guardar evaluacion</button>
+                    <div class="consultBlock">
+                        <h3 class="consultHead">Paciente</h3>
+                        <div class="consultGrid2">
+                            <div class="field"><label>Buscar</label><input id="evaluationWorkerSearch" type="text" placeholder="Filtrar por nombre o cedula"></div>
+                            <div class="field"><label>Paciente *</label><select id="evaluationWorker" name="worker_id" required></select></div>
+                        </div>
+                    </div>
+                    <div class="consultBlock">
+                        <h3 class="consultHead">Signos vitales</h3>
+                        <div class="consultGridVitals">
+                            <div class="field"><label>Presion arterial</label><input name="vs_bp" placeholder="120/80"></div>
+                            <div class="field"><label>Temperatura (C)</label><input name="vs_temp" type="number" step="0.1" min="30" max="45" placeholder="36.5"></div>
+                            <div class="field"><label>Frecuencia cardiaca</label><input name="vs_hr" type="number" min="20" max="250" placeholder="72"></div>
+                            <div class="field"><label>Frecuencia respiratoria</label><input name="vs_rr" type="number" min="6" max="80" placeholder="16"></div>
+                            <div class="field"><label>Peso (kg)</label><input name="vs_weight" type="number" step="0.1" min="1" max="500" placeholder="70"></div>
+                            <div class="field"><label>Talla (cm)</label><input name="vs_height" type="number" step="0.1" min="30" max="260" placeholder="170"></div>
+                        </div>
+                    </div>
+                    <div class="consultBlock">
+                        <h3 class="consultHead">Metodo SOAP</h3>
+                        <div class="field"><label>S - Subjetivo *</label><textarea name="soap_s" placeholder="Motivo de consulta y sintomas del paciente" required></textarea></div>
+                        <div class="field"><label>O - Objetivo *</label><textarea name="soap_o" placeholder="Hallazgos fisicos, signos y resultados relevantes" required></textarea></div>
+                        <div class="diagnosisSearchWrap">
+                            <div class="field"><label>Buscador CIE-10</label><input id="diagnosisSearchInput" type="text" placeholder="Buscar codigo o descripcion (ej: J06, lumbalgia)"></div>
+                            <div id="diagnosisSearchResults" class="diagnosisResults"></div>
+                        </div>
+                        <div id="selectedDiagnosesList" class="diagnosisSelected"><p class="empty">Sin diagnosticos seleccionados.</p></div>
+                        <div class="field"><label>A - Analisis (Diagnostico) *</label><textarea name="soap_a" placeholder="Analisis clinico, diagnostico principal y diferenciales" required></textarea></div>
+                        <div class="field"><label>P - Plan (Tratamiento) *</label><textarea name="soap_p" placeholder="Plan terapeutico, indicaciones y seguimiento" required></textarea></div>
+                    </div>
+                    <div class="consultBlock">
+                        <h3 class="consultHead">Receta medica (opcional)</h3>
+                        <div class="prescriptionGrid">
+                            <div class="field"><label>Medicamento *</label><input id="rxMedication" type="text" placeholder="Paracetamol, Amoxicilina..."></div>
+                            <div class="field"><label>Dosis *</label><input id="rxDosage" type="text" placeholder="500 mg"></div>
+                            <div class="field"><label>Frecuencia</label><input id="rxFrequency" type="text" placeholder="Cada 8 horas"></div>
+                            <div class="field"><label>Duracion</label><input id="rxDuration" type="text" placeholder="7 dias"></div>
+                        </div>
+                        <div class="field"><label>Indicaciones</label><input id="rxIndications" type="text" placeholder="Tomar despues de comidas"></div>
+                        <button id="addPrescriptionBtn" class="btn" type="button">+ Agregar medicamento</button>
+                        <div id="prescriptionList" class="prescriptionList"><p class="empty">Sin medicamentos agregados.</p></div>
+                    </div>
+                    <div class="consultGrid3">
+                        <div class="field"><label>Tipo</label><select name="evaluation_type"><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
+                        <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
+                        <div class="field"><label>Fecha atencion</label><input name="attention_date" type="date"></div>
+                        <div class="field"><label>Profesional</label><input name="professional_name" value="Dra. Maria Lopez" required></div>
+                        <div class="field"><label>Codigo profesional</label><input name="professional_code" value="MED-12345" required></div>
+                    </div>
+                    <button class="btn accent" type="submit">Guardar consulta</button>
                 </form>
             </article>
 
@@ -469,6 +525,7 @@ const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
     selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"recent", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
+    consultation:{ worker_search:"", diagnosis_results:[], selected_diagnoses:[], prescriptions:[] },
     pagination:{
         workers:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
         evaluations:{ page:1, per_page:10, total:0, total_pages:1, has_next:false, has_prev:false },
@@ -496,13 +553,16 @@ const refs = {
     workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
-    evaluationWorker: document.getElementById("evaluationWorker"), certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
+    evaluationWorker: document.getElementById("evaluationWorker"), evaluationWorkerSearch: document.getElementById("evaluationWorkerSearch"), diagnosisSearchInput: document.getElementById("diagnosisSearchInput"), diagnosisSearchResults: document.getElementById("diagnosisSearchResults"), selectedDiagnosesList: document.getElementById("selectedDiagnosesList"),
+    rxMedication: document.getElementById("rxMedication"), rxDosage: document.getElementById("rxDosage"), rxFrequency: document.getElementById("rxFrequency"), rxDuration: document.getElementById("rxDuration"), rxIndications: document.getElementById("rxIndications"), addPrescriptionBtn: document.getElementById("addPrescriptionBtn"), prescriptionList: document.getElementById("prescriptionList"),
+    certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
     userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect"),
     loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm"),
     authRecoveryActions: document.getElementById("authRecoveryActions"), showForgotPasswordBtn: document.getElementById("showForgotPasswordBtn"), showResetPasswordBtn: document.getElementById("showResetPasswordBtn"),
     forgotPasswordBox: document.getElementById("forgotPasswordBox"), forgotPasswordForm: document.getElementById("forgotPasswordForm"), cancelForgotPasswordBtn: document.getElementById("cancelForgotPasswordBtn"),
     resetPasswordBox: document.getElementById("resetPasswordBox"), resetPasswordForm: document.getElementById("resetPasswordForm"), cancelResetPasswordBtn: document.getElementById("cancelResetPasswordBtn")
 };
+let diagnosisSearchTimer = null;
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
 function fmtDate(v){ if(!v) return "-"; try { return new Date(v).toLocaleDateString(); } catch { return v; } }
@@ -587,6 +647,114 @@ function exportCsv(filename, headers, rows){
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+function toNullableNumber(value){
+    const raw = String(value ?? "").trim();
+    if(raw === "") return null;
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : null;
+}
+function normalizeDiagnosisCode(value){
+    return String(value || "").trim().toUpperCase();
+}
+function renderDiagnosisSearchResults(){
+    if(!refs.diagnosisSearchResults) return;
+    refs.diagnosisSearchResults.innerHTML = "";
+    if(!state.consultation.diagnosis_results.length){
+        refs.diagnosisSearchResults.innerHTML = `<p class="empty">Sin resultados.</p>`;
+        return;
+    }
+    state.consultation.diagnosis_results.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "diagnosisResultItem";
+        row.innerHTML = `<div><strong>${esc(item.code)}</strong> - ${esc(item.description)}</div>
+        <button class="btn small" type="button" data-act="add-diagnosis" data-code="${esc(item.code)}" data-description="${esc(item.description)}">Agregar</button>`;
+        refs.diagnosisSearchResults.appendChild(row);
+    });
+}
+function renderSelectedDiagnoses(){
+    if(!refs.selectedDiagnosesList) return;
+    refs.selectedDiagnosesList.innerHTML = "";
+    if(!state.consultation.selected_diagnoses.length){
+        refs.selectedDiagnosesList.innerHTML = `<p class="empty">Sin diagnosticos seleccionados.</p>`;
+        return;
+    }
+    state.consultation.selected_diagnoses.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "diagnosisSelectedItem";
+        row.innerHTML = `
+            <div class="field"><label>Diagnostico CIE-10</label><input type="text" value="${esc(item.code)} - ${esc(item.description)}" disabled></div>
+            <div class="field"><label>Tipo</label><select data-act="diagnosis-type" data-index="${idx}"><option value="PRE" ${item.diagnosis_type === "PRE" ? "selected" : ""}>PRE</option><option value="DEF" ${item.diagnosis_type === "DEF" ? "selected" : ""}>DEF</option></select></div>
+            <button class="btn small" type="button" data-act="remove-diagnosis" data-index="${idx}">Quitar</button>`;
+        refs.selectedDiagnosesList.appendChild(row);
+    });
+}
+function renderPrescriptionList(){
+    if(!refs.prescriptionList) return;
+    refs.prescriptionList.innerHTML = "";
+    if(!state.consultation.prescriptions.length){
+        refs.prescriptionList.innerHTML = `<p class="empty">Sin medicamentos agregados.</p>`;
+        return;
+    }
+    state.consultation.prescriptions.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "prescriptionItem";
+        row.innerHTML = `
+            <span><strong>${esc(item.medication)}</strong></span>
+            <span>${esc(item.dosage)}</span>
+            <span>${esc(item.frequency || "-")}</span>
+            <span>${esc(item.duration || "-")}</span>
+            <span>${esc(item.indications || "-")}</span>
+            <button class="btn small" type="button" data-act="remove-rx" data-index="${idx}">Quitar</button>
+        `;
+        refs.prescriptionList.appendChild(row);
+    });
+}
+function resetConsultationState(){
+    state.consultation.diagnosis_results = [];
+    state.consultation.selected_diagnoses = [];
+    state.consultation.prescriptions = [];
+    renderDiagnosisSearchResults();
+    renderSelectedDiagnoses();
+    renderPrescriptionList();
+    if(refs.diagnosisSearchInput) refs.diagnosisSearchInput.value = "";
+    if(refs.rxMedication) refs.rxMedication.value = "";
+    if(refs.rxDosage) refs.rxDosage.value = "";
+    if(refs.rxFrequency) refs.rxFrequency.value = "";
+    if(refs.rxDuration) refs.rxDuration.value = "";
+    if(refs.rxIndications) refs.rxIndications.value = "";
+}
+function filterEvaluationWorkerOptions(){
+    if(!refs.evaluationWorker) return;
+    const search = mbLower(String(state.consultation.worker_search || ""));
+    refs.evaluationWorker.innerHTML = "";
+    const options = state.workers.filter(w => {
+        if(search === "") return true;
+        const fullName = `${w.first_name || ""} ${w.last_name || ""}`.trim();
+        return mbLower(fullName).includes(search) || mbLower(w.document_number || "").includes(search);
+    });
+    options.forEach(w => refs.evaluationWorker.appendChild(makeOpt(w.id, `${w.first_name} ${w.last_name} (${w.document_number})`)));
+}
+function mbLower(value){
+    return String(value || "").toLocaleLowerCase();
+}
+async function searchDiagnosisCatalog(){
+    const query = String(refs.diagnosisSearchInput?.value || "").trim();
+    if(query.length < 2){
+        state.consultation.diagnosis_results = [];
+        renderDiagnosisSearchResults();
+        return;
+    }
+    try{
+        const res = await api(`/api/catalog/diagnoses?${buildQueryString({ q:query, limit:8 })}`);
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        const selectedCodes = new Set(state.consultation.selected_diagnoses.map(x => x.code));
+        state.consultation.diagnosis_results = rows.filter(x => !selectedCodes.has(normalizeDiagnosisCode(x.code)));
+        renderDiagnosisSearchResults();
+    } catch {
+        state.consultation.diagnosis_results = [];
+        renderDiagnosisSearchResults();
+    }
 }
 async function downloadWithToken(path, filename){
     const res = await fetch(path, { headers:{ Authorization:`Bearer ${state.token}` } });
@@ -934,6 +1102,7 @@ function renderWorkerHistory(){
             const card = document.createElement("div");
             const diagnoses = (e.diagnoses || []).map(d => `<span class="chip">${esc(d.diagnosis_code)} (${esc(d.diagnosis_type)})</span>`).join("");
             const attachments = e.attachments || [];
+            const prescriptions = e.prescriptions || [];
             const attachmentRows = attachments.map((a) => {
                 const type = a.attachment_type || "GENERAL";
                 const examDate = a.exam_date ? fmtDate(a.exam_date) : "-";
@@ -941,12 +1110,21 @@ function renderWorkerHistory(){
                 return `<p class="meta"><strong>${esc(type)}</strong> | ${esc(a.file_name || "archivo")} | ${examDate} | ${formatBytes(a.file_size_bytes)}${notes}
                 <button class="btn small" data-act="download-attachment" data-attachment-id="${a.id}" data-file-name="${esc(a.file_name || "archivo")}" type="button">Descargar</button></p>`;
             }).join("");
+            const prescriptionRows = prescriptions.map((p) => `<p class="meta"><strong>${esc(p.medication)}</strong> | ${esc(p.dosage)} | ${esc(p.frequency || "-")} | ${esc(p.duration || "-")} | ${esc(p.indications || "-")}</p>`).join("");
+            const soapObjective = e.physical_exam?.soap_o || "-";
+            const soapAnalysis = e.exam_results?.soap_a || e.current_problem || "-";
+            const soapPlan = e.recommendations || "-";
             card.className = "historyCard";
             card.innerHTML = `<p class="meta"><strong>${esc(e.evaluation_type)}</strong> - ${fmtDate(e.attention_date)} <span class="pill ${aptitudePillClass(e.medical_aptitude)}">${esc(e.medical_aptitude)}</span></p>
             <p class="meta"><strong>Motivo:</strong> ${esc(e.consultation_reason || "-")}</p>
+            <p class="meta"><strong>SOAP-O:</strong> ${esc(soapObjective)}</p>
+            <p class="meta"><strong>SOAP-A:</strong> ${esc(soapAnalysis)}</p>
+            <p class="meta"><strong>SOAP-P:</strong> ${esc(soapPlan)}</p>
             <p class="meta"><strong>Profesional:</strong> ${esc(e.professional_name || "-")} (${esc(e.professional_code || "-")})</p>
             <p class="meta"><strong>Adjuntos:</strong> ${attachments.length}</p>
             ${attachmentRows || '<p class="meta">Sin adjuntos de examenes.</p>'}
+            <p class="meta"><strong>Receta:</strong> ${prescriptions.length} medicamento(s)</p>
+            ${prescriptionRows || '<p class="meta">Sin receta medica registrada.</p>'}
             <div class="chips">${diagnoses || '<span class="chip">Sin diagnosticos</span>'}</div>`;
             refs.workerHistoryEval.appendChild(card);
         });
@@ -1052,7 +1230,7 @@ function renderUsers(){
 function fillSelects(){
     refs.workerCompany.innerHTML = ""; refs.workerCompany.appendChild(makeOpt("", "Sin empresa")); state.companies.forEach(c=>refs.workerCompany.appendChild(makeOpt(c.id, c.business_name)));
     refs.workerPosition.innerHTML = ""; refs.workerPosition.appendChild(makeOpt("", "Sin puesto")); state.positions.forEach(p=>refs.workerPosition.appendChild(makeOpt(p.id, p.name)));
-    refs.evaluationWorker.innerHTML = ""; state.workers.forEach(w=>refs.evaluationWorker.appendChild(makeOpt(w.id, `${w.first_name} ${w.last_name} (${w.document_number})`)));
+    filterEvaluationWorkerOptions();
     [refs.certificateEvaluation, refs.attachmentEvaluation].forEach(sel => { sel.innerHTML=""; state.evaluations.forEach(e=>{ const w=e.worker||{}; sel.appendChild(makeOpt(e.id, `${e.evaluation_type} - ${w.first_name || ""} ${w.last_name || ""}`)); }); });
     if(refs.userRoleSelect && refs.userEditRoleSelect){
         refs.userRoleSelect.innerHTML = "";
@@ -1074,6 +1252,9 @@ function renderAll(){
     renderCertificates();
     renderUsers();
     fillSelects();
+    renderDiagnosisSearchResults();
+    renderSelectedDiagnoses();
+    renderPrescriptionList();
     renderWorkerHistory();
     applyPagerInfo("workers");
     applyPagerInfo("evaluations");
@@ -1297,6 +1478,76 @@ refs.workerFormResetBtn.addEventListener("click", () => {
     status("Edicion cancelada. Puedes crear un nuevo trabajador.", "ok");
 });
 
+refs.evaluationWorkerSearch.addEventListener("input", (e) => {
+    state.consultation.worker_search = e.target.value || "";
+    filterEvaluationWorkerOptions();
+});
+
+refs.diagnosisSearchInput.addEventListener("input", () => {
+    clearTimeout(diagnosisSearchTimer);
+    diagnosisSearchTimer = setTimeout(searchDiagnosisCatalog, 260);
+});
+
+refs.diagnosisSearchResults.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='add-diagnosis']");
+    if(!btn) return;
+    const code = normalizeDiagnosisCode(btn.getAttribute("data-code"));
+    const description = String(btn.getAttribute("data-description") || "").trim();
+    if(code === "" || state.consultation.selected_diagnoses.some(x => x.code === code)) return;
+    state.consultation.selected_diagnoses.push({ code, description, diagnosis_type:"DEF" });
+    state.consultation.diagnosis_results = state.consultation.diagnosis_results.filter(x => normalizeDiagnosisCode(x.code) !== code);
+    renderDiagnosisSearchResults();
+    renderSelectedDiagnoses();
+});
+
+refs.selectedDiagnosesList.addEventListener("change", (e) => {
+    const select = e.target.closest("select[data-act='diagnosis-type']");
+    if(!select) return;
+    const idx = Number(select.getAttribute("data-index"));
+    if(!Number.isInteger(idx) || !state.consultation.selected_diagnoses[idx]) return;
+    state.consultation.selected_diagnoses[idx].diagnosis_type = select.value === "PRE" ? "PRE" : "DEF";
+});
+
+refs.selectedDiagnosesList.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='remove-diagnosis']");
+    if(!btn) return;
+    const idx = Number(btn.getAttribute("data-index"));
+    if(!Number.isInteger(idx) || !state.consultation.selected_diagnoses[idx]) return;
+    state.consultation.selected_diagnoses.splice(idx, 1);
+    renderSelectedDiagnoses();
+});
+
+refs.addPrescriptionBtn.addEventListener("click", () => {
+    const medication = String(refs.rxMedication.value || "").trim();
+    const dosage = String(refs.rxDosage.value || "").trim();
+    if(medication.length < 2 || dosage.length < 1){
+        status("Medicamento y dosis son obligatorios para agregar receta.", "error");
+        return;
+    }
+    state.consultation.prescriptions.push({
+        medication,
+        dosage,
+        frequency: compactText(refs.rxFrequency.value),
+        duration: compactText(refs.rxDuration.value),
+        indications: compactText(refs.rxIndications.value),
+    });
+    refs.rxMedication.value = "";
+    refs.rxDosage.value = "";
+    refs.rxFrequency.value = "";
+    refs.rxDuration.value = "";
+    refs.rxIndications.value = "";
+    renderPrescriptionList();
+});
+
+refs.prescriptionList.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='remove-rx']");
+    if(!btn) return;
+    const idx = Number(btn.getAttribute("data-index"));
+    if(!Number.isInteger(idx) || !state.consultation.prescriptions[idx]) return;
+    state.consultation.prescriptions.splice(idx, 1);
+    renderPrescriptionList();
+});
+
 async function handleWorkerAction(workerId, action){
     if(!workerId) return;
     if(action === "view-worker"){
@@ -1359,22 +1610,55 @@ refs.workerClinicalForm.addEventListener("submit", async (e) => {
 document.getElementById("evaluationForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const f = new FormData(e.target);
+    const soapS = String(f.get("soap_s") || "").trim();
+    const soapO = String(f.get("soap_o") || "").trim();
+    const soapA = String(f.get("soap_a") || "").trim();
+    const soapP = String(f.get("soap_p") || "").trim();
+    if(soapS.length < 5 || soapO.length < 5 || soapA.length < 5 || soapP.length < 5){
+        status("Completa los campos SOAP obligatorios.", "error");
+        return;
+    }
+    if(!state.consultation.selected_diagnoses.length){
+        status("Agrega al menos un diagnostico CIE-10.", "error");
+        return;
+    }
+    const vitalSigns = {
+        blood_pressure: compactText(f.get("vs_bp")),
+        temperature_c: toNullableNumber(f.get("vs_temp")),
+        heart_rate: toNullableNumber(f.get("vs_hr")),
+        respiratory_rate: toNullableNumber(f.get("vs_rr")),
+        weight_kg: toNullableNumber(f.get("vs_weight")),
+        height_cm: toNullableNumber(f.get("vs_height")),
+    };
     const payload = {
         worker_id:f.get("worker_id"),
         evaluation_type:f.get("evaluation_type"),
-        consultation_reason:f.get("consultation_reason"),
+        attention_date:f.get("attention_date") || null,
+        consultation_reason:soapS,
+        current_problem:soapA,
+        physical_exam:{ soap_o: soapO },
+        exam_results:{ soap_a: soapA },
         medical_aptitude:f.get("medical_aptitude"),
+        recommendations:soapP,
         professional_name:f.get("professional_name"),
         professional_code:f.get("professional_code"),
-        vital_signs:{pa:"120/80",fc:72},
-        diagnoses:[{code:"Z00.0", diagnosis_type:"DEF", notes:"Control de rutina"}]
+        vital_signs:vitalSigns,
+        diagnoses:state.consultation.selected_diagnoses.map((d) => ({
+            code:d.code,
+            description:d.description,
+            diagnosis_type:d.diagnosis_type || "DEF",
+            notes:soapA,
+        })),
+        prescriptions:state.consultation.prescriptions,
     };
     try{
         const res = await api("/api/evaluations",{method:"POST", body:payload});
         if(res?.data?.worker_id){ await loadWorkerHistory(res.data.worker_id); }
-        status("Evaluacion creada.", "ok");
+        status("Consulta medica registrada.", "ok");
+        e.target.reset();
+        resetConsultationState();
         await refreshData();
-    } catch(err){ status(err.message || "No se pudo crear evaluacion.", "error"); }
+    } catch(err){ status(err.message || "No se pudo guardar consulta medica.", "error"); }
 });
 
 document.getElementById("certificateForm").addEventListener("submit", async (e)=>{
@@ -1685,6 +1969,7 @@ refs.logoutBtn.addEventListener("click", logout);
 
 (async function init(){
     setView(resolveViewFromPath(), false);
+    resetConsultationState();
     const t = localStorage.getItem("shcso_token");
     if(!t){ await prepareLoginSection(); return; }
     state.token=t;

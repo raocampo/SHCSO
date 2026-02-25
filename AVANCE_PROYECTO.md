@@ -357,3 +357,31 @@
 - La experiencia conserva el flujo operativo actual:
   - crear/editar desde formulario unificado
   - acciones `Ver`, `Editar`, `Eliminar` por trabajador
+
+## Actualizacion ejecutada (2026-02-20 - consulta medica estructurada SOAP)
+
+### Implementado
+
+- Backend:
+  - nueva tabla `evaluation_prescriptions` para receta medica por evaluacion.
+  - nuevo modelo `EvaluationPrescription` y relacion en `OccupationalEvaluation`.
+  - `POST /api/evaluations` ampliado para guardar:
+    - signos vitales
+    - secciones SOAP (`consultation_reason`, `physical_exam`, `exam_results`, `recommendations`)
+    - diagnosticos CIE-10
+    - receta medica opcional (multiples medicamentos)
+  - `GET /api/evaluations/{evaluationId}` y `GET /api/workers/{workerId}/history` incluyen prescripciones.
+  - nuevo endpoint `GET /api/catalog/diagnoses` para buscador CIE-10 por codigo/descripcion.
+- Frontend `/sistema` (modulo operacion):
+  - formulario de consulta medica con secciones:
+    - paciente (filtro + selector)
+    - signos vitales
+    - metodo SOAP
+    - buscador CIE-10 y seleccion de diagnosticos
+    - receta medica dinamica (agregar/quitar medicamentos)
+  - historial clinico del trabajador muestra resumen SOAP y receta registrada por evaluacion.
+- Pruebas:
+  - nuevo `MedicalConsultationApiTest` con cobertura de:
+    - alta de consulta con receta
+    - busqueda CIE-10 en catalogo
+  - validacion local completa: `25 passed (141 assertions)`.

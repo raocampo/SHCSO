@@ -72,6 +72,11 @@ class OccupationalEvaluation extends Model
         return $this->hasMany(EvaluationAttachment::class, 'evaluation_id');
     }
 
+    public function prescriptions(): HasMany
+    {
+        return $this->hasMany(EvaluationPrescription::class, 'evaluation_id');
+    }
+
     public function certificates(): HasMany
     {
         return $this->hasMany(MedicalCertificate::class, 'evaluation_id');

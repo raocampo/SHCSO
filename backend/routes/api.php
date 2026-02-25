@@ -44,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/catalog/job-positions', [CatalogController::class, 'listJobPositions']);
     Route::post('/catalog/job-positions', [CatalogController::class, 'createJobPosition'])
         ->middleware('role:ADMIN,RECEPCION');
+    Route::get('/catalog/diagnoses', [CatalogController::class, 'listDiagnoses'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
 
     Route::get('/workers', [WorkerController::class, 'index'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');

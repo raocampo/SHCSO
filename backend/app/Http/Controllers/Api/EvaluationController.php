@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DiagnosisCatalog;
 use App\Models\EvaluationAttachment;
 use App\Models\EvaluationDiagnosis;
+use App\Models\EvaluationPrescription;
 use App\Models\OccupationalEvaluation;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
@@ -160,6 +161,12 @@ class EvaluationController extends Controller
             'diagnoses.*.description' => ['nullable', 'string', 'max:400'],
             'diagnoses.*.diagnosis_type' => ['required_with:diagnoses', 'in:PRE,DEF'],
             'diagnoses.*.notes' => ['nullable', 'string', 'max:500'],
+            'prescriptions' => ['nullable', 'array'],
+            'prescriptions.*.medication' => ['required_with:prescriptions', 'string', 'min:2', 'max:180'],
+            'prescriptions.*.dosage' => ['required_with:prescriptions', 'string', 'min:1', 'max:120'],
+            'prescriptions.*.frequency' => ['nullable', 'string', 'max:120'],
+            'prescriptions.*.duration' => ['nullable', 'string', 'max:120'],
+            'prescriptions.*.indications' => ['nullable', 'string', 'max:1500'],
         ]);
 
         /** @var \App\Models\User $user */
@@ -202,6 +209,17 @@ class EvaluationController extends Controller
                     'diagnosis_code' => $diagnosis['code'],
                     'diagnosis_type' => $diagnosis['diagnosis_type'],
                     'notes' => $diagnosis['notes'] ?? null,
+                ]);
+            }
+
+            foreach (($validated['prescriptions'] ?? []) as $prescription) {
+                EvaluationPrescription::query()->create([
+                    'evaluation_id' => $evaluation->id,
+                    'medication' => $prescription['medication'],
+                    'dosage' => $prescription['dosage'],
+                    'frequency' => $prescription['frequency'] ?? null,
+                    'duration' => $prescription['duration'] ?? null,
+                    'indications' => $prescription['indications'] ?? null,
                 ]);
             }
 
@@ -330,6 +348,7 @@ class EvaluationController extends Controller
                 'diagnoses:id,evaluation_id,diagnosis_code,diagnosis_type,notes',
                 'diagnoses.diagnosisCatalog:code,description',
                 'attachments:id,evaluation_id,file_name,file_path,mime_type,attachment_type,exam_date,notes,file_size_bytes,original_extension,uploaded_by,created_at',
+                'prescriptions:id,evaluation_id,medication,dosage,frequency,duration,indications,created_at',
             ])
             ->findOrFail($evaluationId);
 
