@@ -29,13 +29,19 @@ class ClinicalEvolutionController extends Controller
         Worker::findOrFail($workerId);
 
         $validated = $request->validate([
-            'evolution_type'  => ['nullable', 'string', 'in:SEGUIMIENTO,NOTA,INTERCONSULTA,URGENCIA'],
+            'evolution_type'  => ['nullable', 'string', 'in:SEGUIMIENTO,NOTA,INTERCONSULTA,URGENCIA,PRESCRIPCION'],
             'evaluation_id'   => ['nullable', 'uuid', 'exists:occupational_evaluations,id'],
             'subjective'      => ['nullable', 'string', 'max:3000'],
             'objective'       => ['nullable', 'string', 'max:3000'],
             'assessment'      => ['nullable', 'string', 'max:3000'],
             'plan'            => ['nullable', 'string', 'max:3000'],
             'notes'           => ['nullable', 'string', 'max:2000'],
+            'medications'              => ['nullable', 'array'],
+            'medications.*.medication' => ['nullable', 'string', 'max:300'],
+            'medications.*.dose'       => ['nullable', 'string', 'max:100'],
+            'medications.*.frequency'  => ['nullable', 'string', 'max:100'],
+            'medications.*.duration'   => ['nullable', 'string', 'max:100'],
+            'medications.*.instructions' => ['nullable', 'string', 'max:500'],
             'vital_signs'          => ['nullable', 'array'],
             'vital_signs.bp'       => ['nullable', 'string', 'max:20'],
             'vital_signs.temp'     => ['nullable', 'numeric'],
@@ -80,12 +86,18 @@ class ClinicalEvolutionController extends Controller
         $evolution = ClinicalEvolution::where('worker_id', $workerId)->findOrFail($evolutionId);
 
         $validated = $request->validate([
-            'evolution_type'  => ['nullable', 'string', 'in:SEGUIMIENTO,NOTA,INTERCONSULTA,URGENCIA'],
+            'evolution_type'  => ['nullable', 'string', 'in:SEGUIMIENTO,NOTA,INTERCONSULTA,URGENCIA,PRESCRIPCION'],
             'subjective'      => ['nullable', 'string', 'max:3000'],
             'objective'       => ['nullable', 'string', 'max:3000'],
             'assessment'      => ['nullable', 'string', 'max:3000'],
             'plan'            => ['nullable', 'string', 'max:3000'],
             'notes'           => ['nullable', 'string', 'max:2000'],
+            'medications'              => ['nullable', 'array'],
+            'medications.*.medication' => ['nullable', 'string', 'max:300'],
+            'medications.*.dose'       => ['nullable', 'string', 'max:100'],
+            'medications.*.frequency'  => ['nullable', 'string', 'max:100'],
+            'medications.*.duration'   => ['nullable', 'string', 'max:100'],
+            'medications.*.instructions' => ['nullable', 'string', 'max:500'],
             'vital_signs'          => ['nullable', 'array'],
             'vital_signs.bp'       => ['nullable', 'string', 'max:20'],
             'vital_signs.temp'     => ['nullable', 'numeric'],
@@ -141,6 +153,7 @@ class ClinicalEvolutionController extends Controller
             'assessment'     => $e->assessment,
             'plan'           => $e->plan,
             'vital_signs'    => $e->vital_signs ?? [],
+            'medications'    => $e->medications ?? [],
             'notes'          => $e->notes,
             'author'         => $e->author ? ['id' => $e->author->id, 'name' => $e->author->name] : null,
             'created_at'     => $e->created_at?->toIso8601String(),

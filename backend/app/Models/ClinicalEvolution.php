@@ -17,11 +17,13 @@ class ClinicalEvolution extends Model
         'assessment',
         'plan',
         'vital_signs',
+        'medications',
         'notes',
     ];
 
     protected $casts = [
         'vital_signs' => 'array',
+        'medications' => 'array',
     ];
 
     public function worker(): BelongsTo

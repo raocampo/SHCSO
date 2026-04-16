@@ -83,6 +83,8 @@
         .meta strong { color:var(--ink); }
         .historyList { display:grid; gap:8px; }
         .historyCard { border:1px solid #e4ece9; border-radius:10px; padding:10px; background:#fbfefd; }
+        .subCard { border:1px solid #dde9e4; border-radius:12px; padding:16px; background:#f9fdfb; }
+        .subCardTitle { font-size:.9rem; font-weight:700; color:var(--ink); margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid var(--accent); display:inline-block; }
         .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
         .chip { display:inline-block; border:1px solid #cfe0da; border-radius:999px; padding:2px 8px; font-size:.72rem; background:#f0f7f4; color:#115f61; }
         .sectionBadge { font-family:"IBM Plex Mono",monospace; font-size:.66rem; background:#e9f5f0; border:1px solid #b6d9cd; color:#115f61; border-radius:999px; padding:2px 8px; vertical-align:middle; margin-left:6px; }
@@ -116,6 +118,8 @@
         .rxMedItem:hover { background:#eef4ff; }
         .rxMedItem strong { display:block; color:#0e5a5e; }
         .rxMedItem span { color:#7a8fa6; font-size:.8rem; }
+        .autocompleteDropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cde0d9; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:500; max-height:200px; overflow-y:auto; }
+        .autocompleteDropdown.hidden { display:none; }
         /* Modal overlay */
         .modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
         .modalBox { background:#fff; border-radius:14px; padding:24px; max-width:520px; width:94%; box-shadow:0 8px 32px rgba(0,0,0,.18); position:relative; max-height:90vh; overflow-y:auto; }
@@ -251,7 +255,7 @@
             <button class="workerFlowTab" data-worker-step="manage" type="button">2. Nuevo trabajador</button>
             <button class="workerFlowTab" data-worker-step="clinical" type="button">3. Historia clinica ampliada</button>
             <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
-            <button class="workerFlowTab" data-worker-step="evolutions" type="button">5. Evoluciones</button>
+            <button class="workerFlowTab" data-worker-step="evolutions" type="button">5. Evoluciones y Prescripciones</button>
         </nav>
         <nav class="operationFlow view-operations">
             <button class="operationFlowTab active" data-operation-step="consult" type="button">1. Consulta medica</button>
@@ -501,47 +505,106 @@
             <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
         </article>
 
-        </article>
-
         <article class="card view-workers workerStepPanel" data-worker-panel="evolutions">
-            <h2 class="section">Evoluciones clinicas <span class="sectionBadge">seguimiento</span></h2>
-            <div id="workerEvolutionsList" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
-            <hr style="border:none;border-top:1px solid var(--line);margin:16px 0;">
-            <h3 class="section" style="font-size:.9rem;" id="evoFormTitle">Nueva evolucion</h3>
-            <form id="evolutionForm">
-                <div class="consultGrid2" style="margin-bottom:8px;">
-                    <div class="field"><label>Tipo</label>
-                        <select id="evoType">
-                            <option value="SEGUIMIENTO">Seguimiento</option>
-                            <option value="NOTA">Nota clinica</option>
-                            <option value="INTERCONSULTA">Interconsulta</option>
-                        </select>
+            <h2 class="section">Seguimiento del Trabajador <span class="sectionBadge">seguimiento</span></h2>
+
+            <!-- ===== CARD PRESCRIPCIONES ===== -->
+            <div class="subCard" style="margin-bottom:24px;">
+                <h3 class="subCardTitle">💊 Prescripciones</h3>
+
+                <!-- Historial de prescripciones de evaluaciones -->
+                <div id="workerPrescriptionsList" class="historyList" style="margin-bottom:16px;"><p class="empty">Sin trabajador seleccionado.</p></div>
+
+                <hr style="border:none;border-top:1px solid var(--line);margin:16px 0;">
+
+                <!-- Formulario nueva prescripción -->
+                <h4 style="font-size:.85rem;font-weight:600;margin-bottom:10px;color:var(--accent);">➕ Nueva prescripción</h4>
+                <form id="prescriptionForm">
+                    <div class="consultGrid2" style="margin-bottom:8px;">
+                        <div class="field"><label>Evaluación relacionada (opcional)</label>
+                            <select id="rxEvaluation"><option value="">-- Sin evaluación --</option></select>
+                        </div>
+                        <div class="field"><label>Notas / indicaciones generales</label>
+                            <input id="rxGeneralNotes" type="text" placeholder="Ej: Tomar con abundante agua...">
+                        </div>
                     </div>
-                    <div class="field"><label>Evaluacion relacionada (opcional)</label>
-                        <select id="evoEvaluation"><option value="">-- Sin evaluacion --</option></select>
+
+                    <!-- Líneas de medicamentos -->
+                    <div id="rxMedLines">
+                        <!-- template: rxMedLine -->
                     </div>
-                </div>
-                <div class="consultGridSoap" style="margin-bottom:8px;">
-                    <div class="field"><label>S - Subjetivo</label><textarea id="evoSubjective" rows="3" placeholder="Sintomas referidos por el paciente"></textarea></div>
-                    <div class="field"><label>O - Objetivo</label><textarea id="evoObjective" rows="3" placeholder="Signos vitales y hallazgos"></textarea></div>
-                    <div class="field"><label>A - Analisis</label><textarea id="evoAssessment" rows="3" placeholder="Analisis clinico y diagnostico"></textarea></div>
-                    <div class="field"><label>P - Plan</label><textarea id="evoPlan" rows="3" placeholder="Plan terapeutico y seguimiento"></textarea></div>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:8px;">
-                    <div class="field"><label>PA (mmHg)</label><input id="evoBP" type="text" placeholder="120/80"></div>
-                    <div class="field"><label>Temp (°C)</label><input id="evoTemp" type="text" placeholder="36.5"></div>
-                    <div class="field"><label>FC (lpm)</label><input id="evoHR" type="text" placeholder="72"></div>
-                    <div class="field"><label>FR (rpm)</label><input id="evoRR" type="text" placeholder="16"></div>
-                    <div class="field"><label>Peso (kg)</label><input id="evoWeight" type="text" placeholder="70"></div>
-                    <div class="field"><label>Talla (cm)</label><input id="evoHeight" type="text" placeholder="170"></div>
-                </div>
-                <div class="field" style="margin-bottom:8px;"><label>Notas adicionales</label><textarea id="evoNotes" rows="2" placeholder="Observaciones adicionales"></textarea></div>
-                <div class="rowActions">
-                    <button class="btn accent" type="submit" id="evoSubmitBtn">Guardar evolucion</button>
-                    <button class="btn" type="button" id="evoCancelBtn" style="display:none;">Cancelar edicion</button>
-                </div>
-                <input type="hidden" id="evoEditId">
-            </form>
+
+                    <button class="btn" type="button" id="rxAddMedBtn" style="margin-bottom:10px;">+ Agregar medicamento</button>
+
+                    <!-- Template oculto de línea de medicamento -->
+                    <template id="rxMedLineTemplate">
+                        <div class="rxMedLine" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 2fr auto;gap:6px;align-items:end;margin-bottom:6px;">
+                            <div class="field" style="margin:0;position:relative;">
+                                <label>Medicamento</label>
+                                <input type="text" class="rxMedInput" placeholder="Buscar medicamento..." autocomplete="off">
+                                <div class="rxMedSuggestions autocompleteDropdown hidden"></div>
+                            </div>
+                            <div class="field" style="margin:0;"><label>Dosis</label><input type="text" class="rxDose" placeholder="500mg"></div>
+                            <div class="field" style="margin:0;"><label>Frecuencia</label><input type="text" class="rxFreq" placeholder="c/8h"></div>
+                            <div class="field" style="margin:0;"><label>Duración</label><input type="text" class="rxDuration" placeholder="7 días"></div>
+                            <div class="field" style="margin:0;"><label>Instrucciones</label><input type="text" class="rxInstructions" placeholder="Tomar con alimentos"></div>
+                            <div class="field" style="margin:0;"><label>&nbsp;</label><button type="button" class="btn rxRemoveMedBtn" style="color:var(--danger);">✕</button></div>
+                        </div>
+                    </template>
+
+                    <div class="rowActions">
+                        <button class="btn accent" type="submit" id="rxSubmitBtn">💾 Guardar prescripción</button>
+                        <button class="btn" type="button" id="rxCancelBtn" style="display:none;">Cancelar edición</button>
+                    </div>
+                    <input type="hidden" id="rxEditId">
+                </form>
+            </div>
+
+            <!-- ===== CARD EVOLUCIONES ===== -->
+            <div class="subCard">
+                <h3 class="subCardTitle">📋 Evoluciones clínicas</h3>
+
+                <div id="workerEvolutionsList" class="historyList" style="margin-bottom:16px;"><p class="empty">Sin trabajador seleccionado.</p></div>
+
+                <hr style="border:none;border-top:1px solid var(--line);margin:16px 0;">
+
+                <h4 style="font-size:.85rem;font-weight:600;margin-bottom:10px;color:var(--accent);" id="evoFormTitle">➕ Nueva evolución</h4>
+                <form id="evolutionForm">
+                    <div class="consultGrid2" style="margin-bottom:8px;">
+                        <div class="field"><label>Tipo</label>
+                            <select id="evoType">
+                                <option value="SEGUIMIENTO">Seguimiento</option>
+                                <option value="NOTA">Nota clínica</option>
+                                <option value="INTERCONSULTA">Interconsulta</option>
+                                <option value="URGENCIA">Urgencia</option>
+                            </select>
+                        </div>
+                        <div class="field"><label>Evaluación relacionada (opcional)</label>
+                            <select id="evoEvaluation"><option value="">-- Sin evaluación --</option></select>
+                        </div>
+                    </div>
+                    <div class="consultGridSoap" style="margin-bottom:8px;">
+                        <div class="field"><label>S - Subjetivo</label><textarea id="evoSubjective" rows="3" placeholder="Síntomas referidos por el paciente"></textarea></div>
+                        <div class="field"><label>O - Objetivo</label><textarea id="evoObjective" rows="3" placeholder="Signos vitales y hallazgos"></textarea></div>
+                        <div class="field"><label>A - Análisis</label><textarea id="evoAssessment" rows="3" placeholder="Análisis clínico y diagnóstico"></textarea></div>
+                        <div class="field"><label>P - Plan</label><textarea id="evoPlan" rows="3" placeholder="Plan terapéutico y seguimiento"></textarea></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:8px;">
+                        <div class="field"><label>PA (mmHg)</label><input id="evoBP" type="text" placeholder="120/80"></div>
+                        <div class="field"><label>Temp (°C)</label><input id="evoTemp" type="text" placeholder="36.5"></div>
+                        <div class="field"><label>FC (lpm)</label><input id="evoHR" type="text" placeholder="72"></div>
+                        <div class="field"><label>FR (rpm)</label><input id="evoRR" type="text" placeholder="16"></div>
+                        <div class="field"><label>Peso (kg)</label><input id="evoWeight" type="text" placeholder="70"></div>
+                        <div class="field"><label>Talla (cm)</label><input id="evoHeight" type="text" placeholder="170"></div>
+                    </div>
+                    <div class="field" style="margin-bottom:8px;"><label>Notas adicionales</label><textarea id="evoNotes" rows="2" placeholder="Observaciones adicionales"></textarea></div>
+                    <div class="rowActions">
+                        <button class="btn accent" type="submit" id="evoSubmitBtn">💾 Guardar evolución</button>
+                        <button class="btn" type="button" id="evoCancelBtn" style="display:none;">Cancelar edición</button>
+                    </div>
+                    <input type="hidden" id="evoEditId">
+                </form>
+            </div>
         </article>
 
         <article class="card view-operations operationCard operationStepPanel" data-operation-panel="certificates">
@@ -686,6 +749,7 @@ const refs = {
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
+    workerPrescriptionsList: document.getElementById("workerPrescriptionsList"), prescriptionForm: document.getElementById("prescriptionForm"), rxEvaluation: document.getElementById("rxEvaluation"), rxGeneralNotes: document.getElementById("rxGeneralNotes"), rxMedLines: document.getElementById("rxMedLines"), rxAddMedBtn: document.getElementById("rxAddMedBtn"), rxSubmitBtn: document.getElementById("rxSubmitBtn"), rxCancelBtn: document.getElementById("rxCancelBtn"), rxEditId: document.getElementById("rxEditId"),
     rxMedicationResults: document.getElementById("rxMedicationResults"),
     evalProfName: document.getElementById("evalProfName"), evalProfCode: document.getElementById("evalProfCode"),
     miPerfilBtn: document.getElementById("miPerfilBtn"), miPerfilModal: document.getElementById("miPerfilModal"), miPerfilModalClose: document.getElementById("miPerfilModalClose"), miPerfilForm: document.getElementById("miPerfilForm"), perfilFullName: document.getElementById("perfilFullName"), perfilProfCode: document.getElementById("perfilProfCode"), perfilPassword: document.getElementById("perfilPassword"), miPerfilWarn: document.getElementById("miPerfilWarn"),
@@ -1334,8 +1398,10 @@ async function loadWorkerEvolutions(workerId){
     try{
         const res = await api(`/api/workers/${workerId}/evolutions`);
         state.selectedWorkerEvolutions = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
-        renderEvolutionsList(state.selectedWorkerEvolutions);
+        renderEvolutionsList(state.selectedWorkerEvolutions.filter(e => e.evolution_type !== 'PRESCRIPCION'));
+        renderWorkerPrescriptions();
         populateEvoEvaluationSelect();
+        populateRxEvaluationSelect();
     } catch(err){
         state.selectedWorkerEvolutions = [];
         renderEvolutionsList([]);
@@ -1354,7 +1420,7 @@ function populateEvoEvaluationSelect(){
     });
 }
 
-const EVO_TYPE_LABELS = { SEGUIMIENTO:"Seguimiento", NOTA:"Nota clinica", INTERCONSULTA:"Interconsulta" };
+const EVO_TYPE_LABELS = { SEGUIMIENTO:"Seguimiento", NOTA:"Nota clínica", INTERCONSULTA:"Interconsulta", URGENCIA:"Urgencia", PRESCRIPCION:"Prescripción" };
 function renderEvolutionsList(evolutions){
     if(!refs.workerEvolutionsList) return;
     refs.workerEvolutionsList.innerHTML = "";
@@ -1431,7 +1497,226 @@ function fillEvolutionForm(ev){
     refs.evoFormTitle.textContent = "Editar evolucion";
 }
 
-/* ─── MEDICAMENTOS AUTOCOMPLETE ─── */
+/* ─── PRESCRIPCIONES (Tab 5) ─── */
+function renderWorkerPrescriptions(){
+    const list = refs.workerPrescriptionsList;
+    if(!list) return;
+    list.innerHTML = "";
+    if(!state.selectedWorkerId){ list.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`; return; }
+
+    // Prescriptions from evaluations (read-only history)
+    const evals = state.selectedWorkerHistory?.evaluations || [];
+    const evalRx = evals.filter(e => e.prescriptions?.length > 0);
+
+    // Standalone prescriptions saved as PRESCRIPCION evolutions
+    const standaloneRx = (state.selectedWorkerEvolutions || []).filter(e => e.evolution_type === 'PRESCRIPCION');
+
+    if(!evalRx.length && !standaloneRx.length){
+        list.innerHTML = `<p class="empty">No hay prescripciones registradas para este trabajador.</p>`;
+        return;
+    }
+
+    // From evaluations
+    evalRx.forEach(ev => {
+        const card = document.createElement("div");
+        card.className = "historyCard";
+        const rows = (ev.prescriptions||[]).map(rx =>
+            `<tr><td>${esc(rx.medication||"")}</td><td>${esc(rx.dose||"")}</td><td>${esc(rx.frequency||"")}</td><td>${esc(rx.duration||"")}</td><td>${esc(rx.instructions||"")}</td></tr>`
+        ).join("");
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <p class="meta" style="margin:0;">🩺 <strong>Receta en consulta</strong> &mdash; ${fmtDate(ev.attention_date)} &mdash; ${esc(ev.evaluation_type||"")}</p>
+                <button class="btn small" data-act="print-rx" data-eval-id="${ev.id}" type="button">🖨️ Imprimir</button>
+            </div>
+            <table style="width:100%;font-size:.78rem;border-collapse:collapse;">
+                <thead><tr style="background:#edf7f3;"><th style="padding:4px 6px;text-align:left;">Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th><th>Indicaciones</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+        list.appendChild(card);
+    });
+
+    // From standalone evolutions type PRESCRIPCION
+    standaloneRx.forEach(ev => {
+        const card = document.createElement("div");
+        card.className = "historyCard";
+        const meds = ev.medications || [];
+        const rows = meds.map(rx =>
+            `<tr><td>${esc(rx.medication||"")}</td><td>${esc(rx.dose||"")}</td><td>${esc(rx.frequency||"")}</td><td>${esc(rx.duration||"")}</td><td>${esc(rx.instructions||"")}</td></tr>`
+        ).join("");
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <p class="meta" style="margin:0;">💊 <strong>Prescripción directa</strong> &mdash; ${fmtDate(ev.created_at)} &mdash; ${esc(ev.author?.name||"")}</p>
+                <div class="rowActions">
+                    <button class="btn small" data-act="edit-rx-evo" data-evo-id="${ev.id}" type="button">Editar</button>
+                    <button class="btn small" data-act="delete-rx-evo" data-evo-id="${ev.id}" type="button">Eliminar</button>
+                </div>
+            </div>
+            ${ev.notes ? `<p class="meta" style="margin-bottom:6px;"><strong>Notas:</strong> ${esc(ev.notes)}</p>` : ""}
+            ${rows ? `<table style="width:100%;font-size:.78rem;border-collapse:collapse;">
+                <thead><tr style="background:#edf7f3;"><th style="padding:4px 6px;text-align:left;">Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th><th>Indicaciones</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>` : ""}`;
+        list.appendChild(card);
+    });
+}
+
+function populateRxEvaluationSelect(){
+    if(!refs.rxEvaluation) return;
+    refs.rxEvaluation.innerHTML = '<option value="">-- Sin evaluación --</option>';
+    const evals = state.selectedWorkerHistory?.evaluations || [];
+    evals.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${fmtDate(e.attention_date)} - ${esc(e.evaluation_type)}`;
+        refs.rxEvaluation.appendChild(opt);
+    });
+}
+
+function addRxMedLine(data = {}){
+    if(!refs.rxMedLines) return;
+    const tmpl = document.getElementById("rxMedLineTemplate");
+    if(!tmpl) return;
+    const clone = tmpl.content.cloneNode(true);
+    const line = clone.querySelector(".rxMedLine");
+    if(data.medication) line.querySelector(".rxMedInput").value = data.medication;
+    if(data.dose)        line.querySelector(".rxDose").value = data.dose;
+    if(data.frequency)   line.querySelector(".rxFreq").value = data.frequency;
+    if(data.duration)    line.querySelector(".rxDuration").value = data.duration;
+    if(data.instructions) line.querySelector(".rxInstructions").value = data.instructions;
+
+    // Autocomplete for this line
+    const medInput = line.querySelector(".rxMedInput");
+    const suggBox  = line.querySelector(".rxMedSuggestions");
+    let medTimer = null;
+    medInput.addEventListener("input", () => {
+        clearTimeout(medTimer);
+        medTimer = setTimeout(async () => {
+            const q = medInput.value.trim();
+            if(q.length < 2){ suggBox.classList.add("hidden"); return; }
+            try{
+                const res = await api(`/api/catalog/medications?${buildQueryString({ q, limit:6 })}`);
+                const rows = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+                if(!rows.length){ suggBox.classList.add("hidden"); return; }
+                suggBox.innerHTML = "";
+                rows.forEach(m => {
+                    const item = document.createElement("div");
+                    item.className = "rxMedItem";
+                    item.style.cssText = "padding:6px 10px;cursor:pointer;font-size:.82rem;border-bottom:1px solid #eee;";
+                    item.innerHTML = `<strong>${esc(m.generic_name)}${m.concentration ? " " + esc(m.concentration) : ""}</strong> <span style="color:#888;">${esc(m.pharmaceutical_form||"")}</span>`;
+                    item.addEventListener("mousedown", e => {
+                        e.preventDefault();
+                        medInput.value = m.generic_name + (m.concentration ? " " + m.concentration : "");
+                        const doseField = line.querySelector(".rxDose");
+                        if(!doseField.value) doseField.value = m.concentration || "";
+                        suggBox.classList.add("hidden");
+                    });
+                    suggBox.appendChild(item);
+                });
+                suggBox.classList.remove("hidden");
+            } catch { suggBox.classList.add("hidden"); }
+        }, 250);
+    });
+    medInput.addEventListener("blur", () => setTimeout(() => suggBox.classList.add("hidden"), 200));
+
+    // Remove line
+    line.querySelector(".rxRemoveMedBtn").addEventListener("click", () => line.remove());
+
+    refs.rxMedLines.appendChild(line);
+}
+
+function getRxMedLines(){
+    if(!refs.rxMedLines) return [];
+    return Array.from(refs.rxMedLines.querySelectorAll(".rxMedLine")).map(line => ({
+        medication:   line.querySelector(".rxMedInput")?.value?.trim() || "",
+        dose:         line.querySelector(".rxDose")?.value?.trim() || "",
+        frequency:    line.querySelector(".rxFreq")?.value?.trim() || "",
+        duration:     line.querySelector(".rxDuration")?.value?.trim() || "",
+        instructions: line.querySelector(".rxInstructions")?.value?.trim() || "",
+    })).filter(rx => rx.medication);
+}
+
+function resetPrescriptionForm(){
+    if(!refs.prescriptionForm) return;
+    refs.rxEditId.value = "";
+    refs.rxEvaluation.value = "";
+    refs.rxGeneralNotes.value = "";
+    refs.rxMedLines.innerHTML = "";
+    refs.rxSubmitBtn.textContent = "💾 Guardar prescripción";
+    refs.rxCancelBtn.style.display = "none";
+    addRxMedLine(); // start with one empty line
+}
+
+function fillPrescriptionForm(ev){
+    if(!refs.prescriptionForm) return;
+    refs.rxEditId.value = ev.id;
+    refs.rxEvaluation.value = ev.evaluation_id || "";
+    refs.rxGeneralNotes.value = ev.notes || "";
+    refs.rxMedLines.innerHTML = "";
+    (ev.medications || []).forEach(m => addRxMedLine(m));
+    if(!refs.rxMedLines.children.length) addRxMedLine();
+    refs.rxSubmitBtn.textContent = "✏️ Actualizar prescripción";
+    refs.rxCancelBtn.style.display = "";
+    refs.prescriptionForm.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+if(refs.rxAddMedBtn) refs.rxAddMedBtn.addEventListener("click", () => addRxMedLine());
+if(refs.rxCancelBtn) refs.rxCancelBtn.addEventListener("click", () => resetPrescriptionForm());
+
+if(refs.prescriptionForm){
+    refs.prescriptionForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        const medications = getRxMedLines();
+        if(!medications.length){ showToast("Agrega al menos un medicamento.", "warn"); return; }
+        const isEdit = refs.rxEditId.value;
+        const payload = {
+            evolution_type: "PRESCRIPCION",
+            evaluation_id:  refs.rxEvaluation.value || null,
+            notes:          refs.rxGeneralNotes.value.trim() || null,
+            medications,
+        };
+        try{
+            refs.rxSubmitBtn.disabled = true;
+            if(isEdit){
+                await api(`/api/workers/${state.selectedWorkerId}/evolutions/${isEdit}`, "PUT", payload);
+            } else {
+                await api(`/api/workers/${state.selectedWorkerId}/evolutions`, "POST", payload);
+            }
+            showToast(isEdit ? "Prescripción actualizada." : "Prescripción guardada.", "success");
+            resetPrescriptionForm();
+            await loadWorkerEvolutions(state.selectedWorkerId);
+            renderWorkerPrescriptions();
+        } catch(err){
+            showToast("Error al guardar prescripción: " + (err.message||""), "error");
+        } finally { refs.rxSubmitBtn.disabled = false; }
+    });
+}
+
+if(refs.workerPrescriptionsList){
+    refs.workerPrescriptionsList.addEventListener("click", async e => {
+        const btn = e.target.closest("[data-act]");
+        if(!btn) return;
+        const act = btn.dataset.act;
+        if(act === "print-rx"){
+            const evalId = btn.dataset.evalId;
+            window.open(`/api/evaluations/${evalId}/prescription-pdf`, "_blank");
+        } else if(act === "edit-rx-evo"){
+            const evoId = btn.dataset.evoId;
+            const ev = (state.selectedWorkerEvolutions||[]).find(x => String(x.id) === String(evoId));
+            if(ev) fillPrescriptionForm(ev);
+        } else if(act === "delete-rx-evo"){
+            const evoId = btn.dataset.evoId;
+            if(!confirm("¿Eliminar esta prescripción?")) return;
+            try{
+                await api(`/api/workers/${state.selectedWorkerId}/evolutions/${evoId}`, "DELETE");
+                showToast("Prescripción eliminada.", "success");
+                await loadWorkerEvolutions(state.selectedWorkerId);
+                renderWorkerPrescriptions();
+            } catch { showToast("Error al eliminar.", "error"); }
+        }
+    });
+}
+
+
 let rxMedTimer = null;
 async function searchMedicationCatalog(){
     const query = String(refs.rxMedication?.value || "").trim();
@@ -1904,7 +2189,9 @@ refs.workerFlowTabs.forEach(tab => {
     tab.addEventListener("click", () => {
         const step = tab.getAttribute("data-worker-step");
         if(step === "evolutions" && state.selectedWorkerId){
-            loadWorkerEvolutions(state.selectedWorkerId);
+            loadWorkerEvolutions(state.selectedWorkerId).then(() => {
+                if(!refs.rxMedLines?.children.length) addRxMedLine();
+            });
         }
     });
 });
@@ -1934,11 +2221,11 @@ if(refs.evolutionForm){
         const editId = refs.evoEditId.value;
         try{
             if(editId){
-                await api(`/api/workers/${workerId}/evolutions/${editId}`, { method:"PUT", body:payload });
-                status("Evolucion actualizada.", "ok");
+                await api(`/api/workers/${workerId}/evolutions/${editId}`, "PUT", payload);
+                status("Evolución actualizada.", "ok");
             } else {
-                await api(`/api/workers/${workerId}/evolutions`, { method:"POST", body:payload });
-                status("Evolucion guardada.", "ok");
+                await api(`/api/workers/${workerId}/evolutions`, "POST", payload);
+                status("Evolución guardada.", "ok");
             }
             resetEvolutionForm();
             await loadWorkerEvolutions(workerId);
@@ -1961,8 +2248,8 @@ if(refs.workerEvolutionsList){
         if(act === "delete-evo"){
             if(!window.confirm("Eliminar esta evolucion?")) return;
             try{
-                await api(`/api/workers/${workerId}/evolutions/${evoId}`, { method:"DELETE" });
-                status("Evolucion eliminada.", "ok");
+                await api(`/api/workers/${workerId}/evolutions/${evoId}`, "DELETE");
+                status("Evolución eliminada.", "ok");
                 await loadWorkerEvolutions(workerId);
             } catch(err){ status(err.message || "No se pudo eliminar.", "error"); }
         }
