@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AccidentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CertificateController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\ExamOrderController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VaccinationController;
 use App\Http\Controllers\Api\WorkerController;
 
 Route::get('/health', fn () => response()->json([
@@ -99,6 +101,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/workers/{workerId}/exam-orders/{orderId}', [ExamOrderController::class, 'destroy'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
     Route::get('/workers/{workerId}/exam-orders/{orderId}/pdf', [ExamOrderController::class, 'generatePdf'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+
+    // Vaccinations
+    Route::get('/workers/{workerId}/vaccinations', [VaccinationController::class, 'index'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::post('/workers/{workerId}/vaccinations', [VaccinationController::class, 'store'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::put('/workers/{workerId}/vaccinations/{vaccinationId}', [VaccinationController::class, 'update'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::delete('/workers/{workerId}/vaccinations/{vaccinationId}', [VaccinationController::class, 'destroy'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+
+    // Occupational Accidents (AT-01)
+    Route::get('/workers/{workerId}/accidents', [AccidentController::class, 'index'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::post('/workers/{workerId}/accidents', [AccidentController::class, 'store'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::put('/workers/{workerId}/accidents/{accidentId}', [AccidentController::class, 'update'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::delete('/workers/{workerId}/accidents/{accidentId}', [AccidentController::class, 'destroy'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+    Route::get('/workers/{workerId}/accidents/{accidentId}/pdf', [AccidentController::class, 'generatePdf'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
 
     Route::post('/evaluations', [EvaluationController::class, 'store'])

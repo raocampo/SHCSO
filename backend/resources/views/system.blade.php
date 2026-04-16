@@ -67,6 +67,11 @@
         .pill { display:inline-block; background:#d9f1ec; color:#115f61; border-radius:999px; padding:2px 8px; font-size:.72rem; font-weight:700; }
         .rowActions { display:flex; gap:6px; flex-wrap:wrap; }
         .btn.small { padding:6px 8px; border-radius:8px; font-size:.78rem; }
+        .btn.danger { background:#e53935; color:#fff; }
+        .btn.danger:hover { background:#c62828; }
+        .tableCompact { font-size:.82rem; }
+        .tableCompact th { background:var(--color-bg-alt,#f5f5f5); font-weight:600; padding:6px 8px; text-align:left; border-bottom:2px solid var(--color-border,#ddd); }
+        .tableCompact td { padding:5px 8px; border-bottom:1px solid var(--color-border,#ddd); vertical-align:middle; }
         .workerStepPanel { margin-bottom:12px; }
         .workerStepPanel[data-worker-panel="manage"], .workerStepPanel[data-worker-panel="recent"] { grid-column:1 / -1; }
         .workerManagePanel { padding:18px 20px; }
@@ -257,6 +262,8 @@
             <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
             <button class="workerFlowTab" data-worker-step="evolutions" type="button">5. Evoluciones y Prescripciones</button>
             <button class="workerFlowTab" data-worker-step="studies" type="button">6. Estudios Médicos</button>
+            <button class="workerFlowTab" data-worker-step="vaccines" type="button">7. Vacunación</button>
+            <button class="workerFlowTab" data-worker-step="accidents" type="button">8. Accidentes Laborales</button>
         </nav>
         <nav class="operationFlow view-operations">
             <button class="operationFlowTab active" data-operation-step="consult" type="button">1. Consulta medica</button>
@@ -736,6 +743,175 @@
             </div>
         </article>
 
+        <!-- Tab 7: Vacunación Laboral -->
+        <article class="card view-workers workerStepPanel" data-worker-panel="vaccines">
+            <h2 class="section">💉 Vacunación Laboral</h2>
+            <div class="subCard">
+                <div class="subCardTitle">Historial de Vacunas</div>
+                <div id="vaccinesList"><p class="hint">Sin registros de vacunación.</p></div>
+            </div>
+            <div class="subCard" style="margin-top:1.2rem;">
+                <div class="subCardTitle">Registrar Vacuna</div>
+                <form id="vaccineForm">
+                    <input type="hidden" id="vaccineId">
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Vacuna *</label>
+                            <input type="text" id="vaccineNameInput" placeholder="Nombre de la vacuna" autocomplete="off" list="vaccineDatalist">
+                            <datalist id="vaccineDatalist"></datalist>
+                        </div>
+                        <div class="field">
+                            <label>Dosis #</label>
+                            <input type="number" id="vaccineDoseNumber" min="1" max="10" value="1">
+                        </div>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Fecha aplicación *</label>
+                            <input type="date" id="vaccineAppliedDate">
+                        </div>
+                        <div class="field">
+                            <label>Próxima dosis</label>
+                            <input type="date" id="vaccineNextDoseDate">
+                        </div>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Lote</label>
+                            <input type="text" id="vaccineLotNumber" placeholder="Número de lote (opcional)">
+                        </div>
+                        <div class="field">
+                            <label>Laboratorio</label>
+                            <input type="text" id="vaccineManufacturer" placeholder="Fabricante (opcional)">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Notas</label>
+                        <textarea id="vaccineNotes" rows="2" placeholder="Observaciones adicionales"></textarea>
+                    </div>
+                    <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
+                        <button class="btn" type="submit" id="vaccineSubmitBtn">💉 Guardar vacuna</button>
+                        <button class="btn secondary" type="button" id="vaccineCancelBtn" style="display:none;">✕ Cancelar</button>
+                    </div>
+                    <p id="vaccineFormMsg" class="formMsg"></p>
+                </form>
+            </div>
+        </article>
+
+        <!-- Tab 8: Accidentes Laborales -->
+        <article class="card view-workers workerStepPanel" data-worker-panel="accidents">
+            <h2 class="section">⚠️ Accidentes Laborales (AT-01)</h2>
+            <div class="subCard">
+                <div class="subCardTitle">Registro de Accidentes / Incidentes</div>
+                <div id="accidentsList"><p class="hint">Sin accidentes registrados.</p></div>
+            </div>
+            <div class="subCard" style="margin-top:1.2rem;">
+                <div class="subCardTitle" id="accidentFormTitle">Nuevo Reporte AT-01</div>
+                <form id="accidentForm">
+                    <input type="hidden" id="accidentId">
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Fecha del accidente *</label>
+                            <input type="date" id="accidentDate">
+                        </div>
+                        <div class="field">
+                            <label>Hora</label>
+                            <input type="time" id="accidentTime">
+                        </div>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Tipo de evento *</label>
+                            <select id="accidentType">
+                                <option value="ACCIDENT">Accidente de trabajo</option>
+                                <option value="NEAR_MISS">Casi-accidente / Incidente</option>
+                                <option value="OCCUPATIONAL_DISEASE">Enfermedad ocupacional</option>
+                                <option value="COMMUTING">Accidente in itinere</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Severidad *</label>
+                            <select id="accidentSeverity">
+                                <option value="MINOR">Leve</option>
+                                <option value="MODERATE">Moderado</option>
+                                <option value="SERIOUS">Grave</option>
+                                <option value="FATAL">Fatal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Lugar del accidente</label>
+                            <input type="text" id="accidentLocation" placeholder="Área / sección donde ocurrió">
+                        </div>
+                        <div class="field">
+                            <label>Parte del cuerpo afectada</label>
+                            <input type="text" id="accidentBodyPart" placeholder="Ej: mano derecha, columna lumbar">
+                        </div>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Tipo de lesión</label>
+                            <input type="text" id="accidentInjuryType" placeholder="Ej: corte, fractura, contusión">
+                        </div>
+                        <div class="field">
+                            <label>Días de incapacidad</label>
+                            <input type="number" id="accidentLostDays" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Descripción del evento *</label>
+                        <textarea id="accidentDescription" rows="3" placeholder="Describa cómo ocurrió el accidente..."></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Causa inmediata</label>
+                        <textarea id="accidentImmediateCause" rows="2" placeholder="Condición o acto inseguro que causó el accidente"></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Causa raíz</label>
+                        <textarea id="accidentRootCause" rows="2" placeholder="Factor de gestión o causa básica subyacente"></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Acciones correctivas</label>
+                        <textarea id="accidentCorrectiveActions" rows="2" placeholder="Medidas implementadas o programadas"></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Acciones preventivas</label>
+                        <textarea id="accidentPreventiveActions" rows="2" placeholder="Medidas para evitar recurrencia"></textarea>
+                    </div>
+                    <div class="fieldRow">
+                        <div class="field">
+                            <label>Estado del caso</label>
+                            <select id="accidentStatus">
+                                <option value="OPEN">Abierto</option>
+                                <option value="INVESTIGATING">En investigación</option>
+                                <option value="CLOSED">Cerrado</option>
+                            </select>
+                        </div>
+                        <div class="field" style="display:flex;align-items:center;gap:.5rem;padding-top:1.4rem;">
+                            <input type="checkbox" id="accidentIessReported" style="width:auto;">
+                            <label for="accidentIessReported" style="margin:0;">Reportado al IESS</label>
+                        </div>
+                    </div>
+                    <div class="fieldRow" id="accidentIessRow" style="display:none;">
+                        <div class="field">
+                            <label>Número AT-01</label>
+                            <input type="text" id="accidentAt01Number" placeholder="Nro. formulario IESS">
+                        </div>
+                        <div class="field">
+                            <label>Fecha reporte IESS</label>
+                            <input type="date" id="accidentIessDate">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.8rem;">
+                        <button class="btn" type="submit" id="accidentSubmitBtn">💾 Guardar reporte</button>
+                        <button class="btn secondary" type="button" id="accidentCancelBtn" style="display:none;">✕ Cancelar</button>
+                    </div>
+                    <p id="accidentFormMsg" class="formMsg"></p>
+                </form>
+            </div>
+        </article>
+
         <!-- Modal: Visor de imágenes (lightbox) -->
         <div id="imageLightboxModal" class="modalOverlay hidden" style="z-index:2000;">
             <div style="background:#000;border-radius:12px;max-width:92vw;max-height:90vh;position:relative;overflow:hidden;">
@@ -1200,7 +1376,7 @@ function applyWorkerStepVisibility(){
 }
 
 function setWorkerStep(step){
-    const allowed = new Set(["recent","manage","clinical","history","evolutions","studies"]);
+    const allowed = new Set(["recent","manage","clinical","history","evolutions","studies","vaccines","accidents"]);
     state.workerStep = allowed.has(step) ? step : "recent";
     applyWorkerStepVisibility();
 }
@@ -1953,6 +2129,14 @@ const ORDER_PRIORITY_LABELS = { URGENT:"⚠️ URGENTE", NORMAL:"Normal", ROUTIN
 const ORDER_STATUS_LABELS = { PENDING:"Pendiente", COMPLETED:"Completado", PARTIAL:"Parcial", CANCELLED:"Cancelado" };
 
 const state_studies = { examOrders:[], workerAttachments:[], attachmentFilter:"ALL" };
+const state_vaccines = { list:[] };
+const state_accidents = { list:[] };
+
+const COMMON_VACCINES = [
+    "Hepatitis B","Influenza estacional","Tétanos (Td)","Fiebre amarilla","Fiebre tifoidea",
+    "Hepatitis A","Varicela","MMR (SRP)","COVID-19","Neumococo 23v","Meningococo",
+    "Ántrax","Rabia (pre-exposición)","Polio (OPV/IPV)","DPT (difteria, pertusis, tétanos)"
+];
 
 /* --- Exam Orders --- */
 async function loadExamOrders(workerId){
@@ -2813,6 +2997,300 @@ refs.rxMedication.addEventListener("blur", () => {
     setTimeout(hideRxMedResults, 150);
 });
 
+/* ─── VACUNACIÓN ─── */
+function populateVaccineDatalist(){
+    const dl = document.getElementById("vaccineDatalist");
+    if(!dl) return;
+    dl.innerHTML = COMMON_VACCINES.map(v => `<option value="${v}">`).join("");
+}
+
+async function loadVaccinations(workerId){
+    try{
+        const res = await api(`/api/workers/${workerId}/vaccinations`);
+        state_vaccines.list = res.data || [];
+        renderVaccinations(state_vaccines.list);
+    } catch(err){ console.error("Error cargando vacunas:", err); }
+}
+
+function renderVaccinations(list){
+    const el = document.getElementById("vaccinesList");
+    if(!el) return;
+    if(!list.length){ el.innerHTML = "<p class='hint'>Sin registros de vacunación.</p>"; return; }
+    el.innerHTML = `
+    <table class="tableCompact" style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+            <th>Vacuna</th><th>Dosis</th><th>Aplicada</th><th>Próx. dosis</th><th>Lote</th><th>Notas</th><th></th>
+        </tr></thead>
+        <tbody>
+        ${list.map(v => `
+            <tr>
+                <td>${e(v.vaccine_name)}</td>
+                <td style="text-align:center;">${v.dose_number}</td>
+                <td>${v.applied_date || '-'}</td>
+                <td>${v.next_dose_date ? `<span style="color:${isOverdue(v.next_dose_date)?'#e53935':'inherit'}">${v.next_dose_date}</span>` : '-'}</td>
+                <td>${e(v.lot_number||'-')}</td>
+                <td>${e(v.notes||'')}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn small" onclick="editVaccine(${v.id})">✏️</button>
+                    <button class="btn small danger" onclick="deleteVaccine(${v.id})">🗑</button>
+                </td>
+            </tr>`).join('')}
+        </tbody>
+    </table>`;
+}
+
+function isOverdue(dateStr){ return dateStr && new Date(dateStr) < new Date(); }
+function e(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function resetVaccForm(){
+    document.getElementById("vaccineId").value = "";
+    document.getElementById("vaccineNameInput").value = "";
+    document.getElementById("vaccineDoseNumber").value = "1";
+    document.getElementById("vaccineAppliedDate").value = "";
+    document.getElementById("vaccineNextDoseDate").value = "";
+    document.getElementById("vaccineLotNumber").value = "";
+    document.getElementById("vaccineManufacturer").value = "";
+    document.getElementById("vaccineNotes").value = "";
+    const msg = document.getElementById("vaccineFormMsg");
+    if(msg) msg.textContent = "";
+    const cancelBtn = document.getElementById("vaccineCancelBtn");
+    if(cancelBtn) cancelBtn.style.display = "none";
+}
+
+async function editVaccine(id){
+    const v = state_vaccines.list.find(x => x.id === id);
+    if(!v) return;
+    document.getElementById("vaccineId").value = v.id;
+    document.getElementById("vaccineNameInput").value = v.vaccine_name;
+    document.getElementById("vaccineDoseNumber").value = v.dose_number;
+    document.getElementById("vaccineAppliedDate").value = v.applied_date || "";
+    document.getElementById("vaccineNextDoseDate").value = v.next_dose_date || "";
+    document.getElementById("vaccineLotNumber").value = v.lot_number || "";
+    document.getElementById("vaccineManufacturer").value = v.manufacturer || "";
+    document.getElementById("vaccineNotes").value = v.notes || "";
+    const cancelBtn = document.getElementById("vaccineCancelBtn");
+    if(cancelBtn) cancelBtn.style.display = "";
+    document.getElementById("vaccineNameInput").focus();
+}
+
+async function deleteVaccine(id){
+    if(!confirm("¿Eliminar este registro de vacuna?")) return;
+    const workerId = state.selectedWorkerId;
+    try{
+        await api(`/api/workers/${workerId}/vaccinations/${id}`, "DELETE");
+        status("Vacuna eliminada.", "ok");
+        await loadVaccinations(workerId);
+    } catch(err){ status(err.message || "No se pudo eliminar.", "error"); }
+}
+
+const vaccineForm = document.getElementById("vaccineForm");
+if(vaccineForm){
+    vaccineForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const workerId = state.selectedWorkerId;
+        if(!workerId){ status("Selecciona un trabajador primero.", "error"); return; }
+        const vaccineId = document.getElementById("vaccineId").value;
+        const payload = {
+            vaccine_name:   document.getElementById("vaccineNameInput").value.trim(),
+            dose_number:    Number(document.getElementById("vaccineDoseNumber").value),
+            applied_date:   document.getElementById("vaccineAppliedDate").value || null,
+            next_dose_date: document.getElementById("vaccineNextDoseDate").value || null,
+            lot_number:     document.getElementById("vaccineLotNumber").value.trim() || null,
+            manufacturer:   document.getElementById("vaccineManufacturer").value.trim() || null,
+            notes:          document.getElementById("vaccineNotes").value.trim() || null,
+        };
+        const msg = document.getElementById("vaccineFormMsg");
+        if(!payload.vaccine_name){ if(msg) msg.textContent = "El nombre de la vacuna es requerido."; return; }
+        try{
+            if(vaccineId){
+                await api(`/api/workers/${workerId}/vaccinations/${vaccineId}`, "PUT", payload);
+                status("Vacuna actualizada.", "ok");
+            } else {
+                await api(`/api/workers/${workerId}/vaccinations`, "POST", payload);
+                status("Vacuna registrada.", "ok");
+            }
+            resetVaccForm();
+            await loadVaccinations(workerId);
+        } catch(err){ status(err.message || "No se pudo guardar.", "error"); }
+    });
+    const cancelVacc = document.getElementById("vaccineCancelBtn");
+    if(cancelVacc) cancelVacc.addEventListener("click", () => resetVaccForm());
+}
+populateVaccineDatalist();
+
+/* ─── ACCIDENTES LABORALES ─── */
+async function loadAccidents(workerId){
+    try{
+        const res = await api(`/api/workers/${workerId}/accidents`);
+        state_accidents.list = res.data || [];
+        renderAccidents(state_accidents.list);
+    } catch(err){ console.error("Error cargando accidentes:", err); }
+}
+
+const SEVERITY_LABELS = { MINOR:"Leve", MODERATE:"Moderado", SERIOUS:"Grave", FATAL:"Fatal" };
+const ACCIDENT_TYPE_LABELS = { ACCIDENT:"Accidente", NEAR_MISS:"Casi-accidente", OCCUPATIONAL_DISEASE:"Enf. Ocupacional", COMMUTING:"In itinere" };
+const ACCIDENT_STATUS_LABELS = { OPEN:"Abierto", INVESTIGATING:"Investigando", CLOSED:"Cerrado" };
+const ACCIDENT_STATUS_COLORS = { OPEN:"#e53935", INVESTIGATING:"#fb8c00", CLOSED:"#2e7d32" };
+
+function renderAccidents(list){
+    const el = document.getElementById("accidentsList");
+    if(!el) return;
+    if(!list.length){ el.innerHTML = "<p class='hint'>Sin accidentes registrados.</p>"; return; }
+    el.innerHTML = `
+    <table class="tableCompact" style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+            <th>Fecha</th><th>Tipo</th><th>Severidad</th><th>Estado</th><th>Días</th><th>IESS</th><th></th>
+        </tr></thead>
+        <tbody>
+        ${list.map(a => `
+            <tr>
+                <td>${a.accident_date || '-'}</td>
+                <td>${ACCIDENT_TYPE_LABELS[a.accident_type] || a.accident_type}</td>
+                <td>${SEVERITY_LABELS[a.severity] || a.severity}</td>
+                <td><span style="color:${ACCIDENT_STATUS_COLORS[a.status]||'inherit'};font-weight:600;">${ACCIDENT_STATUS_LABELS[a.status]||a.status}</span></td>
+                <td style="text-align:center;">${a.lost_days ?? '-'}</td>
+                <td>${a.iess_reported ? `✅ ${a.at01_number||''}` : '—'}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn small" onclick="editAccident(${a.id})">✏️</button>
+                    <button class="btn small" onclick="printAccidentPdf(${a.id})">🖨</button>
+                    <button class="btn small danger" onclick="deleteAccident(${a.id})">🗑</button>
+                </td>
+            </tr>`).join('')}
+        </tbody>
+    </table>`;
+}
+
+function resetAccidentForm(){
+    document.getElementById("accidentId").value = "";
+    ["accidentDate","accidentTime","accidentLocation","accidentBodyPart","accidentInjuryType",
+     "accidentDescription","accidentImmediateCause","accidentRootCause","accidentCorrectiveActions",
+     "accidentPreventiveActions","accidentAt01Number","accidentIessDate"].forEach(id => {
+         const el = document.getElementById(id);
+         if(el) el.value = "";
+     });
+    document.getElementById("accidentLostDays").value = "0";
+    document.getElementById("accidentType").value = "ACCIDENT";
+    document.getElementById("accidentSeverity").value = "MINOR";
+    document.getElementById("accidentStatus").value = "OPEN";
+    const iessCheck = document.getElementById("accidentIessReported");
+    if(iessCheck){ iessCheck.checked = false; }
+    document.getElementById("accidentIessRow").style.display = "none";
+    const msg = document.getElementById("accidentFormMsg");
+    if(msg) msg.textContent = "";
+    const cancelBtn = document.getElementById("accidentCancelBtn");
+    if(cancelBtn) cancelBtn.style.display = "none";
+    const title = document.getElementById("accidentFormTitle");
+    if(title) title.textContent = "Nuevo Reporte AT-01";
+}
+
+function editAccident(id){
+    const a = state_accidents.list.find(x => x.id === id);
+    if(!a) return;
+    document.getElementById("accidentId").value = a.id;
+    document.getElementById("accidentDate").value = a.accident_date || "";
+    document.getElementById("accidentTime").value = a.accident_time || "";
+    document.getElementById("accidentType").value = a.accident_type || "ACCIDENT";
+    document.getElementById("accidentSeverity").value = a.severity || "MINOR";
+    document.getElementById("accidentLocation").value = a.accident_location || "";
+    document.getElementById("accidentBodyPart").value = a.body_part_affected || "";
+    document.getElementById("accidentInjuryType").value = a.injury_type || "";
+    document.getElementById("accidentLostDays").value = a.lost_days ?? 0;
+    document.getElementById("accidentDescription").value = a.description || "";
+    document.getElementById("accidentImmediateCause").value = a.immediate_cause || "";
+    document.getElementById("accidentRootCause").value = a.root_cause || "";
+    document.getElementById("accidentCorrectiveActions").value = a.corrective_actions || "";
+    document.getElementById("accidentPreventiveActions").value = a.preventive_actions || "";
+    document.getElementById("accidentStatus").value = a.status || "OPEN";
+    const iessCheck = document.getElementById("accidentIessReported");
+    if(iessCheck){ iessCheck.checked = !!a.iess_reported; }
+    document.getElementById("accidentIessRow").style.display = a.iess_reported ? "" : "none";
+    document.getElementById("accidentAt01Number").value = a.at01_number || "";
+    document.getElementById("accidentIessDate").value = a.iess_report_date || "";
+    const cancelBtn = document.getElementById("accidentCancelBtn");
+    if(cancelBtn) cancelBtn.style.display = "";
+    const title = document.getElementById("accidentFormTitle");
+    if(title) title.textContent = "Editar Reporte AT-01";
+    document.getElementById("accidentDate").focus();
+}
+
+async function deleteAccident(id){
+    if(!confirm("¿Eliminar este reporte de accidente?")) return;
+    const workerId = state.selectedWorkerId;
+    try{
+        await api(`/api/workers/${workerId}/accidents/${id}`, "DELETE");
+        status("Reporte eliminado.", "ok");
+        await loadAccidents(workerId);
+    } catch(err){ status(err.message || "No se pudo eliminar.", "error"); }
+}
+
+async function printAccidentPdf(id){
+    const workerId = state.selectedWorkerId;
+    const token = localStorage.getItem("shcso_token");
+    const url = `${window.location.origin}/api/workers/${workerId}/accidents/${id}/pdf`;
+    try{
+        const response = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
+        if(!response.ok) throw new Error("Error al generar PDF");
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+    } catch(err){ status(err.message || "No se pudo generar el PDF.", "error"); }
+}
+
+const accidentForm = document.getElementById("accidentForm");
+if(accidentForm){
+    const iessCheck = document.getElementById("accidentIessReported");
+    if(iessCheck){
+        iessCheck.addEventListener("change", () => {
+            document.getElementById("accidentIessRow").style.display = iessCheck.checked ? "" : "none";
+        });
+    }
+
+    accidentForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const workerId = state.selectedWorkerId;
+        if(!workerId){ status("Selecciona un trabajador primero.", "error"); return; }
+        const accidentId = document.getElementById("accidentId").value;
+        const payload = {
+            accident_date:       document.getElementById("accidentDate").value || null,
+            accident_time:       document.getElementById("accidentTime").value || null,
+            accident_type:       document.getElementById("accidentType").value,
+            severity:            document.getElementById("accidentSeverity").value,
+            accident_location:   document.getElementById("accidentLocation").value.trim() || null,
+            body_part_affected:  document.getElementById("accidentBodyPart").value.trim() || null,
+            injury_type:         document.getElementById("accidentInjuryType").value.trim() || null,
+            lost_days:           Number(document.getElementById("accidentLostDays").value) || 0,
+            description:         document.getElementById("accidentDescription").value.trim(),
+            immediate_cause:     document.getElementById("accidentImmediateCause").value.trim() || null,
+            root_cause:          document.getElementById("accidentRootCause").value.trim() || null,
+            corrective_actions:  document.getElementById("accidentCorrectiveActions").value.trim() || null,
+            preventive_actions:  document.getElementById("accidentPreventiveActions").value.trim() || null,
+            status:              document.getElementById("accidentStatus").value,
+            iess_reported:       document.getElementById("accidentIessReported").checked,
+            at01_number:         document.getElementById("accidentAt01Number").value.trim() || null,
+            iess_report_date:    document.getElementById("accidentIessDate").value || null,
+        };
+        if(!payload.accident_date || !payload.description){
+            const msg = document.getElementById("accidentFormMsg");
+            if(msg) msg.textContent = "La fecha y descripción del accidente son requeridas.";
+            return;
+        }
+        try{
+            if(accidentId){
+                await api(`/api/workers/${workerId}/accidents/${accidentId}`, "PUT", payload);
+                status("Reporte actualizado.", "ok");
+            } else {
+                await api(`/api/workers/${workerId}/accidents`, "POST", payload);
+                status("Reporte AT-01 guardado.", "ok");
+            }
+            resetAccidentForm();
+            await loadAccidents(workerId);
+        } catch(err){ status(err.message || "No se pudo guardar.", "error"); }
+    });
+
+    const cancelAcc = document.getElementById("accidentCancelBtn");
+    if(cancelAcc) cancelAcc.addEventListener("click", () => resetAccidentForm());
+}
+
 /* ─── EVOLUCIONES EVENT LISTENERS ─── */
 refs.workerFlowTabs.forEach(tab => {
     tab.addEventListener("click", () => {
@@ -2826,6 +3304,12 @@ refs.workerFlowTabs.forEach(tab => {
             loadExamOrders(state.selectedWorkerId);
             loadWorkerAttachments(state.selectedWorkerId);
             resetExamOrderForm();
+        }
+        if(step === "vaccines" && state.selectedWorkerId){
+            loadVaccinations(state.selectedWorkerId);
+        }
+        if(step === "accidents" && state.selectedWorkerId){
+            loadAccidents(state.selectedWorkerId);
         }
     });
 });
