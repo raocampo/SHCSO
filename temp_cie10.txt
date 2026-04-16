@@ -1,0 +1,24 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\DiagnosisCatalog;
+use Illuminate\Database\Seeder;
+
+class DiagnosisCatalogCie10Seeder extends Seeder
+{
+    public function run(): void
+    {
+        $chunks = array_chunk($this->getCodes(), 200);
+        foreach ($chunks as $chunk) {
+            DiagnosisCatalog::upsert(
+                array_map(fn($item) => ['code' => $item[0], 'description' => $item[1]], $chunk),
+                ['code'],
+                ['description']
+            );
+        }
+    }
+
+    private function getCodes(): array
+    {
+        return [

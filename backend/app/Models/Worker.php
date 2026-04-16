@@ -72,4 +72,9 @@ class Worker extends Model
     {
         return $this->hasOne(WorkerClinicalHistory::class, 'worker_id');
     }
+
+    public function evolutions(): HasMany
+    {
+        return $this->hasMany(ClinicalEvolution::class, 'worker_id')->orderByDesc('created_at');
+    }
 }

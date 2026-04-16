@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\DiagnosisCatalog;
 use App\Models\JobPosition;
+use App\Models\Medication;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -99,5 +100,68 @@ class CatalogController extends Controller
             'ok' => true,
             'data' => $diagnoses,
         ]);
+    }
+
+    public function listMedications(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q'     => ['nullable', 'string', 'max:120'],
+            'group' => ['nullable', 'string', 'max:150'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $q     = mb_strtolower(trim((string) ($validated['q'] ?? '')));
+        $group = $validated['group'] ?? null;
+        $limit = (int) ($validated['limit'] ?? 15);
+
+        $medications = Medication::active()
+            ->when($q !== '', function ($builder) use ($q) {
+                $builder->whereRaw('LOWER(generic_name) LIKE ?', ["%{$q}%"])
+                    ->orWhereRaw('LOWER(commercial_name) LIKE ?', ["%{$q}%"]);
+            })
+            ->when($group, fn ($b) => $b->where('therapeutic_group', $group))
+            ->orderBy('generic_name')
+            ->limit($limit)
+            ->get(['id', 'generic_name', 'commercial_name', 'concentration', 'pharmaceutical_form', 'therapeutic_group', 'via_administracion', 'controlled']);
+
+        return response()->json(['ok' => true, 'data' => $medications]);
+    }
+
+    public function storeMedication(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code'                => ['nullable', 'string', 'max:30', 'unique:medications,code'],
+            'generic_name'        => ['required', 'string', 'max:200'],
+            'commercial_name'     => ['nullable', 'string', 'max:200'],
+            'concentration'       => ['nullable', 'string', 'max:100'],
+            'pharmaceutical_form' => ['nullable', 'string', 'max:100'],
+            'therapeutic_group'   => ['nullable', 'string', 'max:150'],
+            'via_administracion'  => ['nullable', 'string', 'max:80'],
+            'controlled'          => ['nullable', 'boolean'],
+        ]);
+
+        $medication = Medication::create($validated);
+
+        return response()->json(['ok' => true, 'data' => $medication], 201);
+    }
+
+    public function updateMedication(Request $request, int $medicationId): JsonResponse
+    {
+        $medication = Medication::findOrFail($medicationId);
+
+        $validated = $request->validate([
+            'generic_name'        => ['nullable', 'string', 'max:200'],
+            'commercial_name'     => ['nullable', 'string', 'max:200'],
+            'concentration'       => ['nullable', 'string', 'max:100'],
+            'pharmaceutical_form' => ['nullable', 'string', 'max:100'],
+            'therapeutic_group'   => ['nullable', 'string', 'max:150'],
+            'via_administracion'  => ['nullable', 'string', 'max:80'],
+            'controlled'          => ['nullable', 'boolean'],
+            'active'              => ['nullable', 'boolean'],
+        ]);
+
+        $medication->update($validated);
+
+        return response()->json(['ok' => true, 'data' => $medication]);
     }
 }

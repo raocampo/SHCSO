@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CatalogSeeder::class,
             DiagnosisCatalogCie10Seeder::class,
+            MedicationCatalogSeeder::class,
         ]);
     }
 }

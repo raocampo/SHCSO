@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CertificateController;
+use App\Http\Controllers\Api\ClinicalEvolutionController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
@@ -46,6 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,RECEPCION');
     Route::get('/catalog/diagnoses', [CatalogController::class, 'listDiagnoses'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::get('/catalog/medications', [CatalogController::class, 'listMedications'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::post('/catalog/medications', [CatalogController::class, 'storeMedication'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+    Route::put('/catalog/medications/{medicationId}', [CatalogController::class, 'updateMedication'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
 
     Route::get('/workers', [WorkerController::class, 'index'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
@@ -63,6 +70,16 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::get('/workers/{workerId}/history', [WorkerController::class, 'history'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::get('/workers/{workerId}/evolutions', [ClinicalEvolutionController::class, 'index'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::post('/workers/{workerId}/evolutions', [ClinicalEvolutionController::class, 'store'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::get('/workers/{workerId}/evolutions/{evolutionId}', [ClinicalEvolutionController::class, 'show'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::put('/workers/{workerId}/evolutions/{evolutionId}', [ClinicalEvolutionController::class, 'update'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::delete('/workers/{workerId}/evolutions/{evolutionId}', [ClinicalEvolutionController::class, 'destroy'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
 
     Route::post('/evaluations', [EvaluationController::class, 'store'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
@@ -72,6 +89,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/evaluations/{evaluationId}', [EvaluationController::class, 'show'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::get('/evaluations/{evaluationId}/prescription-pdf', [EvaluationController::class, 'prescriptionPdf'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
     Route::post('/evaluations/{evaluationId}/attachments', [EvaluationController::class, 'uploadAttachment'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
     Route::get('/evaluations/{evaluationId}/attachments', [EvaluationController::class, 'listAttachments'])

@@ -3,18 +3,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\DiagnosisCatalog;
 use App\Models\EvaluationAttachment;
 use App\Models\EvaluationDiagnosis;
 use App\Models\EvaluationPrescription;
 use App\Models\OccupationalEvaluation;
 use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EvaluationController extends Controller
@@ -361,5 +364,74 @@ class EvaluationController extends Controller
                 'attachments' => $attachments,
             ],
         ]);
+    }
+
+    public function prescriptionPdf(Request $request, string $evaluationId): Response
+    {
+        $evaluation = OccupationalEvaluation::with([
+            'worker.company:id,business_name',
+            'prescriptions',
+            'diagnoses.diagnosisCatalog:code,description',
+        ])->findOrFail($evaluationId);
+
+        if ($evaluation->prescriptions->isEmpty()) {
+            return response()->json(['ok' => false, 'message' => 'Esta evaluación no tiene prescripciones.'], 422);
+        }
+
+        $worker  = $evaluation->worker;
+        $age     = $worker->birth_date ? (int) now()->diffInYears($worker->birth_date) . ' años' : '-';
+        $sexMap  = ['M' => 'Masculino', 'F' => 'Femenino', 'O' => 'Otro'];
+
+        $diagnosisSummary = $evaluation->diagnoses
+            ->map(fn ($d) => $d->diagnosis_code . ($d->diagnosisCatalog ? ' - ' . $d->diagnosisCatalog->description : ''))
+            ->take(3)->implode('; ');
+
+        $config = [
+            'name'           => config('shcso.institution.name'),
+            'subtitle'       => config('shcso.institution.subtitle'),
+            'city'           => config('shcso.institution.city'),
+            'logo_path'      => config('shcso.pdf_certificate.logo_path'),
+            'signature_path' => config('shcso.pdf_certificate.signature_path'),
+            'signature_name' => config('shcso.pdf_certificate.signature_name'),
+            'signature_title'=> config('shcso.pdf_certificate.signature_title'),
+            'footer_note'    => config('shcso.pdf_certificate.footer_note'),
+        ];
+
+        $pdf = Pdf::loadView('pdf.prescription', [
+            'config'            => $config,
+            'fecha'             => now()->format('d/m/Y'),
+            'rx_number'         => strtoupper(substr($evaluationId, 0, 8)),
+            'worker'            => [
+                'full_name'       => $worker->first_name . ' ' . $worker->last_name,
+                'document_number' => $worker->document_number,
+                'age'             => $age,
+                'sex'             => $sexMap[$worker->sex] ?? $worker->sex,
+                'company'         => $worker->company?->business_name,
+            ],
+            'evaluation'        => [
+                'soap_p'           => $evaluation->recommendations,
+                'diagnosis_summary'=> $diagnosisSummary,
+            ],
+            'prescriptions'     => $evaluation->prescriptions->map(fn ($p) => [
+                'medication'  => $p->medication,
+                'dosage'      => $p->dosage,
+                'frequency'   => $p->frequency,
+                'duration'    => $p->duration,
+                'indications' => $p->indications,
+            ])->toArray(),
+            'professional_code' => $evaluation->professional_code,
+        ])->setPaper('letter', 'portrait');
+
+        AuditLog::create([
+            'user_id'     => $request->user()->id,
+            'action'      => 'GENERATE_PRESCRIPTION_PDF',
+            'entity_type' => 'OccupationalEvaluation',
+            'entity_id'   => $evaluationId,
+            'description' => "Receta PDF generada para evaluación {$evaluationId}",
+            'ip_address'  => $request->ip(),
+        ]);
+
+        $filename = 'receta-' . strtolower(substr($evaluationId, 0, 8)) . '.pdf';
+        return $pdf->download($filename);
     }
 }
