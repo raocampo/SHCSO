@@ -266,6 +266,7 @@ class AuthController extends Controller
             'data' => [
                 'id' => $user->id,
                 'full_name' => $user->full_name,
+                'professional_code' => $user->professional_code,
                 'email' => $user->email,
                 'roles' => $user->roles->pluck('name')->values(),
             ],

@@ -116,6 +116,18 @@
         .rxMedItem:hover { background:#eef4ff; }
         .rxMedItem strong { display:block; color:#0e5a5e; }
         .rxMedItem span { color:#7a8fa6; font-size:.8rem; }
+        /* Modal overlay */
+        .modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .modalBox { background:#fff; border-radius:14px; padding:24px; max-width:520px; width:94%; box-shadow:0 8px 32px rgba(0,0,0,.18); position:relative; max-height:90vh; overflow-y:auto; }
+        .modalBox h3 { margin:0 0 16px; font-size:1.05rem; color:#0e5a5e; }
+        .modalClose { position:absolute; top:12px; right:14px; background:none; border:none; font-size:1.3rem; cursor:pointer; color:#7a8fa6; }
+        .soapHelp { display:grid; gap:12px; }
+        .soapHelpItem { border-left:3px solid #0e5a5e; padding-left:12px; }
+        .soapHelpItem strong { display:block; color:#0e5a5e; margin-bottom:3px; }
+        .soapHelpItem p { margin:0; font-size:.88rem; color:#444; }
+        .profileWarnBanner { background:#fff8e1; border:1px solid #ffe082; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:.88rem; color:#6d4c00; display:flex; align-items:center; gap:8px; }
+        .helpBtn { background:none; border:1px solid #b0c8c8; border-radius:50%; width:20px; height:20px; font-size:.75rem; cursor:pointer; color:#0e5a5e; line-height:1; padding:0; margin-left:6px; vertical-align:middle; }
+        .helpBtn:hover { background:#e8f5f5; }
         .pill.apt-apto { background:#d9f7e7; color:#166534; border:1px solid #93d7b0; }
         .pill.apt-observacion { background:#fff4d8; color:#8a5a00; border:1px solid #f3c777; }
         .pill.apt-limitaciones { background:#ffe9d8; color:#9a3412; border:1px solid #f1b58d; }
@@ -139,6 +151,7 @@
             <p class="subtitle">Vista inicial del sistema para operacion clinica ocupacional</p>
         </div>
         <div class="actions">
+            <button id="miPerfilBtn" class="btn small hidden" type="button">👤 Mi Perfil</button>
             <button id="refreshBtn" class="btn hidden" type="button">Refrescar</button>
             <button id="logoutBtn" class="btn warn hidden" type="button">Cerrar sesion</button>
         </div>
@@ -348,7 +361,7 @@
                         </div>
                     </div>
                     <div class="consultBlock">
-                        <h3 class="consultHead">Metodo SOAP</h3>
+                        <h3 class="consultHead">Metodo SOAP <button class="helpBtn" id="soapHelpBtn" type="button" title="¿Que es SOAP?">?</button></h3>
                         <div class="consultGridSoap">
                             <div class="field"><label>S - Subjetivo *</label><textarea name="soap_s" placeholder="Motivo de consulta y sintomas del paciente" required></textarea></div>
                             <div class="field"><label>O - Objetivo *</label><textarea name="soap_o" placeholder="Hallazgos fisicos, signos y resultados relevantes" required></textarea></div>
@@ -384,8 +397,8 @@
                         <div class="field"><label>Tipo</label><select name="evaluation_type"><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
                         <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
                         <div class="field"><label>Fecha atencion</label><input name="attention_date" type="date"></div>
-                        <div class="field"><label>Profesional</label><input name="professional_name" value="Dra. Maria Lopez" required></div>
-                        <div class="field"><label>Codigo profesional</label><input name="professional_code" value="MED-12345" required></div>
+                        <div class="field"><label>Profesional</label><input id="evalProfName" name="professional_name" required></div>
+                        <div class="field"><label>Codigo profesional</label><input id="evalProfCode" name="professional_code" required></div>
                     </div>
                     <button class="btn accent" type="submit">Guardar consulta</button>
                 </form>
@@ -592,6 +605,52 @@
     </section>
 </div>
 
+<!-- Modal: Mi Perfil -->
+<div id="miPerfilModal" class="modalOverlay hidden">
+    <div class="modalBox">
+        <button class="modalClose" id="miPerfilModalClose" type="button" title="Cerrar">&times;</button>
+        <h3>👤 Mi Perfil Profesional</h3>
+        <p class="hint" style="margin-bottom:12px;">Actualiza tu nombre y codigo profesional. Estos datos aparecen automaticamente en los formularios de consulta medica.</p>
+        <div id="miPerfilWarn" class="profileWarnBanner hidden">
+            ⚠️ Tu codigo profesional esta vacio. Completalo para que aparezca en las consultas y recetas medicas.
+        </div>
+        <form id="miPerfilForm">
+            <div class="field"><label>Nombre completo</label><input id="perfilFullName" type="text" required></div>
+            <div class="field"><label>Codigo profesional (ej: MED-12345)</label><input id="perfilProfCode" type="text" placeholder="MED-00000"></div>
+            <div class="field"><label>Nueva contrasena (dejar en blanco para no cambiar)</label><input id="perfilPassword" type="password" placeholder="Minimo 8 caracteres"></div>
+            <button class="btn accent" type="submit">Guardar cambios</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Explicacion SOAP -->
+<div id="soapHelpModal" class="modalOverlay hidden">
+    <div class="modalBox">
+        <button class="modalClose" id="soapHelpModalClose" type="button" title="Cerrar">&times;</button>
+        <h3>📋 Metodo SOAP — Nota Clinica Estructurada</h3>
+        <p class="hint" style="margin-bottom:14px;">El metodo SOAP es el estandar internacional para documentar consultas medicas de forma ordenada y reproducible.</p>
+        <div class="soapHelp">
+            <div class="soapHelpItem">
+                <strong>S — Subjetivo</strong>
+                <p>Lo que el paciente refiere: motivo de consulta, sintomas, historia del problema actual, como se siente. Incluye tiempo de evolucion, intensidad y factores que lo mejoran o empeoran.<br><em>Ej: "Dolor lumbar de 3 dias, 7/10 de intensidad, aumenta con movimiento."</em></p>
+            </div>
+            <div class="soapHelpItem">
+                <strong>O — Objetivo</strong>
+                <p>Lo que el medico observa y mide: signos vitales, examen fisico, resultados de examenes de laboratorio o imagen. Datos cuantificables y reproducibles.<br><em>Ej: "PA 130/85, FC 88, contraccion muscular paravertebral L4-L5."</em></p>
+            </div>
+            <div class="soapHelpItem">
+                <strong>A — Analisis (Diagnostico)</strong>
+                <p>Interpretacion clinica: diagnostico principal (con codigo CIE-10), diagnosticos diferenciales y evaluacion del estado del paciente. Combina S + O para concluir.<br><em>Ej: "M54.5 - Lumbago no especificado. Probable contractura muscular."</em></p>
+            </div>
+            <div class="soapHelpItem">
+                <strong>P — Plan (Tratamiento)</strong>
+                <p>Acciones a tomar: medicamentos prescritos, indicaciones, reposo, fisioterapia, interconsultas, examenes adicionales, y seguimiento programado.<br><em>Ej: "Ibuprofeno 400mg c/8h x5 dias. Reposo relativo 48h. Control en 1 semana."</em></p>
+            </div>
+        </div>
+        <button class="btn" style="margin-top:16px;" id="soapHelpModalClose2" type="button">Entendido</button>
+    </div>
+</div>
+
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
@@ -628,6 +687,9 @@ const refs = {
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
     rxMedicationResults: document.getElementById("rxMedicationResults"),
+    evalProfName: document.getElementById("evalProfName"), evalProfCode: document.getElementById("evalProfCode"),
+    miPerfilBtn: document.getElementById("miPerfilBtn"), miPerfilModal: document.getElementById("miPerfilModal"), miPerfilModalClose: document.getElementById("miPerfilModalClose"), miPerfilForm: document.getElementById("miPerfilForm"), perfilFullName: document.getElementById("perfilFullName"), perfilProfCode: document.getElementById("perfilProfCode"), perfilPassword: document.getElementById("perfilPassword"), miPerfilWarn: document.getElementById("miPerfilWarn"),
+    soapHelpBtn: document.getElementById("soapHelpBtn"), soapHelpModal: document.getElementById("soapHelpModal"), soapHelpModalClose: document.getElementById("soapHelpModalClose"), soapHelpModalClose2: document.getElementById("soapHelpModalClose2"),
     evaluationWorker: document.getElementById("evaluationWorker"), evaluationWorkerSearch: document.getElementById("evaluationWorkerSearch"), diagnosisSearchInput: document.getElementById("diagnosisSearchInput"), diagnosisSearchResults: document.getElementById("diagnosisSearchResults"), selectedDiagnosesList: document.getElementById("selectedDiagnosesList"),
     rxMedication: document.getElementById("rxMedication"), rxDosage: document.getElementById("rxDosage"), rxFrequency: document.getElementById("rxFrequency"), rxDuration: document.getElementById("rxDuration"), rxIndications: document.getElementById("rxIndications"), addPrescriptionBtn: document.getElementById("addPrescriptionBtn"), prescriptionList: document.getElementById("prescriptionList"),
     certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"), certificateCreateBtn: document.getElementById("certificateCreateBtn"), certificateFlowHint: document.getElementById("certificateFlowHint"),
@@ -1521,7 +1583,27 @@ function renderAll(){
     applyPagerInfo("certificates");
     applyPagerInfo("users");
 }
-function showApp(){ refs.loginSection.classList.add("hidden"); refs.appSection.classList.remove("hidden"); refs.refreshBtn.classList.remove("hidden"); refs.logoutBtn.classList.remove("hidden"); }
+function showApp(){
+    refs.loginSection.classList.add("hidden");
+    refs.appSection.classList.remove("hidden");
+    refs.refreshBtn.classList.remove("hidden");
+    refs.logoutBtn.classList.remove("hidden");
+    refs.miPerfilBtn.classList.remove("hidden");
+    fillProfessionalFields();
+}
+
+function fillProfessionalFields(){
+    if(!state.user) return;
+    const name = state.user.full_name || "";
+    const code = state.user.professional_code || "";
+    if(refs.evalProfName) refs.evalProfName.value = name;
+    if(refs.evalProfCode) refs.evalProfCode.value = code;
+    if(refs.perfilFullName) refs.perfilFullName.value = name;
+    if(refs.perfilProfCode) refs.perfilProfCode.value = code;
+    // Show warning if professional code is missing
+    const missingCode = !code.trim();
+    if(refs.miPerfilWarn) refs.miPerfilWarn.classList.toggle("hidden", !missingCode);
+}
 function showLogin(){ refs.loginSection.classList.remove("hidden"); refs.appSection.classList.add("hidden"); refs.refreshBtn.classList.add("hidden"); refs.logoutBtn.classList.add("hidden"); showRecoveryMode("none"); applyAuthBootstrapView(); applyResetQueryFromUrl(); }
 async function prepareLoginSection(){
     showLogin();
@@ -2376,6 +2458,44 @@ refs.certificatesBody.addEventListener("click", async (e)=>{
 
 refs.refreshBtn.addEventListener("click", refreshData);
 refs.logoutBtn.addEventListener("click", logout);
+
+/* ─── MI PERFIL MODAL ─── */
+refs.miPerfilBtn.addEventListener("click", () => {
+    fillProfessionalFields();
+    refs.miPerfilModal.classList.remove("hidden");
+    refs.perfilPassword.value = "";
+});
+refs.miPerfilModalClose.addEventListener("click", () => refs.miPerfilModal.classList.add("hidden"));
+refs.miPerfilModal.addEventListener("click", (e) => {
+    if(e.target === refs.miPerfilModal) refs.miPerfilModal.classList.add("hidden");
+});
+refs.miPerfilForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {};
+    const name = refs.perfilFullName.value.trim();
+    const code = refs.perfilProfCode.value.trim();
+    const pw = refs.perfilPassword.value;
+    if(name.length >= 3) payload.full_name = name;
+    payload.professional_code = code;
+    if(pw.length >= 8) payload.password = pw;
+    if(pw && pw.length < 8){ status("La contrasena debe tener minimo 8 caracteres.", "error"); return; }
+    try{
+        const res = await api("/api/auth/me", { method:"PUT", body:payload });
+        // Use /api/auth/me PUT route
+        state.user = { ...state.user, full_name: res.data.full_name, professional_code: res.data.professional_code };
+        fillProfessionalFields();
+        refs.miPerfilModal.classList.add("hidden");
+        status(`Perfil actualizado: ${state.user.full_name}`, "ok");
+    } catch(err){ status(err.message || "No se pudo actualizar el perfil.", "error"); }
+});
+
+/* ─── SOAP HELP MODAL ─── */
+refs.soapHelpBtn.addEventListener("click", () => refs.soapHelpModal.classList.remove("hidden"));
+refs.soapHelpModalClose.addEventListener("click", () => refs.soapHelpModal.classList.add("hidden"));
+refs.soapHelpModalClose2.addEventListener("click", () => refs.soapHelpModal.classList.add("hidden"));
+refs.soapHelpModal.addEventListener("click", (e) => {
+    if(e.target === refs.soapHelpModal) refs.soapHelpModal.classList.add("hidden");
+});
 
 (async function init(){
     setView(resolveViewFromPath(), false);

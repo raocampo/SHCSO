@@ -24,6 +24,7 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/me', [UserController::class, 'updateSelf']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::get('/users', [UserController::class, 'index'])

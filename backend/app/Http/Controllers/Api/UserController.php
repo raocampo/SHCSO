@@ -118,12 +118,43 @@ class UserController extends Controller
         ], 201);
     }
 
+    public function updateSelf(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user()->load('roles:id,name');
+
+        $validated = $request->validate([
+            'full_name'         => ['sometimes', 'string', 'min:3', 'max:120'],
+            'professional_code' => ['sometimes', 'nullable', 'string', 'max:60'],
+            'password'          => ['sometimes', 'nullable', 'string', 'min:8'],
+        ]);
+
+        if (array_key_exists('full_name', $validated)) {
+            $user->full_name = $validated['full_name'];
+        }
+        if (array_key_exists('professional_code', $validated)) {
+            $user->professional_code = $validated['professional_code'];
+        }
+        if (!empty($validated['password'])) {
+            $user->password = $validated['password'];
+        }
+        $user->save();
+
+        AuditLogger::log($request->user(), 'UPDATE_SELF_PROFILE', 'user', $user->id, []);
+
+        return response()->json([
+            'ok' => true,
+            'data' => $this->serializeUser($user),
+        ]);
+    }
+
     public function update(Request $request, string $userId): JsonResponse
     {
         $user = User::query()->with('roles:id,name')->findOrFail($userId);
 
         $validated = $request->validate([
             'full_name' => ['sometimes', 'string', 'min:3', 'max:120'],
+            'professional_code' => ['sometimes', 'nullable', 'string', 'max:60'],
             'email' => ['sometimes', 'email', 'max:180', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
             'role_name' => ['sometimes', 'string', Rule::exists('roles', 'name')],
@@ -143,6 +174,9 @@ class UserController extends Controller
 
         if (array_key_exists('full_name', $validated)) {
             $user->full_name = $validated['full_name'];
+        }
+        if (array_key_exists('professional_code', $validated)) {
+            $user->professional_code = $validated['professional_code'];
         }
         if (array_key_exists('email', $validated)) {
             $user->email = strtolower($validated['email']);
@@ -249,6 +283,7 @@ class UserController extends Controller
         return [
             'id' => $user->id,
             'full_name' => $user->full_name,
+            'professional_code' => $user->professional_code,
             'email' => $user->email,
             'is_active' => (bool) $user->is_active,
             'roles' => $user->roles->pluck('name')->values(),
