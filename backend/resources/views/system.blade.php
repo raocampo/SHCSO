@@ -27,6 +27,9 @@
         .workerFlow { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
         .workerFlowTab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700; }
         .workerFlowTab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+        .operationFlow { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+        .operationFlowTab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700; }
+        .operationFlowTab.active { background:#0f8b8d; border-color:#0f8b8d; color:#fff; }
         .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 8px 18px rgba(16,33,39,.05); }
         .status { min-height:40px; display:flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin-bottom:12px; background:#fff; }
         .status.ok { border-color:#9cd8be; color:#14573b; background:#ecf9f2; }
@@ -90,12 +93,16 @@
         .operationKpiItem p { margin:0; color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
         .operationKpiItem strong { display:block; margin-top:7px; font-size:1.25rem; line-height:1; }
         .operationCard { border-color:#c3ddd4; background:linear-gradient(160deg,#ffffff,#f4fbf8); }
+        .operationStepPanel { width:100%; }
+        .grid3[data-worker-panel-host] > .view-operations.operationStepPanel,
+        .grid2[data-worker-panel-host] > .view-operations.operationStepPanel { grid-column:1 / -1; }
         .operationHint { margin:-3px 0 10px; font-size:.78rem; color:#3f5f67; }
         .consultBlock { border:1px solid #d7e4df; border-radius:12px; padding:12px; background:#fbfefd; margin-bottom:10px; }
         .consultHead { margin:0 0 10px; font-size:.86rem; text-transform:uppercase; letter-spacing:.04em; color:#0e5a5e; }
         .consultGrid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .consultGrid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
         .consultGridVitals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .consultGridSoap { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .diagnosisSearchWrap { border:1px solid #d3dfec; border-radius:10px; background:#f5f8ff; padding:10px; }
         .diagnosisResults { margin-top:8px; display:grid; gap:6px; }
         .diagnosisResultItem { display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid #d7e4ef; border-radius:8px; background:#fff; padding:7px 8px; }
@@ -115,8 +122,8 @@
         .pager .hint { margin:0; }
         .empty { color:var(--muted); font-style:italic; padding:10px 0; }
         @media (max-width:1120px) { .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;} .operationKpiGrid{grid-template-columns:1fr;} }
-        @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} .consultGrid2{grid-template-columns:1fr;} .consultGrid3{grid-template-columns:1fr;} .consultGridVitals{grid-template-columns:1fr 1fr;} .prescriptionGrid{grid-template-columns:1fr 1fr;} .prescriptionItem{grid-template-columns:1fr 1fr;} .diagnosisSelectedItem{grid-template-columns:1fr;} }
-        @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} .workerFormGrid{grid-template-columns:1fr;} .workerFormGrid [class*="span-"]{grid-column:span 1;} .workerManagePanel{padding:14px;} .workerManagePanel table{min-width:680px;} }
+        @media (max-width:980px) { .toolbar{grid-template-columns:1fr 1fr;} .toolbar.compact{grid-template-columns:1fr;} .consultGrid2{grid-template-columns:1fr;} .consultGrid3{grid-template-columns:1fr;} .consultGridVitals{grid-template-columns:1fr 1fr;} .consultGridSoap{grid-template-columns:1fr;} .prescriptionGrid{grid-template-columns:1fr 1fr;} .prescriptionItem{grid-template-columns:1fr 1fr;} .diagnosisSelectedItem{grid-template-columns:1fr;} }
+        @media (max-width:720px) { .top{flex-direction:column; align-items:flex-start;} .actions{width:100%;} .actions .btn{flex:1;} .tabs{width:100%;} .tabs .tab{flex:1;} .workerFlow .workerFlowTab,.operationFlow .operationFlowTab{flex:1;} .workerFormGrid{grid-template-columns:1fr;} .workerFormGrid [class*="span-"]{grid-column:span 1;} .workerManagePanel{padding:14px;} .workerManagePanel table{min-width:680px;} }
     </style>
 </head>
 <body>
@@ -227,6 +234,12 @@
             <button class="workerFlowTab" data-worker-step="clinical" type="button">3. Historia clinica ampliada</button>
             <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
         </nav>
+        <nav class="operationFlow view-operations">
+            <button class="operationFlowTab active" data-operation-step="consult" type="button">1. Consulta medica</button>
+            <button class="operationFlowTab" data-operation-step="certificate" type="button">2. Certificado y adjunto</button>
+            <button class="operationFlowTab" data-operation-step="evaluations" type="button">3. Evaluaciones recientes</button>
+            <button class="operationFlowTab" data-operation-step="certificates" type="button">4. Certificados recientes</button>
+        </nav>
 
         <div id="statsGrid" class="stats view-dashboard"></div>
 
@@ -306,7 +319,7 @@
                 </form>
             </article>
 
-            <article class="card view-operations operationCard">
+            <article class="card view-operations operationCard operationStepPanel" data-operation-panel="consult">
                 <h2 class="section">Nueva consulta medica <span class="sectionBadge">flujo 1/2</span></h2>
                 <p class="operationHint">Registra la consulta estructurada (SOAP) para habilitar certificado y adjuntos.</p>
                 <form id="evaluationForm">
@@ -330,15 +343,19 @@
                     </div>
                     <div class="consultBlock">
                         <h3 class="consultHead">Metodo SOAP</h3>
-                        <div class="field"><label>S - Subjetivo *</label><textarea name="soap_s" placeholder="Motivo de consulta y sintomas del paciente" required></textarea></div>
-                        <div class="field"><label>O - Objetivo *</label><textarea name="soap_o" placeholder="Hallazgos fisicos, signos y resultados relevantes" required></textarea></div>
+                        <div class="consultGridSoap">
+                            <div class="field"><label>S - Subjetivo *</label><textarea name="soap_s" placeholder="Motivo de consulta y sintomas del paciente" required></textarea></div>
+                            <div class="field"><label>O - Objetivo *</label><textarea name="soap_o" placeholder="Hallazgos fisicos, signos y resultados relevantes" required></textarea></div>
+                        </div>
                         <div class="diagnosisSearchWrap">
                             <div class="field"><label>Buscador CIE-10</label><input id="diagnosisSearchInput" type="text" placeholder="Buscar codigo o descripcion (ej: J06, lumbalgia)"></div>
                             <div id="diagnosisSearchResults" class="diagnosisResults"></div>
                         </div>
                         <div id="selectedDiagnosesList" class="diagnosisSelected"><p class="empty">Sin diagnosticos seleccionados.</p></div>
-                        <div class="field"><label>A - Analisis (Diagnostico) *</label><textarea name="soap_a" placeholder="Analisis clinico, diagnostico principal y diferenciales" required></textarea></div>
-                        <div class="field"><label>P - Plan (Tratamiento) *</label><textarea name="soap_p" placeholder="Plan terapeutico, indicaciones y seguimiento" required></textarea></div>
+                        <div class="consultGridSoap">
+                            <div class="field"><label>A - Analisis (Diagnostico) *</label><textarea name="soap_a" placeholder="Analisis clinico, diagnostico principal y diferenciales" required></textarea></div>
+                            <div class="field"><label>P - Plan (Tratamiento) *</label><textarea name="soap_p" placeholder="Plan terapeutico, indicaciones y seguimiento" required></textarea></div>
+                        </div>
                     </div>
                     <div class="consultBlock">
                         <h3 class="consultHead">Receta medica (opcional)</h3>
@@ -363,15 +380,16 @@
                 </form>
             </article>
 
-            <article class="card view-operations operationCard">
+            <article class="card view-operations operationCard operationStepPanel" data-operation-panel="certificate">
                 <h2 class="section">Certificado y adjunto <span class="sectionBadge">flujo 2/2</span></h2>
                 <p class="operationHint">Genera el certificado desde una evaluacion y luego carga evidencia documental.</p>
                 <form id="certificateForm">
                     <div class="field"><label>Evaluacion</label><select id="certificateEvaluation" name="evaluation_id" required></select></div>
                     <div class="field"><label>Observaciones</label><textarea name="observations">Apto para labores</textarea></div>
                     <div class="field"><label>Recomendaciones</label><textarea name="recommendations">Control anual</textarea></div>
-                    <button class="btn accent" type="submit">Crear certificado</button>
+                    <button id="certificateCreateBtn" class="btn accent" type="submit">Crear certificado</button>
                 </form>
+                <p id="certificateFlowHint" class="hint" style="margin:8px 0 0;"></p>
                 <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
                 <form id="attachmentForm">
                     <div class="field"><label>Evaluacion para adjunto</label><select id="attachmentEvaluation" name="evaluation_id" required></select></div>
@@ -411,7 +429,7 @@
                     <p id="workersPageInfo" class="hint">Pagina 1 de 1</p>
                 </div>
             </article>
-            <article class="card view-operations operationCard">
+            <article class="card view-operations operationCard operationStepPanel" data-operation-panel="evaluations">
                 <h2 class="section">Evaluaciones recientes <span class="sectionBadge">operacion</span></h2>
                 <form id="evaluationFilterForm" class="toolbar">
                     <div class="field"><label>Tipo</label><select name="evaluation_type"><option value="">Todos</option><option>INGRESO</option><option>PERIODICO</option><option>REINTEGRO</option><option>RETIRO</option></select></div>
@@ -459,7 +477,7 @@
             <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
         </article>
 
-        <article class="card view-operations operationCard">
+        <article class="card view-operations operationCard operationStepPanel" data-operation-panel="certificates">
             <h2 class="section">Certificados recientes <span class="sectionBadge">documental</span></h2>
             <form id="certificateFilterForm" class="toolbar">
                 <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option value="">Todas</option><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
@@ -523,7 +541,7 @@
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
-    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"recent", workerQuery:"",
+    selectedWorkerId:null, selectedWorkerHistory:null, activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     consultation:{ worker_search:"", diagnosis_results:[], selected_diagnoses:[], prescriptions:[] },
     pagination:{
@@ -540,6 +558,7 @@ const refs = {
     refreshBtn: document.getElementById("refreshBtn"), logoutBtn: document.getElementById("logoutBtn"),
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
     workerFlowTabs: document.querySelectorAll(".workerFlowTab"), workerStepPanels: document.querySelectorAll("[data-worker-panel]"), workerPanelHosts: document.querySelectorAll("[data-worker-panel-host]"),
+    operationFlowTabs: document.querySelectorAll(".operationFlowTab"), operationStepPanels: document.querySelectorAll("[data-operation-panel]"),
     dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
@@ -555,7 +574,7 @@ const refs = {
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     evaluationWorker: document.getElementById("evaluationWorker"), evaluationWorkerSearch: document.getElementById("evaluationWorkerSearch"), diagnosisSearchInput: document.getElementById("diagnosisSearchInput"), diagnosisSearchResults: document.getElementById("diagnosisSearchResults"), selectedDiagnosesList: document.getElementById("selectedDiagnosesList"),
     rxMedication: document.getElementById("rxMedication"), rxDosage: document.getElementById("rxDosage"), rxFrequency: document.getElementById("rxFrequency"), rxDuration: document.getElementById("rxDuration"), rxIndications: document.getElementById("rxIndications"), addPrescriptionBtn: document.getElementById("addPrescriptionBtn"), prescriptionList: document.getElementById("prescriptionList"),
-    certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"),
+    certificateEvaluation: document.getElementById("certificateEvaluation"), attachmentEvaluation: document.getElementById("attachmentEvaluation"), certificateCreateBtn: document.getElementById("certificateCreateBtn"), certificateFlowHint: document.getElementById("certificateFlowHint"),
     userForm: document.getElementById("userForm"), userEditForm: document.getElementById("userEditForm"), userRoleSelect: document.getElementById("userRoleSelect"), userEditRoleSelect: document.getElementById("userEditRoleSelect"),
     loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm"),
     authRecoveryActions: document.getElementById("authRecoveryActions"), showForgotPasswordBtn: document.getElementById("showForgotPasswordBtn"), showResetPasswordBtn: document.getElementById("showResetPasswordBtn"),
@@ -579,6 +598,11 @@ function makeOpt(value,label){ const o=document.createElement("option"); o.value
 function esc(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function buildQueryString(filters){ const p = new URLSearchParams(); Object.entries(filters).forEach(([k,v]) => { if(v!==null && v!==undefined && String(v).trim()!=="") p.set(k, String(v)); }); return p.toString(); }
 function canManageUsers(){ return Array.isArray(state.user?.roles) && state.user.roles.includes("ADMIN"); }
+function hasAnyRole(roles){
+    if(!Array.isArray(state.user?.roles)) return false;
+    return roles.some((role) => state.user.roles.includes(role));
+}
+function canIssueCertificates(){ return hasAnyRole(["ADMIN","MEDICO_OCUPACIONAL"]); }
 function compactText(value){ const v = String(value ?? "").trim(); return v === "" ? null : v; }
 function normalizeFieldName(field){ return String(field || "").replaceAll("_"," "); }
 function aptitudePillClass(aptitude){
@@ -833,6 +857,28 @@ function setWorkerStep(step){
     applyWorkerStepVisibility();
 }
 
+function applyOperationStepVisibility(){
+    const operationsView = state.activeView === "operations";
+    refs.operationFlowTabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-operation-step") === state.operationStep));
+    refs.operationStepPanels.forEach(panel => {
+        const panelStep = panel.getAttribute("data-operation-panel");
+        panel.classList.toggle("hidden", !operationsView || panelStep !== state.operationStep);
+    });
+    refs.workerPanelHosts.forEach(host => {
+        if(!operationsView) return;
+        const hasOperationPanels = !!host.querySelector(".operationStepPanel[data-operation-panel]");
+        if(!hasOperationPanels) return;
+        const hasVisibleOperationPanel = !!host.querySelector(".operationStepPanel[data-operation-panel]:not(.hidden)");
+        host.classList.toggle("hidden", !hasVisibleOperationPanel);
+    });
+}
+
+function setOperationStep(step){
+    const allowed = new Set(["consult","certificate","evaluations","certificates"]);
+    state.operationStep = allowed.has(step) ? step : "consult";
+    applyOperationStepVisibility();
+}
+
 function applyViewVisibility(){
     const dashboard = state.activeView === "dashboard";
     const workers = state.activeView === "workers";
@@ -845,6 +891,7 @@ function applyViewVisibility(){
     if(refs.userTab) refs.userTab.classList.toggle("hidden", !canManageUsers());
     refs.tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-view") === state.activeView));
     applyWorkerStepVisibility();
+    applyOperationStepVisibility();
 }
 
 function setView(view, updateHistory=true){
@@ -1178,9 +1225,11 @@ function renderCertificates(){
     if(!state.certificates.length){ refs.certificatesBody.innerHTML = `<tr><td colspan="5" class="empty">Sin certificados.</td></tr>`; return; }
     state.certificates.forEach(c => {
         const w = c.worker || {};
+        const canGeneratePdf = canIssueCertificates();
+        const generateLabel = canGeneratePdf ? "Generar PDF" : "Sin permiso PDF";
         const row = document.createElement("tr");
         row.innerHTML = `<td>${esc(c.certificate_code)}</td><td>${fmtDate(c.issue_date)}</td><td>${esc(w.first_name || "")} ${esc(w.last_name || "")}</td><td><span class="pill ${aptitudePillClass(c.medical_aptitude)}">${esc(c.medical_aptitude)}</span></td>
-        <td><div class="rowActions"><button class="btn" data-act="gen" data-id="${c.id}" type="button">Generar PDF</button><button class="btn" data-act="down" data-id="${c.id}" type="button">Descargar</button></div></td>`;
+        <td><div class="rowActions"><button class="btn" data-act="gen" data-id="${c.id}" type="button" ${canGeneratePdf ? "" : "disabled"}>${generateLabel}</button><button class="btn" data-act="down" data-id="${c.id}" type="button">Descargar</button></div></td>`;
         refs.certificatesBody.appendChild(row);
     });
 }
@@ -1239,6 +1288,23 @@ function fillSelects(){
             refs.userRoleSelect.appendChild(makeOpt(role.name, role.name));
             refs.userEditRoleSelect.appendChild(makeOpt(role.name, role.name));
         });
+    }
+    applyCertificateFlowState();
+}
+
+function applyCertificateFlowState(){
+    if(!refs.certificateCreateBtn) return;
+    const canCreate = canIssueCertificates();
+    const hasEvaluations = !!refs.certificateEvaluation && refs.certificateEvaluation.options.length > 0;
+    refs.certificateCreateBtn.disabled = !canCreate || !hasEvaluations;
+    if(refs.certificateFlowHint){
+        if(!canCreate){
+            refs.certificateFlowHint.textContent = "Tu rol no puede emitir certificados. Requiere ADMIN o MEDICO_OCUPACIONAL.";
+        } else if(!hasEvaluations){
+            refs.certificateFlowHint.textContent = "No hay evaluaciones disponibles para certificar.";
+        } else {
+            refs.certificateFlowHint.textContent = "Selecciona evaluacion y emite certificado.";
+        }
     }
 }
 
@@ -1657,6 +1723,7 @@ document.getElementById("evaluationForm").addEventListener("submit", async (e)=>
         status("Consulta medica registrada.", "ok");
         e.target.reset();
         resetConsultationState();
+        setOperationStep("certificate");
         await refreshData();
     } catch(err){ status(err.message || "No se pudo guardar consulta medica.", "error"); }
 });
@@ -1664,11 +1731,31 @@ document.getElementById("evaluationForm").addEventListener("submit", async (e)=>
 document.getElementById("certificateForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const f = new FormData(e.target);
+    const evaluationId = String(f.get("evaluation_id") || "").trim();
+    if(!canIssueCertificates()){
+        status("Sin permiso para crear certificados. Requiere rol ADMIN o MEDICO_OCUPACIONAL.", "error");
+        return;
+    }
+    if(evaluationId === ""){
+        status("Selecciona una evaluacion para crear el certificado.", "error");
+        return;
+    }
+    if(refs.certificateCreateBtn) refs.certificateCreateBtn.disabled = true;
+    status("Creando certificado...");
     try{
-        await api(`/api/certificates/from-evaluation/${f.get("evaluation_id")}`,{method:"POST", body:{observations:f.get("observations"), recommendations:f.get("recommendations")}});
+        await api(`/api/certificates/from-evaluation/${evaluationId}`,{method:"POST", body:{observations:f.get("observations"), recommendations:f.get("recommendations")}});
         status("Certificado creado.", "ok");
+        setOperationStep("certificates");
         await refreshData();
-    } catch(err){ status(err.message || "No se pudo crear certificado.", "error"); }
+    } catch(err){
+        if(err?.status === 403){
+            status("Sin permiso para crear certificados. Requiere rol ADMIN o MEDICO_OCUPACIONAL.", "error");
+            return;
+        }
+        status(err.message || "No se pudo crear certificado.", "error");
+    } finally {
+        applyCertificateFlowState();
+    }
 });
 
 document.getElementById("attachmentForm").addEventListener("submit", async (e)=>{
@@ -1780,6 +1867,13 @@ refs.workerFlowTabs.forEach(tab => {
     tab.addEventListener("click", () => {
         const nextStep = tab.getAttribute("data-worker-step");
         if(nextStep) setWorkerStep(nextStep);
+    });
+});
+
+refs.operationFlowTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        const nextStep = tab.getAttribute("data-operation-step");
+        if(nextStep) setOperationStep(nextStep);
     });
 });
 
@@ -1955,13 +2049,35 @@ refs.workerHistoryEval.addEventListener("click", async (e) => {
 refs.certificatesBody.addEventListener("click", async (e)=>{
     const b = e.target.closest("button[data-act]"); if(!b) return;
     const id = b.getAttribute("data-id"); const act = b.getAttribute("data-act");
+    if(!id) return;
+    const prevDisabled = b.disabled;
+    b.disabled = true;
     try{
-        if(act==="gen"){ await api(`/api/certificates/${id}/generate-pdf`,{method:"POST"}); status("PDF generado.", "ok"); await refreshData(); return; }
+        if(act==="gen"){
+            if(!canIssueCertificates()){
+                status("Sin permiso para generar PDF. Requiere rol ADMIN o MEDICO_OCUPACIONAL.", "error");
+                return;
+            }
+            status("Generando PDF del certificado...");
+            await api(`/api/certificates/${id}/generate-pdf`,{method:"POST"});
+            status("PDF generado.", "ok");
+            await refreshData();
+            return;
+        }
         if(act==="down"){
+            status("Descargando PDF...");
             await downloadWithToken(`/api/certificates/${id}/download-pdf`, `certificado-${id}.pdf`);
             status("PDF descargado.", "ok");
         }
-    } catch(err){ status(err.message || "Operacion no completada.", "error"); }
+    } catch(err){
+        if(err?.status === 403 && act === "gen"){
+            status("Sin permiso para generar PDF. Requiere rol ADMIN o MEDICO_OCUPACIONAL.", "error");
+            return;
+        }
+        status(err.message || "Operacion no completada.", "error");
+    } finally {
+        b.disabled = prevDisabled;
+    }
 });
 
 refs.refreshBtn.addEventListener("click", refreshData);
