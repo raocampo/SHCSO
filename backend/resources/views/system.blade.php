@@ -256,6 +256,7 @@
             <button class="workerFlowTab" data-worker-step="clinical" type="button">3. Historia clinica ampliada</button>
             <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
             <button class="workerFlowTab" data-worker-step="evolutions" type="button">5. Evoluciones y Prescripciones</button>
+            <button class="workerFlowTab" data-worker-step="studies" type="button">6. Estudios Médicos</button>
         </nav>
         <nav class="operationFlow view-operations">
             <button class="operationFlowTab active" data-operation-step="consult" type="button">1. Consulta medica</button>
@@ -607,7 +608,165 @@
             </div>
         </article>
 
-        <article class="card view-operations operationCard operationStepPanel" data-operation-panel="certificates">
+        <!-- ===== TAB 6: ESTUDIOS MÉDICOS ===== -->
+        <article class="card view-workers workerStepPanel" data-worker-panel="studies">
+            <h2 class="section">Estudios Médicos <span class="sectionBadge">diagnóstico</span></h2>
+
+            <!-- Sub-card: Pedidos de Exámenes -->
+            <div class="subCard" style="margin-bottom:24px;">
+                <h3 class="subCardTitle">📋 Pedidos de Exámenes</h3>
+
+                <!-- Lista de pedidos -->
+                <div id="examOrdersList" class="historyList" style="margin-bottom:16px;"><p class="empty">Sin trabajador seleccionado.</p></div>
+
+                <hr style="border:none;border-top:1px solid var(--line);margin:16px 0;">
+
+                <!-- Formulario nuevo pedido -->
+                <h4 style="font-size:.85rem;font-weight:600;margin-bottom:10px;color:var(--accent);" id="examOrderFormTitle">➕ Nuevo pedido</h4>
+                <form id="examOrderForm">
+                    <div class="consultGrid2" style="margin-bottom:8px;">
+                        <div class="field"><label>Tipo de pedido</label>
+                            <select id="orderType">
+                                <option value="LAB">🔬 Laboratorio clínico</option>
+                                <option value="IMAGING">🩻 Imágenes diagnósticas</option>
+                                <option value="PATHOLOGY">🔭 Anatomía patológica</option>
+                                <option value="FUNCTIONAL">🫁 Pruebas funcionales</option>
+                            </select>
+                        </div>
+                        <div class="field"><label>Prioridad</label>
+                            <select id="orderPriority">
+                                <option value="NORMAL">Normal</option>
+                                <option value="URGENT">⚠️ Urgente</option>
+                                <option value="ROUTINE">Rutina</option>
+                            </select>
+                        </div>
+                        <div class="field"><label>Fecha del pedido</label>
+                            <input type="date" id="orderDate">
+                        </div>
+                        <div class="field"><label>Evaluación relacionada (opcional)</label>
+                            <select id="orderEvaluation"><option value="">-- Sin evaluación --</option></select>
+                        </div>
+                    </div>
+
+                    <div class="field" style="margin-bottom:8px;">
+                        <label>Indicación clínica</label>
+                        <input type="text" id="orderClinicalIndication" placeholder="Ej: Control anual, sospecha de hipoacusia laboral...">
+                    </div>
+
+                    <!-- Estudios seleccionados -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:6px;">Estudios solicitados</label>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                            <select id="studiesPresetType" style="min-width:180px;">
+                                <option value="LAB">Laboratorio</option>
+                                <option value="IMAGING">Imágenes</option>
+                                <option value="PATHOLOGY">Patología</option>
+                                <option value="FUNCTIONAL">Funcionales</option>
+                            </select>
+                            <button type="button" id="addPresetStudyBtn" class="btn">+ Estudio rápido</button>
+                            <button type="button" id="addCustomStudyBtn" class="btn">+ Personalizado</button>
+                        </div>
+                        <!-- Dropdown de estudios predefinidos -->
+                        <div id="studyPresetDropdown" class="hidden" style="border:1px solid var(--line);border-radius:8px;background:#fff;max-height:200px;overflow-y:auto;padding:4px 0;margin-bottom:8px;"></div>
+                        <div id="examStudiesList" style="display:grid;gap:4px;"></div>
+                    </div>
+
+                    <div class="field" style="margin-bottom:8px;">
+                        <label>Notas adicionales</label>
+                        <textarea id="orderAdditionalNotes" rows="2" placeholder="Observaciones para el laboratorio / centro de imágenes..."></textarea>
+                    </div>
+
+                    <div class="rowActions">
+                        <button class="btn accent" type="submit" id="orderSubmitBtn">💾 Guardar pedido</button>
+                        <button class="btn" type="button" id="orderCancelBtn" style="display:none;">Cancelar edición</button>
+                        <input type="hidden" id="orderEditId">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sub-card: Archivos y Resultados -->
+            <div class="subCard">
+                <h3 class="subCardTitle">📁 Archivos y Resultados</h3>
+                <p class="hint" style="margin-bottom:10px;">Resultados de laboratorio, imágenes (Rx, RM, ecografías), reportes patológicos y archivos DICOM subidos durante las consultas.</p>
+
+                <!-- Filtro por tipo -->
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="attachmentTypeFilters">
+                    <button class="btn small active" data-filter="ALL" type="button">Todos</button>
+                    <button class="btn small" data-filter="LAB_EXAM" type="button">🔬 Lab</button>
+                    <button class="btn small" data-filter="IMAGING" type="button">🩻 Imágenes</button>
+                    <button class="btn small" data-filter="DICOM" type="button">💿 DICOM</button>
+                    <button class="btn small" data-filter="GENERAL" type="button">📄 General</button>
+                    <button class="btn small" data-filter="OTHER" type="button">📎 Otros</button>
+                </div>
+
+                <div id="workerAttachmentGallery" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
+
+                <!-- Upload dentro de la galería -->
+                <details style="margin-top:14px;">
+                    <summary class="btn" style="display:inline-block;cursor:pointer;">📤 Subir archivo a evaluación</summary>
+                    <div style="margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#f9fdfb;">
+                        <div class="consultGrid2" style="margin-bottom:8px;">
+                            <div class="field"><label>Evaluación</label>
+                                <select id="galleryUploadEval"><option value="">-- Seleccionar --</option></select>
+                            </div>
+                            <div class="field"><label>Tipo</label>
+                                <select id="galleryUploadType">
+                                    <option value="GENERAL">General</option>
+                                    <option value="LAB_EXAM">Laboratorio</option>
+                                    <option value="IMAGING">Imagen</option>
+                                    <option value="DICOM">DICOM</option>
+                                    <option value="OTHER">Otro</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>Fecha del examen (opcional)</label>
+                                <input type="date" id="galleryUploadDate">
+                            </div>
+                            <div class="field"><label>Notas</label>
+                                <input type="text" id="galleryUploadNotes" placeholder="Descripción del archivo...">
+                            </div>
+                        </div>
+                        <div class="field" style="margin-bottom:8px;">
+                            <label>Archivo (PDF, JPG, PNG, DCM, DICOM, IMA, ZIP — máx 50 MB)</label>
+                            <input type="file" id="galleryUploadFile" accept=".pdf,.jpg,.jpeg,.png,.dcm,.dicom,.ima,.zip">
+                        </div>
+                        <button class="btn accent" type="button" id="galleryUploadBtn">⬆️ Subir archivo</button>
+                        <span id="galleryUploadStatus" style="margin-left:10px;font-size:.82rem;"></span>
+                    </div>
+                </details>
+            </div>
+        </article>
+
+        <!-- Modal: Visor de imágenes (lightbox) -->
+        <div id="imageLightboxModal" class="modalOverlay hidden" style="z-index:2000;">
+            <div style="background:#000;border-radius:12px;max-width:92vw;max-height:90vh;position:relative;overflow:hidden;">
+                <button id="lightboxClose" style="position:absolute;top:8px;right:12px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:1.4rem;cursor:pointer;z-index:1;border-radius:50%;width:32px;height:32px;">✕</button>
+                <img id="lightboxImg" src="" style="max-width:90vw;max-height:88vh;display:block;border-radius:8px;">
+                <div id="lightboxCaption" style="color:#ccc;font-size:.8rem;padding:6px 12px;text-align:center;"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Visor DICOM (dwv.js) -->
+        <div id="dicomViewerModal" class="modalOverlay hidden" style="z-index:2000;">
+            <div style="background:#1a1a2e;border-radius:12px;width:min(900px,95vw);max-height:92vh;position:relative;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#0f172a;border-bottom:1px solid #334155;">
+                    <span style="color:#7dd3fc;font-weight:600;font-size:.9rem;">💿 Visor DICOM</span>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span id="dicomFileName" style="color:#94a3b8;font-size:.8rem;"></span>
+                        <button id="dicomViewerClose" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1.2rem;cursor:pointer;border-radius:50%;width:28px;height:28px;">✕</button>
+                    </div>
+                </div>
+                <div id="dwvContainer" style="flex:1;min-height:500px;position:relative;overflow:hidden;">
+                    <div id="dwvLoadingMsg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7dd3fc;font-size:.9rem;">Cargando archivo DICOM...</div>
+                    <div id="layerGroup0" style="width:100%;height:100%;"></div>
+                </div>
+                <div style="padding:8px 16px;background:#0f172a;border-top:1px solid #334155;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn small" id="dwvResetBtn" type="button">🔄 Reset</button>
+                    <button class="btn small" id="dwvZoomInBtn" type="button">🔍+</button>
+                    <button class="btn small" id="dwvZoomOutBtn" type="button">🔍-</button>
+                    <span id="dwvToolInfo" style="color:#94a3b8;font-size:.78rem;align-self:center;margin-left:auto;"></span>
+                </div>
+            </div>
+        </div>
             <h2 class="section">Certificados recientes <span class="sectionBadge">documental</span></h2>
             <form id="certificateFilterForm" class="toolbar">
                 <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option value="">Todas</option><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
@@ -750,6 +909,13 @@ const refs = {
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
     workerPrescriptionsList: document.getElementById("workerPrescriptionsList"), prescriptionForm: document.getElementById("prescriptionForm"), rxEvaluation: document.getElementById("rxEvaluation"), rxGeneralNotes: document.getElementById("rxGeneralNotes"), rxMedLines: document.getElementById("rxMedLines"), rxAddMedBtn: document.getElementById("rxAddMedBtn"), rxSubmitBtn: document.getElementById("rxSubmitBtn"), rxCancelBtn: document.getElementById("rxCancelBtn"), rxEditId: document.getElementById("rxEditId"),
+    // Tab 6 — Estudios Médicos
+    examOrdersList: document.getElementById("examOrdersList"), examOrderForm: document.getElementById("examOrderForm"), orderType: document.getElementById("orderType"), orderPriority: document.getElementById("orderPriority"), orderDate: document.getElementById("orderDate"), orderEvaluation: document.getElementById("orderEvaluation"), orderClinicalIndication: document.getElementById("orderClinicalIndication"), orderAdditionalNotes: document.getElementById("orderAdditionalNotes"), orderSubmitBtn: document.getElementById("orderSubmitBtn"), orderCancelBtn: document.getElementById("orderCancelBtn"), orderEditId: document.getElementById("orderEditId"), examOrderFormTitle: document.getElementById("examOrderFormTitle"),
+    examStudiesList: document.getElementById("examStudiesList"), addPresetStudyBtn: document.getElementById("addPresetStudyBtn"), addCustomStudyBtn: document.getElementById("addCustomStudyBtn"), studiesPresetType: document.getElementById("studiesPresetType"), studyPresetDropdown: document.getElementById("studyPresetDropdown"),
+    workerAttachmentGallery: document.getElementById("workerAttachmentGallery"), attachmentTypeFilters: document.getElementById("attachmentTypeFilters"),
+    galleryUploadEval: document.getElementById("galleryUploadEval"), galleryUploadType: document.getElementById("galleryUploadType"), galleryUploadDate: document.getElementById("galleryUploadDate"), galleryUploadNotes: document.getElementById("galleryUploadNotes"), galleryUploadFile: document.getElementById("galleryUploadFile"), galleryUploadBtn: document.getElementById("galleryUploadBtn"), galleryUploadStatus: document.getElementById("galleryUploadStatus"),
+    imageLightboxModal: document.getElementById("imageLightboxModal"), lightboxClose: document.getElementById("lightboxClose"), lightboxImg: document.getElementById("lightboxImg"), lightboxCaption: document.getElementById("lightboxCaption"),
+    dicomViewerModal: document.getElementById("dicomViewerModal"), dicomViewerClose: document.getElementById("dicomViewerClose"), dicomFileName: document.getElementById("dicomFileName"), dwvContainer: document.getElementById("dwvContainer"), dwvLoadingMsg: document.getElementById("dwvLoadingMsg"), dwvResetBtn: document.getElementById("dwvResetBtn"), dwvZoomInBtn: document.getElementById("dwvZoomInBtn"), dwvZoomOutBtn: document.getElementById("dwvZoomOutBtn"), dwvToolInfo: document.getElementById("dwvToolInfo"),
     rxMedicationResults: document.getElementById("rxMedicationResults"),
     evalProfName: document.getElementById("evalProfName"), evalProfCode: document.getElementById("evalProfCode"),
     miPerfilBtn: document.getElementById("miPerfilBtn"), miPerfilModal: document.getElementById("miPerfilModal"), miPerfilModalClose: document.getElementById("miPerfilModalClose"), miPerfilForm: document.getElementById("miPerfilForm"), perfilFullName: document.getElementById("perfilFullName"), perfilProfCode: document.getElementById("perfilProfCode"), perfilPassword: document.getElementById("perfilPassword"), miPerfilWarn: document.getElementById("miPerfilWarn"),
@@ -1034,7 +1200,7 @@ function applyWorkerStepVisibility(){
 }
 
 function setWorkerStep(step){
-    const allowed = new Set(["recent","manage","clinical","history","evolutions"]);
+    const allowed = new Set(["recent","manage","clinical","history","evolutions","studies"]);
     state.workerStep = allowed.has(step) ? step : "recent";
     applyWorkerStepVisibility();
 }
@@ -1717,7 +1883,470 @@ if(refs.workerPrescriptionsList){
 }
 
 
-let rxMedTimer = null;
+
+
+/* ─── TAB 6: ESTUDIOS MÉDICOS ─── */
+
+/* ---- Catálogos de estudios predefinidos ---- */
+const STUDY_PRESETS = {
+    LAB: [
+        "Biometría hemática completa (BHC)",
+        "Glucosa en ayunas",
+        "Urea y creatinina",
+        "Perfil lipídico (Colesterol total, HDL, LDL, Triglicéridos)",
+        "Transaminasas (AST/ALT)",
+        "Ácido úrico",
+        "Proteínas totales y albúmina",
+        "Calcio sérico",
+        "Hemoglobina glicosilada (HbA1c)",
+        "Examen general de orina (EGO)",
+        "Coprocultivo",
+        "Urocultivo",
+        "VDRL",
+        "VIH (Confidencial)",
+        "HBsAg (Hepatitis B)",
+        "TSH (Tiroides)",
+        "Ferritina y hierro sérico",
+        "Proteína C reactiva (PCR)",
+    ],
+    IMAGING: [
+        "Radiografía de tórax PA y lateral",
+        "Radiografía columna lumbar AP y lateral",
+        "Radiografía columna cervical AP y lateral",
+        "Radiografía de manos bilateral",
+        "Radiografía de rodillas bilateral",
+        "Radiografía de cadera AP",
+        "Ecografía abdominal",
+        "Ecografía renal",
+        "Ecografía musculoesquelética",
+        "Tomografía de tórax (TC)",
+        "Tomografía de abdomen y pelvis (TC)",
+        "Resonancia magnética columna lumbar (RM)",
+        "Resonancia magnética columna cervical (RM)",
+        "Resonancia magnética cerebral (RM)",
+        "Ecocardiograma",
+        "Doppler venoso miembros inferiores",
+    ],
+    PATHOLOGY: [
+        "Citología cervicovaginal (Papanicolaou)",
+        "Biopsia de piel",
+        "Biopsia de nódulo/masa",
+        "Biopsia de endometrio",
+        "Estudio anatomopatológico",
+        "Cultivo de secreción",
+        "Raspado de lesión cutánea",
+    ],
+    FUNCTIONAL: [
+        "Audiometría tonal (OD y OI)",
+        "Espirometría / Prueba de función pulmonar",
+        "Electrocardiograma (ECG)",
+        "Electroencefalograma (EEG)",
+        "Ergometría / Prueba de esfuerzo",
+        "Optometría / Agudeza visual",
+        "Rinoscopia",
+        "Electromiografía (EMG)",
+        "Velocidad de conducción nerviosa",
+    ],
+};
+const ORDER_TYPE_LABELS = { LAB:"Laboratorio", IMAGING:"Imágenes", PATHOLOGY:"Patología", FUNCTIONAL:"Funcionales" };
+const ORDER_PRIORITY_LABELS = { URGENT:"⚠️ URGENTE", NORMAL:"Normal", ROUTINE:"Rutina" };
+const ORDER_STATUS_LABELS = { PENDING:"Pendiente", COMPLETED:"Completado", PARTIAL:"Parcial", CANCELLED:"Cancelado" };
+
+const state_studies = { examOrders:[], workerAttachments:[], attachmentFilter:"ALL" };
+
+/* --- Exam Orders --- */
+async function loadExamOrders(workerId){
+    if(!workerId){ renderExamOrders([]); return; }
+    try{
+        const res = await api(`/api/workers/${workerId}/exam-orders`);
+        state_studies.examOrders = Array.isArray(res?.data) ? res.data : [];
+        renderExamOrders(state_studies.examOrders);
+        populateOrderEvaluationSelect();
+    } catch { state_studies.examOrders = []; renderExamOrders([]); }
+}
+
+function renderExamOrders(orders){
+    const list = refs.examOrdersList;
+    if(!list) return;
+    list.innerHTML = "";
+    if(!state.selectedWorkerId){ list.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`; return; }
+    if(!orders.length){ list.innerHTML = `<p class="empty">No hay pedidos registrados.</p>`; return; }
+    orders.forEach(o => {
+        const card = document.createElement("div");
+        card.className = "historyCard";
+        const studies = (o.studies || []).map((s,i) => `<li>${i+1}. ${esc(s.name)}${s.notes ? ` <em style="color:#888;font-size:.78rem;">(${esc(s.notes)})</em>` : ""}</li>`).join("");
+        const statusColor = { PENDING:"#f59e0b", COMPLETED:"#10b981", PARTIAL:"#3b82f6", CANCELLED:"#ef4444" };
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <div>
+                    <p class="meta" style="margin:0;font-weight:700;">${esc(ORDER_TYPE_LABELS[o.order_type]||o.order_type)} &mdash; ${fmtDate(o.order_date)}</p>
+                    <span style="font-size:.75rem;color:${statusColor[o.status]||"#888"};">${esc(ORDER_STATUS_LABELS[o.status]||o.status)}</span>
+                    <span style="font-size:.75rem;color:#888;margin-left:8px;">${esc(ORDER_PRIORITY_LABELS[o.priority]||o.priority)}</span>
+                </div>
+                <div class="rowActions">
+                    <button class="btn small" data-act="print-order" data-order-id="${o.id}" type="button">🖨️ Imprimir</button>
+                    <button class="btn small" data-act="edit-order" data-order-id="${o.id}" type="button">Editar</button>
+                    <button class="btn small" data-act="delete-order" data-order-id="${o.id}" type="button">Eliminar</button>
+                </div>
+            </div>
+            ${o.clinical_indication ? `<p class="meta"><strong>Indicación:</strong> ${esc(o.clinical_indication)}</p>` : ""}
+            <ul style="margin:4px 0 0 14px;font-size:.82rem;">${studies}</ul>
+            ${o.ordered_by?.name ? `<p class="meta" style="margin-top:4px;font-size:.78rem;color:#888;">Solicitado por: ${esc(o.ordered_by.name)}</p>` : ""}`;
+        list.appendChild(card);
+    });
+}
+
+function populateOrderEvaluationSelect(){
+    const sel = refs.orderEvaluation;
+    if(!sel) return;
+    sel.innerHTML = '<option value="">-- Sin evaluación --</option>';
+    const evals = state.selectedWorkerHistory?.evaluations || [];
+    evals.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${fmtDate(e.attention_date)} — ${esc(e.evaluation_type)}`;
+        sel.appendChild(opt);
+    });
+}
+
+/* --- Study lines --- */
+let selectedStudies = [];
+function renderStudiesList(){
+    if(!refs.examStudiesList) return;
+    refs.examStudiesList.innerHTML = "";
+    selectedStudies.forEach((s, i) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;background:#f0f9f8;border-radius:6px;padding:5px 8px;";
+        row.innerHTML = `<span style="font-size:.82rem;">${esc(s.name)}</span><input type="text" class="studyNoteInput" value="${esc(s.notes||"")}" placeholder="Indicación específica..." style="font-size:.8rem;"><button type="button" class="btn small" data-si="${i}" style="color:var(--danger);">✕</button>`;
+        row.querySelector(".studyNoteInput").addEventListener("change", ev => { selectedStudies[i].notes = ev.target.value; });
+        row.querySelector(`[data-si="${i}"]`).addEventListener("click", () => { selectedStudies.splice(i,1); renderStudiesList(); });
+        refs.examStudiesList.appendChild(row);
+    });
+}
+
+function showPresetDropdown(){
+    const type = refs.studiesPresetType?.value || "LAB";
+    const presets = STUDY_PRESETS[type] || [];
+    const box = refs.studyPresetDropdown;
+    if(!box) return;
+    box.innerHTML = "";
+    presets.forEach(name => {
+        const already = selectedStudies.some(s => s.name === name);
+        const item = document.createElement("div");
+        item.style.cssText = `padding:6px 12px;cursor:pointer;font-size:.82rem;border-bottom:1px solid #eee;${already?"opacity:.4;":""}`;
+        item.textContent = (already ? "✓ " : "") + name;
+        if(!already) item.addEventListener("click", () => {
+            selectedStudies.push({ name, notes:"" });
+            renderStudiesList();
+            box.classList.add("hidden");
+        });
+        box.appendChild(item);
+    });
+    box.classList.remove("hidden");
+}
+
+if(refs.addPresetStudyBtn) refs.addPresetStudyBtn.addEventListener("click", e => { e.stopPropagation(); showPresetDropdown(); });
+if(refs.studiesPresetType) refs.studiesPresetType.addEventListener("change", () => { if(!refs.studyPresetDropdown?.classList.contains("hidden")) showPresetDropdown(); });
+document.addEventListener("click", () => refs.studyPresetDropdown?.classList.add("hidden"));
+
+if(refs.addCustomStudyBtn) refs.addCustomStudyBtn.addEventListener("click", () => {
+    const name = prompt("Nombre del estudio / examen:");
+    if(name?.trim()) { selectedStudies.push({ name: name.trim(), notes:"" }); renderStudiesList(); }
+});
+
+/* --- Exam order form --- */
+function resetExamOrderForm(){
+    if(!refs.examOrderForm) return;
+    refs.orderEditId.value = "";
+    refs.orderType.value = "LAB";
+    refs.orderPriority.value = "NORMAL";
+    refs.orderDate.value = new Date().toISOString().split("T")[0];
+    refs.orderEvaluation.value = "";
+    refs.orderClinicalIndication.value = "";
+    refs.orderAdditionalNotes.value = "";
+    selectedStudies = [];
+    renderStudiesList();
+    refs.orderSubmitBtn.textContent = "💾 Guardar pedido";
+    refs.orderCancelBtn.style.display = "none";
+    refs.examOrderFormTitle.textContent = "➕ Nuevo pedido";
+}
+
+function fillExamOrderForm(o){
+    refs.orderEditId.value = o.id;
+    refs.orderType.value = o.order_type || "LAB";
+    refs.orderPriority.value = o.priority || "NORMAL";
+    refs.orderDate.value = o.order_date || "";
+    refs.orderEvaluation.value = o.evaluation_id || "";
+    refs.orderClinicalIndication.value = o.clinical_indication || "";
+    refs.orderAdditionalNotes.value = o.additional_notes || "";
+    selectedStudies = (o.studies || []).map(s => ({ name: s.name||"", notes: s.notes||"" }));
+    renderStudiesList();
+    refs.orderSubmitBtn.textContent = "✏️ Actualizar pedido";
+    refs.orderCancelBtn.style.display = "";
+    refs.examOrderFormTitle.textContent = "Editar pedido";
+    refs.examOrderForm.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+if(refs.orderCancelBtn) refs.orderCancelBtn.addEventListener("click", () => resetExamOrderForm());
+
+if(refs.examOrderForm){
+    // init date
+    if(refs.orderDate) refs.orderDate.value = new Date().toISOString().split("T")[0];
+
+    refs.examOrderForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        if(!selectedStudies.length){ showToast("Agrega al menos un estudio.", "warn"); return; }
+        const payload = {
+            order_type:          refs.orderType.value,
+            priority:            refs.orderPriority.value,
+            order_date:          refs.orderDate.value,
+            evaluation_id:       refs.orderEvaluation.value || null,
+            clinical_indication: refs.orderClinicalIndication.value.trim() || null,
+            studies:             selectedStudies,
+            additional_notes:    refs.orderAdditionalNotes.value.trim() || null,
+        };
+        const isEdit = refs.orderEditId.value;
+        try{
+            refs.orderSubmitBtn.disabled = true;
+            if(isEdit){
+                await api(`/api/workers/${state.selectedWorkerId}/exam-orders/${isEdit}`, "PUT", payload);
+            } else {
+                await api(`/api/workers/${state.selectedWorkerId}/exam-orders`, "POST", payload);
+            }
+            showToast(isEdit ? "Pedido actualizado." : "Pedido guardado.", "success");
+            resetExamOrderForm();
+            await loadExamOrders(state.selectedWorkerId);
+        } catch(err){ showToast("Error: " + (err.message||""), "error"); }
+        finally { refs.orderSubmitBtn.disabled = false; }
+    });
+}
+
+if(refs.examOrdersList){
+    refs.examOrdersList.addEventListener("click", async e => {
+        const btn = e.target.closest("[data-act]");
+        if(!btn) return;
+        const act = btn.dataset.act;
+        const orderId = btn.dataset.orderId;
+        if(act === "print-order"){
+            window.open(`/api/workers/${state.selectedWorkerId}/exam-orders/${orderId}/pdf`, "_blank");
+        } else if(act === "edit-order"){
+            const o = state_studies.examOrders.find(x => String(x.id) === String(orderId));
+            if(o) fillExamOrderForm(o);
+        } else if(act === "delete-order"){
+            if(!confirm("¿Eliminar este pedido?")) return;
+            try{
+                await api(`/api/workers/${state.selectedWorkerId}/exam-orders/${orderId}`, "DELETE");
+                showToast("Pedido eliminado.", "success");
+                await loadExamOrders(state.selectedWorkerId);
+            } catch { showToast("Error al eliminar.", "error"); }
+        }
+    });
+}
+
+/* --- Attachment Gallery --- */
+async function loadWorkerAttachments(workerId){
+    const gallery = refs.workerAttachmentGallery;
+    if(!gallery) return;
+    if(!workerId){ gallery.innerHTML = `<p class="empty">Sin trabajador seleccionado.</p>`; return; }
+    try{
+        const res = await api(`/api/workers/${workerId}/attachments`);
+        state_studies.workerAttachments = Array.isArray(res?.data) ? res.data : [];
+        renderAttachmentGallery();
+        populateGalleryUploadEval();
+    } catch { state_studies.workerAttachments = []; renderAttachmentGallery(); }
+}
+
+function renderAttachmentGallery(){
+    const gallery = refs.workerAttachmentGallery;
+    if(!gallery) return;
+    gallery.innerHTML = "";
+    const filter = state_studies.attachmentFilter;
+    const attachments = filter === "ALL" ? state_studies.workerAttachments
+        : state_studies.workerAttachments.filter(a => a.attachment_type === filter);
+    if(!attachments.length){
+        gallery.innerHTML = `<p class="empty">${state_studies.workerAttachments.length ? "Sin archivos de este tipo." : "No hay archivos subidos para este trabajador."}</p>`;
+        return;
+    }
+    attachments.forEach(att => {
+        const card = document.createElement("div");
+        card.className = "historyCard";
+        const ext = (att.original_extension||"").toLowerCase();
+        const isImage = ["jpg","jpeg","png"].includes(ext);
+        const isDicom = ["dcm","dicom","ima"].includes(ext);
+        const isPdf   = ext === "pdf";
+        const sizeLabel = att.file_size_bytes ? `${(att.file_size_bytes/1024/1024).toFixed(1)} MB` : "";
+        const typeIcons = { GENERAL:"📄", LAB_EXAM:"🔬", IMAGING:"🩻", DICOM:"💿", AUDIO:"🔊", OTHER:"📎" };
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                <div>
+                    <p class="meta" style="margin:0;font-weight:600;">${typeIcons[att.attachment_type]||"📎"} ${esc(att.file_name)}</p>
+                    <p class="meta" style="margin:2px 0;font-size:.78rem;color:#888;">${esc(att.attachment_type)} &middot; ${sizeLabel}${att.exam_date ? " &middot; Examen: " + fmtDate(att.exam_date) : ""}</p>
+                    ${att.notes ? `<p class="meta" style="font-size:.8rem;">${esc(att.notes)}</p>` : ""}
+                    <p class="meta" style="font-size:.75rem;color:#aaa;">Consulta: ${fmtDate(att.evaluation_date||att.created_at)}</p>
+                </div>
+                <div class="rowActions">
+                    ${isImage ? `<button class="btn small" data-act="view-image" data-url="${att.file_url}" data-name="${esc(att.file_name)}" type="button">🔍 Ver</button>` : ""}
+                    ${isPdf ? `<button class="btn small" data-act="view-pdf" data-url="${att.file_url}" type="button">📄 Ver PDF</button>` : ""}
+                    ${isDicom ? `<button class="btn small" data-act="view-dicom" data-download="${att.download_path}" data-name="${esc(att.file_name)}" type="button">💿 Ver DICOM</button>` : ""}
+                    <a href="${att.download_path}" class="btn small" target="_blank">⬇️ Descargar</a>
+                </div>
+            </div>
+            ${isImage ? `<div style="margin-top:8px;"><img src="${att.file_url}" alt="${esc(att.file_name)}" style="max-height:120px;max-width:100%;border-radius:6px;cursor:pointer;object-fit:cover;" data-act="view-image" data-url="${att.file_url}" data-name="${esc(att.file_name)}"></div>` : ""}`;
+        card.addEventListener("click", e => {
+            const btn2 = e.target.closest("[data-act]");
+            if(!btn2) return;
+            const act2 = btn2.dataset.act;
+            if(act2 === "view-image") openLightbox(btn2.dataset.url, btn2.dataset.name);
+            else if(act2 === "view-pdf") window.open(btn2.dataset.url, "_blank");
+            else if(act2 === "view-dicom") openDicomViewer(btn2.dataset.download, btn2.dataset.name);
+        });
+        gallery.appendChild(card);
+    });
+}
+
+function populateGalleryUploadEval(){
+    const sel = refs.galleryUploadEval;
+    if(!sel) return;
+    sel.innerHTML = '<option value="">-- Seleccionar consulta --</option>';
+    const evals = state.selectedWorkerHistory?.evaluations || [];
+    evals.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${fmtDate(e.attention_date)} — ${esc(e.evaluation_type)}`;
+        sel.appendChild(opt);
+    });
+}
+
+/* Attachment type filter buttons */
+if(refs.attachmentTypeFilters){
+    refs.attachmentTypeFilters.addEventListener("click", e => {
+        const btn = e.target.closest("[data-filter]");
+        if(!btn) return;
+        state_studies.attachmentFilter = btn.dataset.filter;
+        refs.attachmentTypeFilters.querySelectorAll("[data-filter]").forEach(b => b.classList.toggle("active", b === btn));
+        renderAttachmentGallery();
+    });
+}
+
+/* Gallery upload */
+if(refs.galleryUploadBtn){
+    refs.galleryUploadBtn.addEventListener("click", async () => {
+        const evalId = refs.galleryUploadEval?.value;
+        const file   = refs.galleryUploadFile?.files?.[0];
+        if(!evalId){ showToast("Selecciona una consulta.", "warn"); return; }
+        if(!file)  { showToast("Selecciona un archivo.", "warn"); return; }
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("attachment_type", refs.galleryUploadType?.value || "GENERAL");
+        if(refs.galleryUploadDate?.value) formData.append("exam_date", refs.galleryUploadDate.value);
+        if(refs.galleryUploadNotes?.value) formData.append("notes", refs.galleryUploadNotes.value);
+        refs.galleryUploadBtn.disabled = true;
+        if(refs.galleryUploadStatus) refs.galleryUploadStatus.textContent = "Subiendo...";
+        try{
+            const token = localStorage.getItem("shcso_token");
+            const res = await fetch(`/api/evaluations/${evalId}/attachments`, {
+                method:"POST",
+                headers:{ Authorization:`Bearer ${token}` },
+                body: formData,
+            });
+            const data = await res.json();
+            if(!data.ok) throw new Error(data.message || "Error al subir");
+            showToast("Archivo subido correctamente.", "success");
+            if(refs.galleryUploadStatus) refs.galleryUploadStatus.textContent = "✅ Subido";
+            if(refs.galleryUploadFile) refs.galleryUploadFile.value = "";
+            await loadWorkerAttachments(state.selectedWorkerId);
+        } catch(err){
+            showToast("Error: " + (err.message||""), "error");
+            if(refs.galleryUploadStatus) refs.galleryUploadStatus.textContent = "❌ Error";
+        } finally { refs.galleryUploadBtn.disabled = false; }
+    });
+}
+
+/* --- Lightbox --- */
+function openLightbox(url, name){
+    if(!refs.imageLightboxModal) return;
+    refs.lightboxImg.src = url;
+    refs.lightboxCaption.textContent = name || "";
+    refs.imageLightboxModal.classList.remove("hidden");
+}
+if(refs.lightboxClose) refs.lightboxClose.addEventListener("click", () => refs.imageLightboxModal?.classList.add("hidden"));
+if(refs.imageLightboxModal) refs.imageLightboxModal.addEventListener("click", e => { if(e.target === refs.imageLightboxModal) refs.imageLightboxModal.classList.add("hidden"); });
+
+/* --- DICOM Viewer (dwv.js) --- */
+let dwvApp = null;
+let dwvLoaded = false;
+
+function loadDwvScript(){
+    return new Promise((resolve) => {
+        if(window.dwv){ resolve(); return; }
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/dwv@0.31.0/dist/dwv.min.js";
+        s.onload = resolve;
+        s.onerror = () => { console.warn("dwv.js no se pudo cargar"); resolve(); };
+        document.head.appendChild(s);
+    });
+}
+
+async function openDicomViewer(downloadPath, fileName){
+    if(!refs.dicomViewerModal) return;
+    refs.dicomFileName.textContent = fileName || "";
+    refs.dwvLoadingMsg.style.display = "flex";
+    if(refs.layerGroup0) refs.layerGroup0.innerHTML = "";
+    refs.dicomViewerModal.classList.remove("hidden");
+
+    await loadDwvScript();
+
+    if(!window.dwv){
+        refs.dwvLoadingMsg.textContent = "El visor DICOM no pudo cargarse. Descarga el archivo para verlo con un visor local.";
+        return;
+    }
+
+    try{
+        const token = localStorage.getItem("shcso_token");
+        // Fetch file as ArrayBuffer
+        const res = await fetch(downloadPath, { headers:{ Authorization:`Bearer ${token}` } });
+        if(!res.ok) throw new Error("No se pudo obtener el archivo");
+        const buffer = await res.arrayBuffer();
+
+        // Destroy previous app
+        if(dwvApp){ try{ dwvApp.reset(); } catch{} dwvApp = null; }
+
+        const layerDiv = document.getElementById("layerGroup0");
+        if(!layerDiv){ refs.dwvLoadingMsg.textContent = "Error interno del visor."; return; }
+
+        dwvApp = new dwv.App();
+        dwvApp.init({
+            dataViewConfigs: { "*": [{ divId: "layerGroup0" }] },
+            tools: { ZoomAndPan: {}, WindowLevel: {} },
+        });
+
+        dwvApp.addEventListener("load", () => {
+            refs.dwvLoadingMsg.style.display = "none";
+            if(refs.dwvToolInfo) refs.dwvToolInfo.textContent = "Usa la rueda del mouse para zoom | Arrastra para mover | Clic derecho: contraste";
+        });
+        dwvApp.addEventListener("error", () => {
+            refs.dwvLoadingMsg.style.display = "flex";
+            refs.dwvLoadingMsg.textContent = "Error al renderizar DICOM. El archivo puede estar comprimido o no ser compatible.";
+        });
+
+        dwvApp.loadArrayBuffer([{ filename: fileName||"file.dcm", data: buffer }]);
+        dwvApp.activateTool("ZoomAndPan");
+
+    } catch(err){
+        refs.dwvLoadingMsg.style.display = "flex";
+        refs.dwvLoadingMsg.textContent = "Error: " + (err.message||"No se pudo cargar el DICOM");
+    }
+}
+
+if(refs.dicomViewerClose) refs.dicomViewerClose.addEventListener("click", () => refs.dicomViewerModal?.classList.add("hidden"));
+if(refs.dicomViewerModal) refs.dicomViewerModal.addEventListener("click", e => { if(e.target === refs.dicomViewerModal) refs.dicomViewerModal.classList.add("hidden"); });
+
+if(refs.dwvResetBtn) refs.dwvResetBtn.addEventListener("click", () => { try{ dwvApp?.resetLayout(); } catch{} });
+if(refs.dwvZoomInBtn) refs.dwvZoomInBtn.addEventListener("click", () => { try{ dwvApp?.zoom(0.1); } catch{} });
+if(refs.dwvZoomOutBtn) refs.dwvZoomOutBtn.addEventListener("click", () => { try{ dwvApp?.zoom(-0.1); } catch{} });
+
+/* Wire Tab 6 to loader */
+
 async function searchMedicationCatalog(){
     const query = String(refs.rxMedication?.value || "").trim();
     if(query.length < 2){ hideRxMedResults(); return; }
@@ -2192,6 +2821,11 @@ refs.workerFlowTabs.forEach(tab => {
             loadWorkerEvolutions(state.selectedWorkerId).then(() => {
                 if(!refs.rxMedLines?.children.length) addRxMedLine();
             });
+        }
+        if(step === "studies" && state.selectedWorkerId){
+            loadExamOrders(state.selectedWorkerId);
+            loadWorkerAttachments(state.selectedWorkerId);
+            resetExamOrderForm();
         }
     });
 });

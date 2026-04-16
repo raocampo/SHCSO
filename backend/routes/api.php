@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\ClinicalEvolutionController;
 use App\Http\Controllers\Api\EvaluationController;
+use App\Http\Controllers\Api\ExamOrderController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WorkerController;
@@ -81,6 +82,24 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
     Route::delete('/workers/{workerId}/evolutions/{evolutionId}', [ClinicalEvolutionController::class, 'destroy'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+
+    // Worker aggregate attachments
+    Route::get('/workers/{workerId}/attachments', [WorkerController::class, 'allAttachments'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+
+    // Medical Exam Orders
+    Route::get('/workers/{workerId}/exam-orders', [ExamOrderController::class, 'index'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::post('/workers/{workerId}/exam-orders', [ExamOrderController::class, 'store'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::get('/workers/{workerId}/exam-orders/{orderId}', [ExamOrderController::class, 'show'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::put('/workers/{workerId}/exam-orders/{orderId}', [ExamOrderController::class, 'update'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
+    Route::delete('/workers/{workerId}/exam-orders/{orderId}', [ExamOrderController::class, 'destroy'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+    Route::get('/workers/{workerId}/exam-orders/{orderId}/pdf', [ExamOrderController::class, 'generatePdf'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA');
 
     Route::post('/evaluations', [EvaluationController::class, 'store'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');

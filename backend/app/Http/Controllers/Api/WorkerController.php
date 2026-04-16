@@ -308,4 +308,35 @@ class WorkerController extends Controller
             ],
         ]);
     }
+
+    public function allAttachments(string $workerId): JsonResponse
+    {
+        Worker::findOrFail($workerId);
+
+        $attachments = \App\Models\EvaluationAttachment::query()
+            ->whereHas('evaluation', fn ($q) => $q->where('worker_id', $workerId))
+            ->with('evaluation:id,attention_date,evaluation_type')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($att) {
+                return [
+                    'id'                 => $att->id,
+                    'evaluation_id'      => $att->evaluation_id,
+                    'evaluation_date'    => $att->evaluation?->attention_date?->toDateString(),
+                    'evaluation_type'    => $att->evaluation?->evaluation_type,
+                    'file_name'          => $att->file_name,
+                    'mime_type'          => $att->mime_type,
+                    'attachment_type'    => $att->attachment_type,
+                    'exam_date'          => $att->exam_date?->toDateString(),
+                    'notes'              => $att->notes,
+                    'file_size_bytes'    => $att->file_size_bytes,
+                    'original_extension' => $att->original_extension,
+                    'file_url'           => \Illuminate\Support\Facades\Storage::disk('public')->url($att->file_path),
+                    'download_path'      => "/api/evaluations/attachments/{$att->id}/download",
+                    'created_at'         => $att->created_at?->toIso8601String(),
+                ];
+            });
+
+        return response()->json(['ok' => true, 'data' => $attachments]);
+    }
 }
