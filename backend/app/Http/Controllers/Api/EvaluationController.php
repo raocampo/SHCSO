@@ -420,6 +420,9 @@ class EvaluationController extends Controller
                 'indications' => $p->indications,
             ])->toArray(),
             'professional_code' => $evaluation->professional_code,
+            'qr_data_uri'       => $this->buildQrDataUri(
+                'SHCSO|RX-' . strtoupper(substr($evaluationId, 0, 8)) . '|' . now()->format('Ymd') . '|CI:' . $worker->document_number
+            ),
         ])->setPaper('letter', 'portrait');
 
         AuditLog::create([
@@ -433,5 +436,21 @@ class EvaluationController extends Controller
 
         $filename = 'receta-' . strtolower(substr($evaluationId, 0, 8)) . '.pdf';
         return $pdf->download($filename);
+    }
+
+    private function buildQrDataUri(string $data): ?string
+    {
+        try {
+            $encoded = rawurlencode($data);
+            $url     = "https://api.qrserver.com/v1/create-qr-code/?size=90x90&format=png&ecc=M&data={$encoded}";
+            $ctx     = stream_context_create(['http' => ['timeout' => 3]]);
+            $imgData = @file_get_contents($url, false, $ctx);
+            if ($imgData === false) {
+                return null;
+            }
+            return 'data:image/png;base64,' . base64_encode($imgData);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

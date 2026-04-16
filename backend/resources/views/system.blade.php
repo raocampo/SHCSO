@@ -274,6 +274,17 @@
 
         <div id="statsGrid" class="stats view-dashboard"></div>
 
+        <!-- Alertas: certificados por vencer -->
+        <div id="alertsBanner" class="view-dashboard" style="display:none;margin-bottom:1rem;">
+            <article class="card" style="border-left:4px solid #e53935;">
+                <h2 class="section" style="color:#e53935;">🔔 Alertas — Certificados por vencer
+                    <span id="alertsCount" class="sectionBadge" style="background:#e53935;color:#fff;">0</span>
+                </h2>
+                <div id="alertsList" style="font-size:.84rem;"></div>
+                <p id="alertsEmpty" class="hint" style="display:none;">Sin certificados próximos a vencer.</p>
+            </article>
+        </div>
+
         <div class="operationPulse view-operations">
             <article class="card operationKpi">
                 <h2 class="section">Pulso operativo <span class="sectionBadge">tiempo real</span></h2>
@@ -483,6 +494,32 @@
                     </div>
                     <p id="evaluationsPageInfo" class="hint">Pagina 1 de 1</p>
                 </div>
+            </article>
+
+            <!-- Exportación Excel -->
+            <article class="card view-operations operationCard operationStepPanel" data-operation-panel="evaluations" style="margin-top:1rem;">
+                <h2 class="section">📊 Exportar a Excel</h2>
+                <div class="toolbar" style="flex-wrap:wrap;gap:.6rem;align-items:flex-end;">
+                    <div class="field">
+                        <label>Tipo de reporte</label>
+                        <select id="xlsType">
+                            <option value="evaluations">Evaluaciones</option>
+                            <option value="workers">Trabajadores</option>
+                            <option value="certificates">Certificados</option>
+                            <option value="accidents">Accidentes</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Desde</label>
+                        <input type="date" id="xlsFrom">
+                    </div>
+                    <div class="field">
+                        <label>Hasta</label>
+                        <input type="date" id="xlsTo">
+                    </div>
+                    <button class="btn accent" type="button" id="xlsExportBtn">⬇️ Descargar Excel</button>
+                </div>
+                <p id="xlsMsg" class="hint" style="margin-top:.4rem;"></p>
             </article>
         </div>
 
@@ -3661,6 +3698,82 @@ refs.operationFlowTabs.forEach(tab => {
 window.addEventListener("popstate", () => {
     setView(resolveViewFromPath(), false);
 });
+
+/* ─── ALERTAS: CERTIFICADOS POR VENCER ─── */
+async function loadExpiringAlerts(){
+    try{
+        const res = await api("/api/certificates/expiring?days=30");
+        const list = res.data || [];
+        const banner = document.getElementById("alertsBanner");
+        const countEl = document.getElementById("alertsCount");
+        const listEl = document.getElementById("alertsList");
+        const emptyEl = document.getElementById("alertsEmpty");
+        if(!banner) return;
+        if(!list.length){
+            banner.style.display = "none";
+            return;
+        }
+        banner.style.display = "";
+        if(countEl) countEl.textContent = list.length;
+        if(!listEl) return;
+        if(emptyEl) emptyEl.style.display = "none";
+        listEl.innerHTML = `
+        <table class="tableCompact" style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+                <th>Trabajador</th><th>Empresa</th><th>Certificado</th><th>Aptitud</th><th>Vence</th><th>Días restantes</th>
+            </tr></thead>
+            <tbody>
+            ${list.map(c => {
+                const daysLeft = c.days_left;
+                const color = daysLeft <= 7 ? '#e53935' : daysLeft <= 14 ? '#fb8c00' : '#1565c0';
+                return `<tr>
+                    <td>${e(c.worker?.full_name||'-')}</td>
+                    <td>${e(c.worker?.company||'-')}</td>
+                    <td>${e(c.certificate_code)}</td>
+                    <td>${e(c.medical_aptitude)}</td>
+                    <td>${c.valid_until}</td>
+                    <td style="font-weight:700;color:${color};">${daysLeft} días</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+    } catch(err){ console.warn("No se pudieron cargar alertas:", err.message); }
+}
+
+/* ─── EXCEL EXPORT ─── */
+const xlsExportBtn = document.getElementById("xlsExportBtn");
+if(xlsExportBtn){
+    xlsExportBtn.addEventListener("click", async () => {
+        const type  = document.getElementById("xlsType").value;
+        const from  = document.getElementById("xlsFrom").value;
+        const to    = document.getElementById("xlsTo").value;
+        const msg   = document.getElementById("xlsMsg");
+        const token = localStorage.getItem("shcso_token");
+        let url = `/api/reports/export-excel?type=${encodeURIComponent(type)}`;
+        if(from) url += `&date_from=${encodeURIComponent(from)}`;
+        if(to)   url += `&date_to=${encodeURIComponent(to)}`;
+        if(msg){ msg.textContent = "⏳ Generando Excel..."; msg.style.color = "#475569"; }
+        try{
+            const response = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
+            if(!response.ok){ const err = await response.json().catch(()=>({})); throw new Error(err.message || "Error generando reporte"); }
+            const blob = await response.blob();
+            const cd   = response.headers.get("Content-Disposition") || "";
+            const match = cd.match(/filename="?([^";\n]+)"?/);
+            const filename = match?.[1] || `reporte-${type}.xlsx`;
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl; a.download = filename; a.click();
+            URL.revokeObjectURL(blobUrl);
+            if(msg){ msg.textContent = "✅ Descarga iniciada."; msg.style.color = "#2e7d32"; }
+            setTimeout(() => { if(msg) msg.textContent = ""; }, 4000);
+        } catch(err){
+            if(msg){ msg.textContent = "❌ " + (err.message || "Error al exportar."); msg.style.color = "#e53935"; }
+        }
+    });
+}
+
+// Load alerts on init
+loadExpiringAlerts();
 
 refs.workersPrevBtn.addEventListener("click", async () => {
     if(!state.pagination.workers.has_prev) return;

@@ -23,30 +23,35 @@ class CertificateController extends Controller
     public function storeFromEvaluation(Request $request, string $evaluationId): JsonResponse
     {
         $validated = $request->validate([
-            'issue_date' => ['nullable', 'date'],
-            'observations' => ['nullable', 'string'],
-            'recommendations' => ['nullable', 'string'],
+            'issue_date'            => ['nullable', 'date'],
+            'valid_until'           => ['nullable', 'date', 'after:issue_date'],
+            'observations'          => ['nullable', 'string'],
+            'recommendations'       => ['nullable', 'string'],
             'worker_signature_path' => ['nullable', 'string'],
-            'pdf_path' => ['nullable', 'string'],
-            'qr_code_data' => ['nullable', 'string'],
+            'pdf_path'              => ['nullable', 'string'],
+            'qr_code_data'          => ['nullable', 'string'],
         ]);
 
         $evaluation = OccupationalEvaluation::query()->findOrFail($evaluationId);
 
+        $issueDate  = $validated['issue_date'] ?? now()->toDateString();
+        $validUntil = $validated['valid_until'] ?? \Carbon\Carbon::parse($issueDate)->addYear()->toDateString();
+
         $certificate = new MedicalCertificate([
-            'certificate_code' => $this->buildCertificateCode(),
-            'evaluation_id' => $evaluation->id,
-            'worker_id' => $evaluation->worker_id,
-            'issue_date' => $validated['issue_date'] ?? now()->toDateString(),
-            'medical_aptitude' => $evaluation->medical_aptitude,
-            'observations' => $validated['observations'] ?? null,
-            'recommendations' => $validated['recommendations'] ?? $evaluation->recommendations,
-            'professional_name' => $evaluation->professional_name,
-            'professional_code' => $evaluation->professional_code,
+            'certificate_code'      => $this->buildCertificateCode(),
+            'evaluation_id'         => $evaluation->id,
+            'worker_id'             => $evaluation->worker_id,
+            'issue_date'            => $issueDate,
+            'valid_until'           => $validUntil,
+            'medical_aptitude'      => $evaluation->medical_aptitude,
+            'observations'          => $validated['observations'] ?? null,
+            'recommendations'       => $validated['recommendations'] ?? $evaluation->recommendations,
+            'professional_name'     => $evaluation->professional_name,
+            'professional_code'     => $evaluation->professional_code,
             'worker_signature_path' => $validated['worker_signature_path'] ?? null,
-            'pdf_path' => $validated['pdf_path'] ?? null,
-            'qr_code_data' => $validated['qr_code_data'] ?? null,
-            'created_by' => $request->user()?->id,
+            'pdf_path'              => $validated['pdf_path'] ?? null,
+            'qr_code_data'          => $validated['qr_code_data'] ?? null,
+            'created_by'            => $request->user()?->id,
         ]);
         $certificate->id = (string) Str::uuid();
         $certificate->save();
@@ -238,5 +243,40 @@ class CertificateController extends Controller
                 'pdf_url' => $certificate->pdf_path ? Storage::disk('public')->url($certificate->pdf_path) : null,
             ],
         ]);
+    }
+
+    public function expiring(Request $request): JsonResponse
+    {
+        $days  = max(1, min(90, (int) ($request->query('days', 30))));
+        $today = now()->toDateString();
+        $limit = now()->addDays($days)->toDateString();
+
+        $certificates = MedicalCertificate::query()
+            ->with(['worker:id,first_name,last_name,document_number', 'worker.company:id,business_name'])
+            ->whereNotNull('valid_until')
+            ->whereDate('valid_until', '>=', $today)
+            ->whereDate('valid_until', '<=', $limit)
+            ->orderBy('valid_until')
+            ->limit(100)
+            ->get()
+            ->map(function (MedicalCertificate $c) use ($today) {
+                $daysLeft = now()->diffInDays($c->valid_until, false);
+                return [
+                    'id'               => $c->id,
+                    'certificate_code' => $c->certificate_code,
+                    'issue_date'       => $c->issue_date?->toDateString(),
+                    'valid_until'      => $c->valid_until?->toDateString(),
+                    'days_left'        => (int) $daysLeft,
+                    'medical_aptitude' => $c->medical_aptitude,
+                    'worker'           => $c->worker ? [
+                        'id'              => $c->worker->id,
+                        'full_name'       => trim($c->worker->first_name . ' ' . $c->worker->last_name),
+                        'document_number' => $c->worker->document_number,
+                        'company'         => $c->worker->company?->business_name,
+                    ] : null,
+                ];
+            });
+
+        return response()->json(['ok' => true, 'data' => $certificates, 'meta' => ['days' => $days, 'count' => $certificates->count()]]);
     }
 }

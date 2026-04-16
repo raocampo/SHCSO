@@ -19,6 +19,7 @@ class MedicalCertificate extends Model
         'evaluation_id',
         'worker_id',
         'issue_date',
+        'valid_until',
         'medical_aptitude',
         'observations',
         'recommendations',
@@ -33,7 +34,8 @@ class MedicalCertificate extends Model
     protected function casts(): array
     {
         return [
-            'issue_date' => 'date',
+            'issue_date'  => 'date',
+            'valid_until' => 'date',
         ];
     }
 

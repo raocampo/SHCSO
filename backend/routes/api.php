@@ -140,6 +140,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/evaluations/{evaluationId}/attachments', [EvaluationController::class, 'listAttachments'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
 
+    Route::get('/certificates/expiring', [CertificateController::class, 'expiring'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::post('/certificates/from-evaluation/{evaluationId}', [CertificateController::class, 'storeFromEvaluation'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
     Route::get('/certificates', [CertificateController::class, 'index'])
@@ -159,4 +161,6 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/reports/monthly-activity', [ReportController::class, 'monthlyActivity'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
+    Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,AUDITOR');
 });

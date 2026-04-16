@@ -57,6 +57,9 @@
                 @if(!empty($config['city']))
                     <div>{{ $config['city'] }}</div>
                 @endif
+                @if(!empty($qr_data_uri))
+                    <div style="margin-top:6px;"><img src="{{ $qr_data_uri }}" alt="QR" style="width:72px;height:72px;border:1px solid #e2e8f0;"></div>
+                @endif
             </td>
         </tr>
     </table>
