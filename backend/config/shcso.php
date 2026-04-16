@@ -14,4 +14,13 @@ return [
         'signature_title' => env('SHCSO_CERTIFICATE_SIGNATURE_TITLE', 'Responsable de Salud Ocupacional'),
         'footer_note' => env('SHCSO_CERTIFICATE_FOOTER_NOTE', 'Documento confidencial de uso medico ocupacional.'),
     ],
+    /*
+    |--------------------------------------------------------------------------
+    | Credenciales API OMS (ICD)
+    |--------------------------------------------------------------------------
+    | Regístrese gratis en: https://icdaccessmanagement.who.int/
+    | Se usan con: php artisan cie10:actualizar --fuente=api
+    */
+    'who_client_id'     => env('WHO_ICD_CLIENT_ID'),
+    'who_client_secret' => env('WHO_ICD_CLIENT_SECRET'),
 ];
