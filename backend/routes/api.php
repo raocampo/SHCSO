@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\ClinicalEvolutionController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\ExamOrderController;
+use App\Http\Controllers\Api\ManualController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\UserController;
@@ -20,6 +21,10 @@ Route::get('/health', fn () => response()->json([
     'message' => 'API SHCSO activa',
     'timestamp' => now()->toISOString(),
 ]));
+
+// Manual de usuario — acceso público (sin auth)
+Route::get('/manual/download', [ManualController::class, 'download']);
+Route::get('/manual/preview',  [ManualController::class, 'preview']);
 
 Route::get('/auth/setup-status', [AuthController::class, 'setupStatus']);
 Route::post('/auth/register-admin', [AuthController::class, 'registerAdmin']);

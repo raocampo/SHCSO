@@ -161,6 +161,7 @@
         </div>
         <div class="actions">
             <button id="miPerfilBtn" class="btn small hidden" type="button">👤 Mi Perfil</button>
+            <a href="/api/manual/download" target="_blank" class="btn small" title="Descargar manual de usuario" style="text-decoration:none;">📖 Manual</a>
             <button id="refreshBtn" class="btn hidden" type="button">Refrescar</button>
             <button id="logoutBtn" class="btn warn hidden" type="button">Cerrar sesion</button>
         </div>
