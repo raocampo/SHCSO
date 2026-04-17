@@ -13,6 +13,8 @@ class SettingsController extends Controller
 {
     private const TEXT_KEYS = [
         'institution_name', 'institution_subtitle', 'institution_city',
+        'institution_ruc', 'institution_representative',
+        'institution_phone', 'institution_address', 'institution_email',
         'footer_note', 'signature_name', 'signature_title',
         'professional_code', 'professional_title',
     ];

@@ -1261,10 +1261,15 @@
 
     <article class="card view-settings" style="margin-bottom:1.5rem;">
         <h2 class="section">🏥 Datos de la Institución</h2>
-        <form id="settingsForm" style="display:grid;gap:12px;max-width:600px;">
+        <form id="settingsForm" style="display:grid;gap:12px;max-width:640px;">
             <div class="field"><label>Nombre de la institución</label><input id="cfgInstitutionName" type="text" placeholder="Ej: Clínica Salud Ocupacional"></div>
             <div class="field"><label>Subtítulo / especialidad</label><input id="cfgInstitutionSubtitle" type="text" placeholder="Ej: Medicina Ocupacional y Salud Laboral"></div>
             <div class="field"><label>Ciudad</label><input id="cfgInstitutionCity" type="text" placeholder="Ej: Quito – Ecuador"></div>
+            <div class="field"><label>RUC</label><input id="cfgInstitutionRuc" type="text" placeholder="Ej: 0101010101001"></div>
+            <div class="field"><label>Dirección</label><input id="cfgInstitutionAddress" type="text" placeholder="Ej: Av. República 123 y Naciones Unidas"></div>
+            <div class="field"><label>Teléfono</label><input id="cfgInstitutionPhone" type="text" placeholder="Ej: 02-2345678 / 099-8765432"></div>
+            <div class="field"><label>Correo electrónico</label><input id="cfgInstitutionEmail" type="email" placeholder="Ej: info@clinica.com"></div>
+            <div class="field"><label>Representante legal</label><input id="cfgInstitutionRepresentative" type="text" placeholder="Ej: Dra. María García López"></div>
             <div class="field"><label>Nota al pie de PDFs</label><input id="cfgFooterNote" type="text" placeholder="Ej: Documento confidencial de uso médico."></div>
             <hr style="border:none;border-top:1px solid var(--border);margin:4px 0;">
             <h3 style="font-size:.9rem;font-weight:600;margin:0;">Médico responsable</h3>
@@ -4141,6 +4146,17 @@ async function loadSettings(){
         document.getElementById("cfgSignatureTitle").value     = d.signature_title      || "";
         document.getElementById("cfgProfessionalCode").value   = d.professional_code    || "";
         document.getElementById("cfgProfessionalTitle").value  = d.professional_title   || "";
+        // Nuevos campos de institución
+        const cfgRuc  = document.getElementById("cfgInstitutionRuc");
+        const cfgAddr = document.getElementById("cfgInstitutionAddress");
+        const cfgPhone= document.getElementById("cfgInstitutionPhone");
+        const cfgEmail= document.getElementById("cfgInstitutionEmail");
+        const cfgRep  = document.getElementById("cfgInstitutionRepresentative");
+        if(cfgRuc)   cfgRuc.value   = d.institution_ruc            || "";
+        if(cfgAddr)  cfgAddr.value  = d.institution_address        || "";
+        if(cfgPhone) cfgPhone.value = d.institution_phone          || "";
+        if(cfgEmail) cfgEmail.value = d.institution_email          || "";
+        if(cfgRep)   cfgRep.value   = d.institution_representative || "";
         renderSettingsImagePreview("logo",      d.logo_url);
         renderSettingsImagePreview("signature", d.signature_url);
         renderSettingsImagePreview("seal",      d.seal_url);
@@ -4148,16 +4164,21 @@ async function loadSettings(){
         const prev = document.getElementById("settingsPreview");
         if(prev){
             const rows = [
-                ["Institución",       d.institution_name     || "(sin configurar)"],
-                ["Subtítulo",         d.institution_subtitle || "(sin configurar)"],
-                ["Ciudad",            d.institution_city     || "(sin configurar)"],
-                ["Médico responsable",d.signature_name       || "(sin configurar)"],
-                ["Cargo / título",    d.signature_title      || "(sin configurar)"],
-                ["Código profesional",d.professional_code    || "(sin configurar)"],
+                ["Institución",         d.institution_name           || "(sin configurar)"],
+                ["Subtítulo",           d.institution_subtitle       || "(sin configurar)"],
+                ["Ciudad",              d.institution_city           || "(sin configurar)"],
+                ["RUC",                 d.institution_ruc            || "(sin configurar)"],
+                ["Dirección",           d.institution_address        || "(sin configurar)"],
+                ["Teléfono",            d.institution_phone          || "(sin configurar)"],
+                ["Email",               d.institution_email          || "(sin configurar)"],
+                ["Representante legal", d.institution_representative || "(sin configurar)"],
+                ["Médico responsable",  d.signature_name             || "(sin configurar)"],
+                ["Cargo / título",      d.signature_title            || "(sin configurar)"],
+                ["Código profesional",  d.professional_code          || "(sin configurar)"],
             ];
             prev.innerHTML = `<table style="border-collapse:collapse;width:100%;font-size:.86rem;">
                 ${rows.map(([k,v]) => `<tr>
-                    <td style="padding:4px 10px 4px 0;color:var(--muted);font-weight:600;width:40%;vertical-align:top;">${e(k)}</td>
+                    <td style="padding:4px 10px 4px 0;color:var(--muted);font-weight:600;width:38%;vertical-align:top;">${e(k)}</td>
                     <td style="padding:4px 0;color:var(--text);">${e(v)}</td>
                 </tr>`).join('')}
             </table>`;
@@ -4204,14 +4225,19 @@ document.getElementById("settingsForm")?.addEventListener("submit", async e => {
     const btn = e.target.querySelector('button[type="submit"]');
     if(btn){ btn.disabled = true; btn.textContent = "Guardando…"; }
     const body = {
-        institution_name:      document.getElementById("cfgInstitutionName").value.trim(),
-        institution_subtitle:  document.getElementById("cfgInstitutionSubtitle").value.trim(),
-        institution_city:      document.getElementById("cfgInstitutionCity").value.trim(),
-        footer_note:           document.getElementById("cfgFooterNote").value.trim(),
-        signature_name:        document.getElementById("cfgSignatureName").value.trim(),
-        signature_title:       document.getElementById("cfgSignatureTitle").value.trim(),
-        professional_code:     document.getElementById("cfgProfessionalCode").value.trim(),
-        professional_title:    document.getElementById("cfgProfessionalTitle").value.trim(),
+        institution_name:           document.getElementById("cfgInstitutionName").value.trim(),
+        institution_subtitle:       document.getElementById("cfgInstitutionSubtitle").value.trim(),
+        institution_city:           document.getElementById("cfgInstitutionCity").value.trim(),
+        institution_ruc:            document.getElementById("cfgInstitutionRuc")?.value.trim() || "",
+        institution_address:        document.getElementById("cfgInstitutionAddress")?.value.trim() || "",
+        institution_phone:          document.getElementById("cfgInstitutionPhone")?.value.trim() || "",
+        institution_email:          document.getElementById("cfgInstitutionEmail")?.value.trim() || "",
+        institution_representative: document.getElementById("cfgInstitutionRepresentative")?.value.trim() || "",
+        footer_note:                document.getElementById("cfgFooterNote").value.trim(),
+        signature_name:             document.getElementById("cfgSignatureName").value.trim(),
+        signature_title:            document.getElementById("cfgSignatureTitle").value.trim(),
+        professional_code:          document.getElementById("cfgProfessionalCode").value.trim(),
+        professional_title:         document.getElementById("cfgProfessionalTitle").value.trim(),
     };
     try {
         await api("/api/settings", {method:"PUT", body});

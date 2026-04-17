@@ -47,17 +47,22 @@ class SystemSetting extends Model
     {
         $s = static::getAll();
         return [
-            'name'           => $s['institution_name']     ?? config('shcso.institution.name'),
-            'subtitle'       => $s['institution_subtitle'] ?? config('shcso.institution.subtitle'),
-            'city'           => $s['institution_city']     ?? config('shcso.institution.city'),
-            'footer_note'    => $s['footer_note']          ?? config('shcso.pdf_certificate.footer_note'),
-            'signature_name' => $s['signature_name']       ?? config('shcso.pdf_certificate.signature_name'),
-            'signature_title'=> $s['signature_title']      ?? config('shcso.pdf_certificate.signature_title'),
-            'professional_code' => $s['professional_code'] ?? null,
-            'professional_title'=> $s['professional_title'] ?? null,
-            'logo_path'      => $s['logo_path']            ? public_path($s['logo_path']) : null,
-            'signature_path' => $s['signature_path']       ? public_path($s['signature_path']) : null,
-            'seal_path'      => $s['seal_path']            ? public_path($s['seal_path']) : null,
+            'name'                   => $s['institution_name']           ?? config('shcso.institution.name'),
+            'subtitle'               => $s['institution_subtitle']       ?? config('shcso.institution.subtitle'),
+            'city'                   => $s['institution_city']           ?? config('shcso.institution.city'),
+            'ruc'                    => $s['institution_ruc']            ?? null,
+            'representative'         => $s['institution_representative'] ?? null,
+            'phone'                  => $s['institution_phone']          ?? null,
+            'address'                => $s['institution_address']        ?? null,
+            'email'                  => $s['institution_email']          ?? null,
+            'footer_note'            => $s['footer_note']                ?? config('shcso.pdf_certificate.footer_note'),
+            'signature_name'         => $s['signature_name']             ?? config('shcso.pdf_certificate.signature_name'),
+            'signature_title'        => $s['signature_title']            ?? config('shcso.pdf_certificate.signature_title'),
+            'professional_code'      => $s['professional_code']          ?? null,
+            'professional_title'     => $s['professional_title']         ?? null,
+            'logo_path'              => $s['logo_path']                  ? public_path($s['logo_path']) : null,
+            'signature_path'         => $s['signature_path']             ? public_path($s['signature_path']) : null,
+            'seal_path'              => $s['seal_path']                  ? public_path($s['seal_path']) : null,
         ];
     }
 }

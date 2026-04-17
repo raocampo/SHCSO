@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Company;
 use App\Models\MedicalCertificate;
 use App\Models\OccupationalAccident;
 use App\Models\OccupationalEvaluation;
@@ -99,50 +100,43 @@ class ReportController extends Controller
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $limit = (int) ($validated['limit'] ?? 50);
+        $limit    = (int) ($validated['limit'] ?? 50);
         $dateFrom = $validated['date_from'] ?? null;
-        $dateTo = $validated['date_to'] ?? null;
-        $companyIdExpression = 'COALESCE(companies.id, 0)';
-        $companyNameExpression = "COALESCE(companies.business_name, 'SIN EMPRESA')";
+        $dateTo   = $validated['date_to']   ?? null;
 
-        $query = OccupationalEvaluation::query()
-            ->join('workers', 'workers.id', '=', 'occupational_evaluations.worker_id')
-            ->leftJoin('companies', 'companies.id', '=', 'workers.company_id')
-            ->selectRaw("
-                {$companyIdExpression} as company_id,
-                {$companyNameExpression} as company_name,
-                occupational_evaluations.medical_aptitude,
-                COUNT(*) as total
-            ");
-
-        $this->applyDateRange($query, $dateFrom, $dateTo);
-
-        $rows = $query
-            ->groupByRaw("{$companyIdExpression}, {$companyNameExpression}, occupational_evaluations.medical_aptitude")
-            ->orderByRaw("{$companyNameExpression} asc")
-            ->limit($limit * 4)
+        // All companies (including those with no evaluations)
+        $allCompanies = \App\Models\Company::query()
+            ->select('id', 'business_name')
+            ->orderBy('business_name')
+            ->limit($limit)
             ->get();
 
-        $grouped = $rows
-            ->groupBy(fn ($row) => (string) $row->company_id)
-            ->map(function ($items) {
-                $first = $items->first();
-                return [
-                    'company_id' => $first->company_id,
-                    'company_name' => $first->company_name,
-                    'totals_by_aptitude' => $items->mapWithKeys(
-                        fn ($item) => [$item->medical_aptitude => (int) $item->total]
-                    ),
-                    'total_evaluations' => (int) $items->sum('total'),
-                ];
-            })
-            ->sortByDesc('total_evaluations')
-            ->take($limit)
-            ->values();
+        // Evaluations aggregated by company + aptitude
+        $evalQuery = DB::table('occupational_evaluations as oe')
+            ->join('workers as w', 'w.id', '=', 'oe.worker_id')
+            ->select('w.company_id', 'oe.medical_aptitude', DB::raw('COUNT(*) as total'));
+
+        if ($dateFrom) $evalQuery->whereDate('oe.attention_date', '>=', $dateFrom);
+        if ($dateTo)   $evalQuery->whereDate('oe.attention_date', '<=', $dateTo);
+
+        $evalRows = $evalQuery
+            ->groupBy('w.company_id', 'oe.medical_aptitude')
+            ->get()
+            ->groupBy('company_id');
+
+        $result = $allCompanies->map(function ($company) use ($evalRows) {
+            $rows = $evalRows->get($company->id, collect());
+            return [
+                'company_id'        => $company->id,
+                'company_name'      => $company->business_name,
+                'totals_by_aptitude'=> $rows->mapWithKeys(fn ($r) => [$r->medical_aptitude => (int) $r->total]),
+                'total_evaluations' => (int) $rows->sum('total'),
+            ];
+        });
 
         return response()->json([
-            'ok' => true,
-            'data' => $grouped,
+            'ok'   => true,
+            'data' => $result,
         ]);
     }
 
