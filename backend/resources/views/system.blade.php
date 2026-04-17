@@ -171,7 +171,7 @@
 
     <section id="loginSection" class="card login">
         <h2 class="section">Acceso</h2>
-        <form id="loginForm">
+        <form id="loginForm" method="post" onsubmit="return false;">
             <div class="field">
                 <label>Email</label>
                 <input name="email" type="email" value="admin@shcso.local" required>
@@ -4783,8 +4783,8 @@ function renderEmpresaGrid(){
             <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:.75rem;color:var(--muted);">Ver detalle →</span>
                 <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
-                    <button class="btn small" onclick="openEditCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;">✏️</button>
-                    <button class="btn small" onclick="deleteCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;background:#fff0f3;border-color:#fca5a5;color:#b91c1c;">🗑️</button>
+                    <button class="btn small" onclick="openEditCompany(${c.company_id})" style="font-size:.75rem;padding:4px 8px;">✏️</button>
+                    <button class="btn small" onclick="deleteCompany(${c.company_id})" style="font-size:.75rem;padding:4px 8px;background:#fff0f3;border-color:#fca5a5;color:#b91c1c;">🗑️</button>
                 </div>
             </div>
         </article>`;
@@ -4951,7 +4951,9 @@ function openEditCompany(id) {
     refs.companyModal.classList.remove('hidden');
 }
 
-async function deleteCompany(id, name) {
+async function deleteCompany(id) {
+    const co = state.companies.find(c => String(c.id) === String(id));
+    const name = co ? co.business_name : 'esta empresa';
     if (!confirm(`¿Eliminar la empresa "${name}"?\n\nEsta acción no se puede deshacer. Si tiene trabajadores asignados, no se podrá eliminar.`)) return;
     try {
         await api('/api/catalog/companies/' + id, { method: 'DELETE' });
