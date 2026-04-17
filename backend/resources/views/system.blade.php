@@ -3089,6 +3089,9 @@ async function refreshData(){
         renderAll();
         showApp();
         status(`Sesion activa: ${state.user.full_name}`, "ok");
+        // Load authenticated-only widgets after login confirmed
+        loadExpiringAlerts();
+        loadTodayAppts();
     }
     catch (e) { if(e.status===401){ await logout(); status("Token invalido o expirado.", "error"); } else status(e.message || "Error al cargar datos.", "error"); }
 }
@@ -4091,10 +4094,6 @@ if(xlsExportBtn){
         }
     });
 }
-
-// Load alerts on init
-loadExpiringAlerts();
-loadTodayAppts();
 
 /* ─── CITAS DE HOY (DASHBOARD WIDGET) ─── */
 async function loadTodayAppts(){
