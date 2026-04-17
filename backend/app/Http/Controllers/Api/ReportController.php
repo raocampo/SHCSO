@@ -62,7 +62,7 @@ class ReportController extends Controller
 
         // Stats adicionales para el dashboard
         $todayAppts = \App\Models\Appointment::query()
-            ->whereDate('scheduled_at', today())
+            ->whereDate('appointment_date', today())
             ->count();
 
         $thisMonthEvals = OccupationalEvaluation::query()

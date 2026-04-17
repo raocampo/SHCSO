@@ -4111,7 +4111,7 @@ async function loadTodayAppts(){
             </tr></thead>
             <tbody>
             ${list.map(a => {
-                const hour = a.scheduled_at ? a.scheduled_at.substring(11,16) : '—';
+                const hour = a.appointment_time ? a.appointment_time.substring(0,5) : (a.scheduled_at ? a.scheduled_at.substring(11,16) : '—');
                 const col  = statusColor[a.status] || '#546e7a';
                 return `<tr>
                     <td style="font-weight:700;">${hour}</td>
