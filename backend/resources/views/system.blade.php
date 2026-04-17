@@ -252,11 +252,11 @@
     <section id="appSection" class="hidden">
         <nav class="tabs">
             <button class="tab" data-view="dashboard" type="button">Dashboard</button>
+            <button class="tab" data-view="agenda" type="button">📅 Agenda</button>
             <button class="tab" data-view="workers" type="button">Trabajadores</button>
             <button class="tab" data-view="operations" type="button">Operacion</button>
             <button class="tab" data-view="users" type="button">Usuarios</button>
             <button class="tab" data-view="empresa" type="button">🏢 Empresas</button>
-            <button class="tab" data-view="agenda" type="button">📅 Agenda</button>
             <button class="tab" data-view="settings" type="button">⚙️ Configuración</button>
         </nav>
         <nav class="workerFlow view-workers">
