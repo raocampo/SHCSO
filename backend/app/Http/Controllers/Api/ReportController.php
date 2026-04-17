@@ -354,4 +354,112 @@ class ReportController extends Controller
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ])->deleteFileAfterSend(true);
     }
+
+    public function companyDetail(Request $request, int $companyId): JsonResponse
+    {
+        $validated = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to'   => ['nullable', 'date'],
+        ]);
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo   = $validated['date_to']   ?? null;
+
+        // Company info
+        $company = \App\Models\Company::findOrFail($companyId);
+
+        // Worker stats
+        $workerCount = Worker::where('company_id', $companyId)->count();
+
+        // Evaluations with date filter
+        $evalQuery = OccupationalEvaluation::whereHas(
+            'worker', fn ($q) => $q->where('company_id', $companyId)
+        );
+        $this->applyDateRange($evalQuery, $dateFrom, $dateTo);
+
+        $totalEvaluations = (clone $evalQuery)->count();
+
+        // Aptitude breakdown
+        $aptDist = (clone $evalQuery)
+            ->select('medical_aptitude', DB::raw('COUNT(*) as total'))
+            ->groupBy('medical_aptitude')
+            ->pluck('total', 'medical_aptitude');
+
+        // Evaluation type breakdown
+        $evalTypes = (clone $evalQuery)
+            ->select('evaluation_type', DB::raw('COUNT(*) as total'))
+            ->groupBy('evaluation_type')
+            ->pluck('total', 'evaluation_type');
+
+        // Certificates
+        $certQuery = MedicalCertificate::whereHas(
+            'worker', fn ($q) => $q->where('company_id', $companyId)
+        );
+        if ($dateFrom) $certQuery->whereDate('issue_date', '>=', $dateFrom);
+        if ($dateTo)   $certQuery->whereDate('issue_date', '<=', $dateTo);
+        $totalCerts = (clone $certQuery)->count();
+        $expiringCerts = MedicalCertificate::whereHas('worker', fn ($q) => $q->where('company_id', $companyId))
+            ->whereDate('valid_until', '<=', now()->addDays(30))
+            ->whereDate('valid_until', '>=', now())
+            ->count();
+
+        // Accidents
+        $accidents = \App\Models\OccupationalAccident::whereHas(
+            'worker', fn ($q) => $q->where('company_id', $companyId)
+        )->count();
+
+        // Recent evaluations (last 10)
+        $recentEvals = OccupationalEvaluation::with('worker:id,first_name,last_name,document_number')
+            ->whereHas('worker', fn ($q) => $q->where('company_id', $companyId))
+            ->orderByDesc('attention_date')
+            ->limit(10)
+            ->get()
+            ->map(fn ($e) => [
+                'id'              => $e->id,
+                'worker_name'     => trim(($e->worker->first_name ?? '') . ' ' . ($e->worker->last_name ?? '')),
+                'worker_document' => $e->worker->document_number ?? '-',
+                'attention_date'  => $e->attention_date?->format('d/m/Y'),
+                'evaluation_type' => $e->evaluation_type,
+                'medical_aptitude'=> $e->medical_aptitude,
+            ]);
+
+        // Monthly trend (last 6 months)
+        $driver = DB::connection()->getDriverName();
+        $monthExpr = match ($driver) {
+            'sqlite' => "strftime('%Y-%m', attention_date)",
+            'mysql'  => "DATE_FORMAT(attention_date, '%Y-%m')",
+            default  => "TO_CHAR(attention_date, 'YYYY-MM')",
+        };
+        $monthlyTrend = OccupationalEvaluation::selectRaw("{$monthExpr} as month_key, COUNT(*) as total")
+            ->whereHas('worker', fn ($q) => $q->where('company_id', $companyId))
+            ->whereDate('attention_date', '>=', now()->subMonths(6)->startOfMonth())
+            ->groupBy('month_key')
+            ->orderBy('month_key')
+            ->get()
+            ->map(fn ($r) => ['month' => $r->month_key, 'total' => (int) $r->total]);
+
+        return response()->json([
+            'ok'   => true,
+            'data' => [
+                'company'           => [
+                    'id'            => $company->id,
+                    'name'          => $company->business_name,
+                    'ruc'           => $company->ruc,
+                    'ciiu'          => $company->ciiu,
+                    'work_center'   => $company->work_center,
+                    'address'       => $company->address,
+                ],
+                'stats'             => [
+                    'workers'          => $workerCount,
+                    'evaluations'      => $totalEvaluations,
+                    'certificates'     => $totalCerts,
+                    'expiring_certs'   => $expiringCerts,
+                    'accidents'        => $accidents,
+                ],
+                'aptitude_dist'     => $aptDist,
+                'eval_type_dist'    => $evalTypes,
+                'monthly_trend'     => $monthlyTrend,
+                'recent_evals'      => $recentEvals,
+            ],
+        ]);
+    }
 }

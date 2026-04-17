@@ -165,6 +165,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,AUDITOR');
+    Route::get('/reports/company/{companyId}', [ReportController::class, 'companyDetail'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
 
     // Settings / configuration
     Route::get('/settings', [SettingsController::class, 'index']);

@@ -254,6 +254,7 @@
             <button class="tab" data-view="workers" type="button">Trabajadores</button>
             <button class="tab" data-view="operations" type="button">Operacion</button>
             <button class="tab" data-view="users" type="button">Usuarios</button>
+            <button class="tab" data-view="empresa" type="button">🏢 Empresas</button>
             <button class="tab" data-view="agenda" type="button">📅 Agenda</button>
             <button class="tab" data-view="settings" type="button">⚙️ Configuración</button>
         </nav>
@@ -1061,6 +1062,71 @@
     </div>
 </div>
 
+<!-- ─── EMPRESA (PORTAL POR EMPRESA) ─────────────────────────────── -->
+<div class="view-empresa hidden" style="padding:0 8px;">
+
+    <!-- Panel lista de empresas -->
+    <div id="empresaListPanel">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+            <h2 class="section" style="margin:0;flex:1;">🏢 Portal por Empresa</h2>
+            <input id="empresaSearch" type="text" placeholder="Buscar empresa..." style="min-width:200px;max-width:280px;">
+            <input id="empresaFilterFrom" type="date" title="Desde">
+            <input id="empresaFilterTo"   type="date" title="Hasta">
+            <button class="btn accent" type="button" id="empresaFilterBtn">🔍 Aplicar</button>
+        </div>
+        <div id="empresaGrid" class="grid3" style="margin-bottom:1rem;">
+            <div style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1;">Cargando empresas...</div>
+        </div>
+    </div>
+
+    <!-- Panel detalle empresa -->
+    <div id="empresaDetailPanel" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn" type="button" id="empresaBackBtn">← Volver</button>
+            <div>
+                <h2 id="empresaDetailName" class="section" style="margin:0;"></h2>
+                <div id="empresaDetailMeta" style="font-size:.8rem;color:var(--muted);margin-top:2px;"></div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="empresaDetailFrom" type="date" title="Desde">
+                <input id="empresaDetailTo"   type="date" title="Hasta">
+                <button class="btn accent" type="button" id="empresaDetailFilterBtn">🔍 Filtrar</button>
+                <button class="btn" type="button" id="empresaDetailExcelBtn">📥 Excel</button>
+            </div>
+        </div>
+
+        <!-- Stats cards empresa -->
+        <div id="empresaDetailStats" class="stats" style="margin-bottom:1.2rem;"></div>
+
+        <!-- Distribución aptitud + Tendencia mensual -->
+        <div class="grid2" style="margin-bottom:1.2rem;">
+            <article class="card">
+                <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">📊 Distribución de aptitud</h3>
+                <div id="empresaAptitudeDist"></div>
+            </article>
+            <article class="card">
+                <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">📈 Actividad mensual (6m)</h3>
+                <div id="empresaMonthlyBars" class="bars" style="min-height:80px;"></div>
+            </article>
+        </div>
+
+        <!-- Evaluaciones recientes -->
+        <article class="card">
+            <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">📋 Evaluaciones recientes</h3>
+            <div style="overflow-x:auto;">
+                <table class="tableCompact" style="width:100%;">
+                    <thead>
+                        <tr><th>Trabajador</th><th>Doc.</th><th>Fecha</th><th>Tipo</th><th>Aptitud</th></tr>
+                    </thead>
+                    <tbody id="empresaEvalsBody">
+                        <tr><td colspan="5" style="text-align:center;color:var(--muted);">-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</div>
+
 <!-- ─── AGENDA VIEW ──────────────────────────────────────────────── -->
 <div class="view-agenda hidden" style="padding:0 8px;">
 
@@ -1286,7 +1352,7 @@ const refs = {
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
     workerFlowTabs: document.querySelectorAll(".workerFlowTab"), workerStepPanels: document.querySelectorAll("[data-worker-panel]"), workerPanelHosts: document.querySelectorAll("[data-worker-panel-host]"),
     operationFlowTabs: document.querySelectorAll(".operationFlowTab"), operationStepPanels: document.querySelectorAll("[data-operation-panel]"),
-    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"), agendaViews: document.querySelectorAll(".view-agenda"),
+    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"), agendaViews: document.querySelectorAll(".view-agenda"), empresaViews: document.querySelectorAll(".view-empresa"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
@@ -1568,11 +1634,12 @@ function applyResetQueryFromUrl(){
 
 function resolveViewFromPath(){
     const p = window.location.pathname;
-    if(p.startsWith("/sistema/trabajadores")) return "workers";
-    if(p.startsWith("/sistema/operacion")) return "operations";
-    if(p.startsWith("/sistema/usuarios")) return "users";
+    if(p.startsWith("/sistema/trabajadores"))  return "workers";
+    if(p.startsWith("/sistema/operacion"))     return "operations";
+    if(p.startsWith("/sistema/usuarios"))      return "users";
     if(p.startsWith("/sistema/configuracion")) return "settings";
-    if(p.startsWith("/sistema/agenda")) return "agenda";
+    if(p.startsWith("/sistema/agenda"))        return "agenda";
+    if(p.startsWith("/sistema/empresas"))      return "empresa";
     return "dashboard";
 }
 
@@ -1622,18 +1689,20 @@ function setOperationStep(step){
 }
 
 function applyViewVisibility(){
-    const dashboard = state.activeView === "dashboard";
-    const workers = state.activeView === "workers";
+    const dashboard  = state.activeView === "dashboard";
+    const workers    = state.activeView === "workers";
     const operations = state.activeView === "operations";
-    const users = state.activeView === "users" && canManageUsers();
-    const settings = state.activeView === "settings";
-    const agenda = state.activeView === "agenda";
+    const users      = state.activeView === "users" && canManageUsers();
+    const settings   = state.activeView === "settings";
+    const agenda     = state.activeView === "agenda";
+    const empresa    = state.activeView === "empresa";
     refs.dashboardViews.forEach(el => el.classList.toggle("hidden", !dashboard));
     refs.workerViews.forEach(el => el.classList.toggle("hidden", !workers));
     refs.operationViews.forEach(el => el.classList.toggle("hidden", !operations));
     refs.userViews.forEach(el => el.classList.toggle("hidden", !users));
     refs.settingsViews.forEach(el => el.classList.toggle("hidden", !settings));
     refs.agendaViews.forEach(el => el.classList.toggle("hidden", !agenda));
+    refs.empresaViews.forEach(el => el.classList.toggle("hidden", !empresa));
     if(refs.userTab) refs.userTab.classList.toggle("hidden", !canManageUsers());
     refs.tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-view") === state.activeView));
     applyWorkerStepVisibility();
@@ -1647,17 +1716,12 @@ function setView(view, updateHistory=true){
     state.activeView = view;
     applyViewVisibility();
     if(view === "settings") loadSettings();
-    if(view === "agenda") loadAgendaView();
+    if(view === "agenda")   loadAgendaView();
+    if(view === "empresa")  loadEmpresaList();
     if(!updateHistory) return;
-    const target = view === "workers"
-        ? "/sistema/trabajadores"
-        : (view === "operations"
-            ? "/sistema/operacion"
-            : (view === "users"
-                ? "/sistema/usuarios"
-                : (view === "settings"
-                    ? "/sistema/configuracion"
-                    : (view === "agenda" ? "/sistema/agenda" : "/sistema"))));
+    const paths = {workers:"/sistema/trabajadores", operations:"/sistema/operacion", users:"/sistema/usuarios",
+                   settings:"/sistema/configuracion", agenda:"/sistema/agenda", empresa:"/sistema/empresas"};
+    const target = paths[view] || "/sistema";
     if(window.location.pathname !== target) window.history.pushState({view}, "", target);
 }
 
@@ -4445,7 +4509,191 @@ refs.certificatesBody.addEventListener("click", async (e)=>{
 refs.refreshBtn.addEventListener("click", refreshData);
 refs.logoutBtn.addEventListener("click", logout);
 
-/* ─── MI PERFIL MODAL ─── */
+/* ─── PORTAL POR EMPRESA ─── */
+const empresaPortalState = {
+    companies: [],
+    searchTerm: '',
+    dateFrom: '',
+    dateTo: '',
+    selectedCompanyId: null,
+};
+
+const APT_COLORS = {
+    APTO:               { bg:'#d9f7e7', color:'#166534' },
+    APTO_OBSERVACION:   { bg:'#fff4d8', color:'#8a5a00' },
+    APTO_LIMITACIONES:  { bg:'#ffe9d8', color:'#9a3412' },
+    NO_APTO:            { bg:'#ffe0e7', color:'#9f1239' },
+};
+const APT_LABELS = {
+    APTO:'Apto', APTO_OBSERVACION:'Apto c/ observación',
+    APTO_LIMITACIONES:'Apto c/ limitaciones', NO_APTO:'No apto'
+};
+
+async function loadEmpresaList(){
+    try {
+        const q = new URLSearchParams({ limit: 100 });
+        if(empresaPortalState.dateFrom) q.set('date_from', empresaPortalState.dateFrom);
+        if(empresaPortalState.dateTo)   q.set('date_to',   empresaPortalState.dateTo);
+        const res = await api('/api/reports/aptitude-by-company?' + q.toString());
+        empresaPortalState.companies = res.data || [];
+        renderEmpresaGrid();
+        document.getElementById('empresaListPanel').style.display = '';
+        document.getElementById('empresaDetailPanel').style.display = 'none';
+    } catch(e){ showStatus('Error cargando empresas: ' + e.message, 'error'); }
+}
+
+function renderEmpresaGrid(){
+    const search = empresaPortalState.searchTerm.toLowerCase();
+    const grid = document.getElementById('empresaGrid');
+    const filtered = empresaPortalState.companies.filter(c =>
+        !search || c.company_name.toLowerCase().includes(search)
+    );
+    if(!filtered.length){
+        grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1;">Sin empresas registradas.</div>';
+        return;
+    }
+    grid.innerHTML = filtered.map(c => {
+        const apt = c.totals_by_aptitude || {};
+        const aptoN = apt['APTO'] || 0;
+        const noAptoN = apt['NO_APTO'] || 0;
+        const obsN = apt['APTO_OBSERVACION'] || 0;
+        const limN = apt['APTO_LIMITACIONES'] || 0;
+        const total = c.total_evaluations || 0;
+        const pct = (v) => total > 0 ? Math.round(v / total * 100) : 0;
+        return `<article class="card" style="cursor:pointer;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,.12)'" onmouseleave="this.style.boxShadow=''" onclick="openEmpresaDetail(${c.company_id})">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                <div>
+                    <div style="font-weight:700;font-size:.95rem;color:var(--text);">${c.company_name}</div>
+                    <div style="font-size:.75rem;color:var(--muted);">ID: ${c.company_id}</div>
+                </div>
+                <span style="font-size:.8rem;background:#e0e7ff;color:#3730a3;padding:3px 9px;border-radius:99px;">${total} eval.</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-bottom:10px;border-radius:6px;overflow:hidden;height:8px;">
+                ${aptoN ? `<div style="flex:${aptoN};background:#22c55e;" title="Apto: ${aptoN}"></div>` : ''}
+                ${obsN  ? `<div style="flex:${obsN};background:#f59e0b;" title="Obs: ${obsN}"></div>` : ''}
+                ${limN  ? `<div style="flex:${limN};background:#f97316;" title="Lim: ${limN}"></div>` : ''}
+                ${noAptoN ? `<div style="flex:${noAptoN};background:#ef4444;" title="No apto: ${noAptoN}"></div>` : ''}
+                ${!total ? '<div style="flex:1;background:var(--border);"></div>' : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${aptoN ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#d9f7e7;color:#166534;">✅ ${aptoN} (${pct(aptoN)}%)</span>` : ''}
+                ${obsN  ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#fff4d8;color:#8a5a00;">⚠️ ${obsN}</span>` : ''}
+                ${limN  ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#ffe9d8;color:#9a3412;">🔸 ${limN}</span>` : ''}
+                ${noAptoN ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#ffe0e7;color:#9f1239;">❌ ${noAptoN}</span>` : ''}
+            </div>
+            <div style="margin-top:10px;text-align:right;font-size:.75rem;color:var(--muted);">Ver detalle →</div>
+        </article>`;
+    }).join('');
+}
+
+async function openEmpresaDetail(companyId){
+    if(!companyId || companyId === 0) return;
+    empresaPortalState.selectedCompanyId = companyId;
+    document.getElementById('empresaListPanel').style.display   = 'none';
+    document.getElementById('empresaDetailPanel').style.display = '';
+    document.getElementById('empresaEvalsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);">Cargando...</td></tr>';
+    document.getElementById('empresaDetailStats').innerHTML = '<div style="color:var(--muted)">Cargando...</div>';
+    try {
+        const q = new URLSearchParams();
+        const from = document.getElementById('empresaDetailFrom').value;
+        const to   = document.getElementById('empresaDetailTo').value;
+        if(from) q.set('date_from', from);
+        if(to)   q.set('date_to', to);
+        const res = await api(`/api/reports/company/${companyId}?` + q.toString());
+        const d = res.data;
+        // Header
+        document.getElementById('empresaDetailName').textContent = d.company.name;
+        document.getElementById('empresaDetailMeta').textContent =
+            [d.company.ruc && `RUC: ${d.company.ruc}`, d.company.work_center, d.company.address].filter(Boolean).join(' · ');
+        // Stats
+        const s = d.stats || {};
+        document.getElementById('empresaDetailStats').innerHTML = [
+            { label:'Trabajadores',  value: s.workers      || 0, icon:'👷' },
+            { label:'Evaluaciones',  value: s.evaluations  || 0, icon:'📋' },
+            { label:'Certificados',  value: s.certificates || 0, icon:'📄' },
+            { label:'Cert. por vencer', value: s.expiring_certs || 0, icon:'⚠️', warn: s.expiring_certs > 0 },
+            { label:'Accidentes',    value: s.accidents    || 0, icon:'🚨' },
+        ].map(st => `<div class="stat${st.warn ? '" style="border-color:#ef4444' : ''}">
+            <h4>${st.icon} ${st.label}</h4><p>${st.value}</p></div>`).join('');
+        // Aptitude distribution
+        const apt = d.aptitude_dist || {};
+        document.getElementById('empresaAptitudeDist').innerHTML = Object.entries(APT_LABELS).map(([key, label]) => {
+            const n = apt[key] || 0;
+            const total = Object.values(apt).reduce((a,b) => a + b, 0);
+            const pct = total > 0 ? Math.round(n / total * 100) : 0;
+            const c = APT_COLORS[key] || {bg:'#e2e8f0', color:'#64748b'};
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="font-size:.78rem;padding:2px 9px;border-radius:99px;background:${c.bg};color:${c.color};min-width:140px;text-align:center;">${label}</span>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;">
+                    <div style="width:${pct}%;background:${c.color};height:10px;border-radius:4px;transition:width .4s;"></div>
+                </div>
+                <span style="font-size:.78rem;color:var(--muted);min-width:40px;text-align:right;">${n} (${pct}%)</span>
+            </div>`;
+        }).join('') || '<span style="color:var(--muted);font-size:.85rem;">Sin datos</span>';
+        // Monthly trend (bars)
+        const trend = d.monthly_trend || [];
+        const maxT = Math.max(...trend.map(t => t.total), 1);
+        document.getElementById('empresaMonthlyBars').innerHTML = trend.length
+            ? trend.map(t => `<div class="bar" style="--pct:${Math.round(t.total/maxT*100)}%">
+                <span class="barLabel">${t.total}</span>
+                <span class="barMonth">${t.month}</span></div>`).join('')
+            : '<span style="color:var(--muted);font-size:.8rem;">Sin actividad en los últimos 6 meses.</span>';
+        // Recent evaluations table
+        const evals = d.recent_evals || [];
+        document.getElementById('empresaEvalsBody').innerHTML = evals.length
+            ? evals.map(e => {
+                const ac = APT_COLORS[e.medical_aptitude] || {bg:'#e2e8f0', color:'#64748b'};
+                return `<tr>
+                    <td><strong>${e.worker_name}</strong></td>
+                    <td style="font-size:.8rem;">${e.worker_document}</td>
+                    <td style="font-size:.8rem;">${e.attention_date || '-'}</td>
+                    <td style="font-size:.78rem;">${e.evaluation_type || '-'}</td>
+                    <td><span style="font-size:.72rem;padding:2px 8px;border-radius:99px;background:${ac.bg};color:${ac.color};">${APT_LABELS[e.medical_aptitude] || e.medical_aptitude || '-'}</span></td>
+                </tr>`;
+            }).join('')
+            : '<tr><td colspan="5" style="text-align:center;color:var(--muted);">Sin evaluaciones en el período.</td></tr>';
+    } catch(e){ showStatus('Error cargando detalle: ' + e.message, 'error'); }
+}
+
+document.getElementById('empresaBackBtn')?.addEventListener('click', () => {
+    document.getElementById('empresaListPanel').style.display = '';
+    document.getElementById('empresaDetailPanel').style.display = 'none';
+    empresaPortalState.selectedCompanyId = null;
+});
+document.getElementById('empresaFilterBtn')?.addEventListener('click', () => {
+    empresaPortalState.searchTerm = document.getElementById('empresaSearch').value.trim();
+    empresaPortalState.dateFrom   = document.getElementById('empresaFilterFrom').value;
+    empresaPortalState.dateTo     = document.getElementById('empresaFilterTo').value;
+    loadEmpresaList();
+});
+document.getElementById('empresaSearch')?.addEventListener('input', e => {
+    empresaPortalState.searchTerm = e.target.value;
+    renderEmpresaGrid();
+});
+document.getElementById('empresaDetailFilterBtn')?.addEventListener('click', () => {
+    if(empresaPortalState.selectedCompanyId) openEmpresaDetail(empresaPortalState.selectedCompanyId);
+});
+document.getElementById('empresaDetailExcelBtn')?.addEventListener('click', async () => {
+    const id = empresaPortalState.selectedCompanyId;
+    if(!id) return;
+    const token = localStorage.getItem('shcso_token');
+    const from = document.getElementById('empresaDetailFrom').value;
+    const to   = document.getElementById('empresaDetailTo').value;
+    let url = `/api/reports/export-excel?type=evaluations&company_id=${id}`;
+    if(from) url += `&date_from=${from}`;
+    if(to)   url += `&date_to=${to}`;
+    try {
+        const response = await fetch(url, { headers:{ Authorization:`Bearer ${token}` }});
+        if(!response.ok) throw new Error('Error exportando');
+        const blob = await response.blob();
+        const cd = response.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="?([^";\n]+)"?/);
+        const filename = match?.[1] || 'reporte-empresa.xlsx';
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = blobUrl; a.download = filename; a.click();
+        URL.revokeObjectURL(blobUrl);
+    } catch(e){ showStatus('Error: ' + e.message, 'error'); }
+});
 refs.miPerfilBtn.addEventListener("click", () => {
     fillProfessionalFields();
     refs.miPerfilModal.classList.remove("hidden");
