@@ -65,6 +65,25 @@ class CatalogController extends Controller
         return response()->json(['ok' => true, 'data' => $company]);
     }
 
+    public function deleteCompany(Request $request, int $companyId): JsonResponse
+    {
+        $company = Company::findOrFail($companyId);
+
+        // Prevent deletion if company has workers assigned
+        $workerCount = \App\Models\Worker::where('company_id', $companyId)->count();
+        if ($workerCount > 0) {
+            return response()->json([
+                'ok'      => false,
+                'message' => "No se puede eliminar: la empresa tiene {$workerCount} trabajador(es) asignado(s). Reasigne o elimine los trabajadores primero.",
+            ], 422);
+        }
+
+        AuditLogger::log($request->user(), 'DELETE_COMPANY', 'company', (string) $company->id);
+        $company->delete();
+
+        return response()->json(['ok' => true, 'message' => 'Empresa eliminada correctamente.']);
+    }
+
     public function listJobPositions(): JsonResponse
     {
         return response()->json([

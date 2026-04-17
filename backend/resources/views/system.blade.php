@@ -4782,7 +4782,10 @@ function renderEmpresaGrid(){
             </div>
             <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:.75rem;color:var(--muted);">Ver detalle →</span>
-                <button class="btn small" onclick="event.stopPropagation();openEditCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;">✏️</button>
+                <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+                    <button class="btn small" onclick="openEditCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;">✏️</button>
+                    <button class="btn small" onclick="deleteCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;background:#fff0f3;border-color:#fca5a5;color:#b91c1c;">🗑️</button>
+                </div>
             </div>
         </article>`;
     }).join('');
@@ -4946,6 +4949,17 @@ function openEditCompany(id) {
     document.getElementById('companyModalTitle').textContent = '✏️ Editar Empresa';
     document.getElementById('companyFormSubmitBtn').textContent = '💾 Actualizar';
     refs.companyModal.classList.remove('hidden');
+}
+
+async function deleteCompany(id, name) {
+    if (!confirm(`¿Eliminar la empresa "${name}"?\n\nEsta acción no se puede deshacer. Si tiene trabajadores asignados, no se podrá eliminar.`)) return;
+    try {
+        await api('/api/catalog/companies/' + id, { method: 'DELETE' });
+        showStatus('Empresa eliminada correctamente.', 'success');
+        await refreshData();
+    } catch(err) {
+        showStatus(err.message || 'No se pudo eliminar la empresa.', 'error');
+    }
 }
 
 // Company Modal event listeners

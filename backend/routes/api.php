@@ -55,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,RECEPCION');
     Route::put('/catalog/companies/{companyId}', [CatalogController::class, 'updateCompany'])
         ->middleware('role:ADMIN,RECEPCION');
+    Route::delete('/catalog/companies/{companyId}', [CatalogController::class, 'deleteCompany'])
+        ->middleware('role:ADMIN');
     Route::get('/catalog/job-positions', [CatalogController::class, 'listJobPositions']);
     Route::post('/catalog/job-positions', [CatalogController::class, 'createJobPosition'])
         ->middleware('role:ADMIN,RECEPCION');
