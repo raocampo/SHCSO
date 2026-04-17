@@ -1064,6 +1064,26 @@
     </section>
 </div>
 
+<!-- Modal: Nueva/Editar Empresa -->
+<div id="companyModal" class="modalOverlay hidden">
+    <div class="modalBox" style="max-width:520px;">
+        <button class="modalClose" id="companyModalClose" type="button" title="Cerrar">&times;</button>
+        <h3 id="companyModalTitle">🏢 Nueva Empresa</h3>
+        <form id="companyForm" autocomplete="off">
+            <input type="hidden" id="companyFormId" value="">
+            <div class="field"><label>Razón Social <span style="color:var(--error)">*</span></label><input id="companyFormName" name="business_name" type="text" required placeholder="Nombre de la empresa"></div>
+            <div class="field"><label>RUC</label><input id="companyFormRuc" name="ruc" type="text" maxlength="13" placeholder="0999999999001"></div>
+            <div class="field"><label>Centro de Trabajo</label><input id="companyFormWorkCenter" name="work_center" type="text" placeholder="Ej: Planta Norte"></div>
+            <div class="field"><label>Dirección</label><input id="companyFormAddress" name="address" type="text" placeholder="Dirección principal"></div>
+            <div class="field"><label>Código CIIU</label><input id="companyFormCiiu" name="ciiu" type="text" maxlength="12" placeholder="Código actividad económica"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+                <button class="btn accent" type="submit" id="companyFormSubmitBtn">💾 Guardar</button>
+                <button class="btn" type="button" id="companyModalCancel">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal: Mi Perfil -->
 <div id="miPerfilModal" class="modalOverlay hidden">
     <div class="modalBox">
@@ -1089,6 +1109,7 @@
     <div id="empresaListPanel">
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
             <h2 class="section" style="margin:0;flex:1;">🏢 Portal por Empresa</h2>
+            <button class="btn accent" type="button" id="newCompanyBtn">+ Nueva Empresa</button>
             <input id="empresaSearch" type="text" placeholder="Buscar empresa..." style="min-width:200px;max-width:280px;">
             <input id="empresaFilterFrom" type="date" title="Desde">
             <input id="empresaFilterTo"   type="date" title="Hasta">
@@ -1417,7 +1438,8 @@ const refs = {
     loginForm: document.getElementById("loginForm"), loginHint: document.getElementById("loginHint"), firstAdminBox: document.getElementById("firstAdminBox"), firstAdminForm: document.getElementById("firstAdminForm"),
     authRecoveryActions: document.getElementById("authRecoveryActions"), showForgotPasswordBtn: document.getElementById("showForgotPasswordBtn"), showResetPasswordBtn: document.getElementById("showResetPasswordBtn"),
     forgotPasswordBox: document.getElementById("forgotPasswordBox"), forgotPasswordForm: document.getElementById("forgotPasswordForm"), cancelForgotPasswordBtn: document.getElementById("cancelForgotPasswordBtn"),
-    resetPasswordBox: document.getElementById("resetPasswordBox"), resetPasswordForm: document.getElementById("resetPasswordForm"), cancelResetPasswordBtn: document.getElementById("cancelResetPasswordBtn")
+    resetPasswordBox: document.getElementById("resetPasswordBox"), resetPasswordForm: document.getElementById("resetPasswordForm"), cancelResetPasswordBtn: document.getElementById("cancelResetPasswordBtn"),
+    companyModal: document.getElementById('companyModal'), companyForm: document.getElementById('companyForm'), companyFormId: document.getElementById('companyFormId'), newCompanyBtn: document.getElementById('newCompanyBtn')
 };
 let diagnosisSearchTimer = null;
 
@@ -4758,7 +4780,10 @@ function renderEmpresaGrid(){
                 ${limN  ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#ffe9d8;color:#9a3412;">🔸 ${limN}</span>` : ''}
                 ${noAptoN ? `<span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:#ffe0e7;color:#9f1239;">❌ ${noAptoN}</span>` : ''}
             </div>
-            <div style="margin-top:10px;text-align:right;font-size:.75rem;color:var(--muted);">Ver detalle →</div>
+            <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:.75rem;color:var(--muted);">Ver detalle →</span>
+                <button class="btn small" onclick="event.stopPropagation();openEditCompany(${c.company_id},'${(c.company_name||'').replace(/'/g,'\\'')}')" style="font-size:.75rem;padding:4px 8px;">✏️</button>
+            </div>
         </article>`;
     }).join('');
 }
@@ -4898,6 +4923,61 @@ refs.miPerfilForm.addEventListener("submit", async (e) => {
         refs.miPerfilModal.classList.add("hidden");
         status(`Perfil actualizado: ${state.user.full_name}`, "ok");
     } catch(err){ status(err.message || "No se pudo actualizar el perfil.", "error"); }
+});
+
+/* ─── COMPANY CRUD ─── */
+function openNewCompanyModal() {
+    refs.companyFormId.value = '';
+    refs.companyForm.reset();
+    document.getElementById('companyModalTitle').textContent = '🏢 Nueva Empresa';
+    document.getElementById('companyFormSubmitBtn').textContent = '💾 Guardar';
+    refs.companyModal.classList.remove('hidden');
+}
+
+function openEditCompany(id) {
+    const co = state.companies.find(c => String(c.id) === String(id));
+    if (!co) return;
+    refs.companyFormId.value = co.id;
+    document.getElementById('companyFormName').value = co.business_name || '';
+    document.getElementById('companyFormRuc').value = co.ruc || '';
+    document.getElementById('companyFormWorkCenter').value = co.work_center || '';
+    document.getElementById('companyFormAddress').value = co.address || '';
+    document.getElementById('companyFormCiiu').value = co.ciiu || '';
+    document.getElementById('companyModalTitle').textContent = '✏️ Editar Empresa';
+    document.getElementById('companyFormSubmitBtn').textContent = '💾 Actualizar';
+    refs.companyModal.classList.remove('hidden');
+}
+
+// Company Modal event listeners
+refs.newCompanyBtn.addEventListener('click', openNewCompanyModal);
+refs.companyModal.addEventListener('click', (e) => { if (e.target === refs.companyModal) refs.companyModal.classList.add('hidden'); });
+document.getElementById('companyModalClose').addEventListener('click', () => refs.companyModal.classList.add('hidden'));
+document.getElementById('companyModalCancel').addEventListener('click', () => refs.companyModal.classList.add('hidden'));
+
+refs.companyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(refs.companyForm);
+    const id = refs.companyFormId.value;
+    const body = {
+        business_name: fd.get('business_name'),
+        ruc: fd.get('ruc') || null,
+        work_center: fd.get('work_center') || null,
+        address: fd.get('address') || null,
+        ciiu: fd.get('ciiu') || null,
+    };
+    try {
+        if (id) {
+            await api('/api/catalog/companies/' + id, { method: 'PUT', body });
+            showStatus('Empresa actualizada correctamente.', 'success');
+        } else {
+            await api('/api/catalog/companies', { method: 'POST', body });
+            showStatus('Empresa creada correctamente.', 'success');
+        }
+        refs.companyModal.classList.add('hidden');
+        await refreshData();
+    } catch(err) {
+        showStatus(err.message || 'Error al guardar empresa.', 'error');
+    }
 });
 
 /* ─── SOAP HELP MODAL ─── */

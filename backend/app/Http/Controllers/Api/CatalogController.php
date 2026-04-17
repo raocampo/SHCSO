@@ -46,6 +46,25 @@ class CatalogController extends Controller
         ], 201);
     }
 
+    public function updateCompany(Request $request, int $companyId): JsonResponse
+    {
+        $company = Company::findOrFail($companyId);
+
+        $validated = $request->validate([
+            'ruc'           => ['nullable', 'string', 'max:13', 'unique:companies,ruc,' . $companyId],
+            'ciiu'          => ['nullable', 'string', 'max:12'],
+            'business_name' => ['required', 'string', 'min:3', 'max:180'],
+            'work_center'   => ['nullable', 'string', 'max:180'],
+            'address'       => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $company->update($validated);
+
+        AuditLogger::log($request->user(), 'UPDATE_COMPANY', 'company', (string) $company->id);
+
+        return response()->json(['ok' => true, 'data' => $company]);
+    }
+
     public function listJobPositions(): JsonResponse
     {
         return response()->json([
