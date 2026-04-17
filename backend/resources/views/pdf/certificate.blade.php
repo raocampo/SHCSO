@@ -309,8 +309,20 @@
     </table>
 
     <div class="foot">
-        {{ $org['footer_note'] ?? 'Documento confidencial de uso medico ocupacional.' }}<br>
-        Emitido por {{ $org['name'] ?? 'SHCSO' }}.
+        <table style="width:100%;">
+            <tr>
+                <td style="vertical-align:top;width:80%;">
+                    {{ $org['footer_note'] ?? 'Documento confidencial de uso medico ocupacional.' }}<br>
+                    Emitido por {{ $org['name'] ?? 'SHCSO' }}.
+                </td>
+                @if(!empty($qr_data_uri))
+                <td style="vertical-align:top;text-align:right;width:20%;">
+                    <img src="{{ $qr_data_uri }}" alt="QR verificacion" style="width:62px;height:62px;border:1px solid #e2e8f0;">
+                    <div style="font-size:7px;color:#94a3b8;text-align:center;margin-top:2px;">Verificacion</div>
+                </td>
+                @endif
+            </tr>
+        </table>
     </div>
 </div>
 </body>

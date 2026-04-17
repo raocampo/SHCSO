@@ -81,6 +81,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION');
     Route::get('/workers/{workerId}/history', [WorkerController::class, 'history'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,RECEPCION,AUDITOR');
+    Route::get('/workers/{workerId}/history-pdf', [WorkerController::class, 'historyPdf'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/workers/{workerId}/evolutions', [ClinicalEvolutionController::class, 'index'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::post('/workers/{workerId}/evolutions', [ClinicalEvolutionController::class, 'store'])

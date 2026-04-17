@@ -325,6 +325,17 @@
             </article>
         </div>
 
+        <!-- Widget: Citas de hoy -->
+        <div class="view-dashboard" style="margin-bottom:1rem;">
+            <article class="card">
+                <h2 class="section">📅 Citas de hoy
+                    <span id="todayApptsCount" class="sectionBadge">0</span>
+                </h2>
+                <div id="todayApptsList" style="font-size:.84rem;"></div>
+                <p id="todayApptsEmpty" class="hint">Sin citas programadas para hoy.</p>
+            </article>
+        </div>
+
         <div class="grid3" data-worker-panel-host>
             <article class="card view-workers workerStepPanel workerManagePanel" data-worker-panel="manage">
                 <h2 class="section">Nuevo trabajador y ficha/edicion</h2>
@@ -545,7 +556,9 @@
         </article>
 
         <article class="card view-workers workerStepPanel" data-worker-panel="history">
-            <h2 class="section">Historial clinico del trabajador</h2>
+            <h2 class="section">Historial clinico del trabajador
+                <button id="workerHistoryPdfBtn" class="btn small" type="button" style="float:right;font-size:.78rem;" title="Descargar historia clínica completa en PDF">📄 HC PDF</button>
+            </h2>
             <div id="workerHistoryEval" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
             <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
             <div id="workerHistoryCert" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
@@ -1335,7 +1348,7 @@
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
-    selectedWorkerId:null, selectedWorkerHistory:null, selectedWorkerEvolutions:[], activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"",
+    selectedWorkerId:null, selectedWorkerName:null, selectedWorkerHistory:null, selectedWorkerEvolutions:[], activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     consultation:{ worker_search:"", diagnosis_results:[], selected_diagnoses:[], prescriptions:[] },
     pagination:{
@@ -1355,6 +1368,7 @@ const refs = {
     operationFlowTabs: document.querySelectorAll(".operationFlowTab"), operationStepPanels: document.querySelectorAll("[data-operation-panel]"),
     dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"), agendaViews: document.querySelectorAll(".view-agenda"), empresaViews: document.querySelectorAll(".view-empresa"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
+    todayApptsList: document.getElementById("todayApptsList"), todayApptsCount: document.getElementById("todayApptsCount"), todayApptsEmpty: document.getElementById("todayApptsEmpty"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
     workersPrevBtn: document.getElementById("workersPrevBtn"), workersNextBtn: document.getElementById("workersNextBtn"), workersPageInfo: document.getElementById("workersPageInfo"), workersExportBtn: document.getElementById("workersExportBtn"),
@@ -1365,7 +1379,7 @@ const refs = {
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
     workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
-    workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"),
+    workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerHistoryPdfBtn: document.getElementById("workerHistoryPdfBtn"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
     workerPrescriptionsList: document.getElementById("workerPrescriptionsList"), prescriptionForm: document.getElementById("prescriptionForm"), rxEvaluation: document.getElementById("rxEvaluation"), rxGeneralNotes: document.getElementById("rxGeneralNotes"), rxMedLines: document.getElementById("rxMedLines"), rxAddMedBtn: document.getElementById("rxAddMedBtn"), rxSubmitBtn: document.getElementById("rxSubmitBtn"), rxCancelBtn: document.getElementById("rxCancelBtn"), rxEditId: document.getElementById("rxEditId"),
     // Tab 6 — Estudios Médicos
@@ -1801,6 +1815,9 @@ async function loadWorkerHistory(workerId){
     const res = await api(`/api/workers/${workerId}/history`);
     state.selectedWorkerId = workerId;
     state.selectedWorkerHistory = res.data;
+    // Store worker name for PDF filename
+    const w = res.data?.worker;
+    if(w) state.selectedWorkerName = `${w.last_name||''}-${w.first_name||''}`.replace(/\s+/g,'').substring(0,30);
 }
 
 function renderStats(){
@@ -4030,6 +4047,43 @@ if(xlsExportBtn){
 
 // Load alerts on init
 loadExpiringAlerts();
+loadTodayAppts();
+
+/* ─── CITAS DE HOY (DASHBOARD WIDGET) ─── */
+async function loadTodayAppts(){
+    try{
+        const res = await api("/api/appointments/today");
+        const list = (res.data || []);
+        if(!refs.todayApptsList) return;
+        refs.todayApptsCount.textContent = list.length;
+        if(!list.length){
+            refs.todayApptsList.innerHTML = "";
+            refs.todayApptsEmpty.style.display = "";
+            return;
+        }
+        refs.todayApptsEmpty.style.display = "none";
+        const statusColor = { PROGRAMADA:'#1565c0', CONFIRMADA:'#2e7d32', CANCELADA:'#e53935', COMPLETADA:'#546e7a', EN_CURSO:'#f57c00' };
+        refs.todayApptsList.innerHTML = `
+        <table class="tableCompact" style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+                <th>Hora</th><th>Trabajador</th><th>Tipo</th><th>Estado</th><th>Motivo</th>
+            </tr></thead>
+            <tbody>
+            ${list.map(a => {
+                const hour = a.scheduled_at ? a.scheduled_at.substring(11,16) : '—';
+                const col  = statusColor[a.status] || '#546e7a';
+                return `<tr>
+                    <td style="font-weight:700;">${hour}</td>
+                    <td>${e(a.worker_name || '—')}</td>
+                    <td>${e(a.appointment_type || '—')}</td>
+                    <td style="color:${col};font-weight:600;">${e(a.status)}</td>
+                    <td>${e(a.reason || '—')}</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+    } catch(err){ console.warn("No se pudieron cargar citas de hoy:", err.message); }
+}
 
 /* ─── CONFIGURACIÓN DEL SISTEMA ─── */
 let _settingsLoaded = false;
@@ -4472,6 +4526,22 @@ refs.workerHistoryEval.addEventListener("click", async (e) => {
         status("Adjunto descargado.", "ok");
     } catch(err){ status(err.message || "No se pudo descargar adjunto.", "error"); }
 });
+
+// HC PDF button
+if(refs.workerHistoryPdfBtn){
+    refs.workerHistoryPdfBtn.addEventListener("click", async () => {
+        const wid = state.selectedWorkerId;
+        if(!wid){ status("Selecciona un trabajador primero.", "warn"); return; }
+        const wname = state.selectedWorkerName || wid.substring(0,8);
+        refs.workerHistoryPdfBtn.disabled = true;
+        refs.workerHistoryPdfBtn.textContent = "⏳";
+        try{
+            await downloadWithToken(`/api/workers/${wid}/history-pdf`, `HC-${wname}.pdf`);
+            status("Historia clínica PDF descargada.", "ok");
+        } catch(err){ status(err.message || "Error generando PDF.", "error"); }
+        finally{ refs.workerHistoryPdfBtn.disabled = false; refs.workerHistoryPdfBtn.textContent = "📄 HC PDF"; }
+    });
+}
 
 refs.certificatesBody.addEventListener("click", async (e)=>{
     const b = e.target.closest("button[data-act]"); if(!b) return;

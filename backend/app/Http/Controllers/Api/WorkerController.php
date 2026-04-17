@@ -8,10 +8,12 @@ use App\Models\OccupationalEvaluation;
 use App\Models\Worker;
 use App\Models\WorkerClinicalHistory;
 use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 
 class WorkerController extends Controller
 {
@@ -338,5 +340,55 @@ class WorkerController extends Controller
             });
 
         return response()->json(['ok' => true, 'data' => $attachments]);
+    }
+
+    public function historyPdf(string $workerId): Response
+    {
+        $worker = Worker::query()
+            ->with(['company:id,business_name,ruc', 'jobPosition:id,name'])
+            ->findOrFail($workerId);
+
+        $clinicalHistory = WorkerClinicalHistory::query()
+            ->where('worker_id', $workerId)
+            ->first();
+
+        $evaluations = OccupationalEvaluation::query()
+            ->with([
+                'diagnoses.diagnosisCatalog:code,description',
+                'prescriptions:id,evaluation_id,medication,dosage,frequency,duration,indications',
+            ])
+            ->where('worker_id', $workerId)
+            ->orderByDesc('attention_date')
+            ->get();
+
+        $certificates = MedicalCertificate::query()
+            ->where('worker_id', $workerId)
+            ->orderByDesc('issue_date')
+            ->get();
+
+        $vaccinations = \App\Models\WorkerVaccination::query()
+            ->where('worker_id', $workerId)
+            ->orderByDesc('vaccination_date')
+            ->get();
+
+        $accidents = \App\Models\OccupationalAccident::query()
+            ->where('worker_id', $workerId)
+            ->orderByDesc('accident_date')
+            ->get();
+
+        $institution = \App\Models\SystemSetting::institutionConfig();
+
+        $pdf = Pdf::loadView('pdf.worker-history', compact(
+            'worker',
+            'clinicalHistory',
+            'evaluations',
+            'certificates',
+            'vaccinations',
+            'accidents',
+            'institution'
+        ))->setPaper('a4', 'portrait');
+
+        $filename = 'HC-' . strtoupper(substr($workerId, 0, 8)) . '.pdf';
+        return $pdf->download($filename);
     }
 }
