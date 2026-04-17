@@ -173,7 +173,7 @@ class AccidentController extends Controller
                 'name' => $accident->reportedBy?->name ?? 'MÉDICO OCUPACIONAL',
                 'code' => $accident->reportedBy?->professional_code ?? '',
             ],
-            'config'  => config('shcso', []),
+            'config'  => \App\Models\SystemSetting::institutionConfig(),
             'fecha'   => now()->format('d/m/Y'),
         ]);
 

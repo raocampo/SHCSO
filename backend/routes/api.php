@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ClinicalEvolutionController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\ExamOrderController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VaccinationController;
 use App\Http\Controllers\Api\WorkerController;
@@ -163,4 +164,13 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,ENFERMERIA,AUDITOR');
     Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL,AUDITOR');
+
+    // Settings / configuration
+    Route::get('/settings', [SettingsController::class, 'index']);
+    Route::put('/settings', [SettingsController::class, 'update'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+    Route::post('/settings/upload-image/{type}', [SettingsController::class, 'uploadImage'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+    Route::delete('/settings/image/{type}', [SettingsController::class, 'deleteImage'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
 });

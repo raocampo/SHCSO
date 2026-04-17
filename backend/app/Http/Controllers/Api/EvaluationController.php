@@ -9,6 +9,7 @@ use App\Models\EvaluationAttachment;
 use App\Models\EvaluationDiagnosis;
 use App\Models\EvaluationPrescription;
 use App\Models\OccupationalEvaluation;
+use App\Models\SystemSetting;
 use App\Services\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -386,16 +387,7 @@ class EvaluationController extends Controller
             ->map(fn ($d) => $d->diagnosis_code . ($d->diagnosisCatalog ? ' - ' . $d->diagnosisCatalog->description : ''))
             ->take(3)->implode('; ');
 
-        $config = [
-            'name'           => config('shcso.institution.name'),
-            'subtitle'       => config('shcso.institution.subtitle'),
-            'city'           => config('shcso.institution.city'),
-            'logo_path'      => config('shcso.pdf_certificate.logo_path'),
-            'signature_path' => config('shcso.pdf_certificate.signature_path'),
-            'signature_name' => config('shcso.pdf_certificate.signature_name'),
-            'signature_title'=> config('shcso.pdf_certificate.signature_title'),
-            'footer_note'    => config('shcso.pdf_certificate.footer_note'),
-        ];
+        $config = SystemSetting::institutionConfig();
 
         $pdf = Pdf::loadView('pdf.prescription', [
             'config'            => $config,

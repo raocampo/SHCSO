@@ -254,6 +254,7 @@
             <button class="tab" data-view="workers" type="button">Trabajadores</button>
             <button class="tab" data-view="operations" type="button">Operacion</button>
             <button class="tab" data-view="users" type="button">Usuarios</button>
+            <button class="tab" data-view="settings" type="button">⚙️ Configuración</button>
         </nav>
         <nav class="workerFlow view-workers">
             <button class="workerFlowTab active" data-worker-step="recent" type="button">1. Trabajadores recientes</button>
@@ -980,6 +981,7 @@
                 </div>
             </div>
         </div>
+        <article class="card view-operations operationCard operationStepPanel" data-operation-panel="certificates">
             <h2 class="section">Certificados recientes <span class="sectionBadge">documental</span></h2>
             <form id="certificateFilterForm" class="toolbar">
                 <div class="field"><label>Aptitud</label><select name="medical_aptitude"><option value="">Todas</option><option>APTO</option><option>APTO_OBSERVACION</option><option>APTO_LIMITACIONES</option><option>NO_APTO</option></select></div>
@@ -1058,6 +1060,72 @@
     </div>
 </div>
 
+<!-- ─── SETTINGS VIEW ─────────────────────────────────────────────── -->
+<div class="view-settings hidden" style="padding:0 8px;">
+
+    <article class="card view-settings" style="margin-bottom:1.5rem;">
+        <h2 class="section">🏥 Datos de la Institución</h2>
+        <form id="settingsForm" style="display:grid;gap:12px;max-width:600px;">
+            <div class="field"><label>Nombre de la institución</label><input id="cfgInstitutionName" type="text" placeholder="Ej: Clínica Salud Ocupacional"></div>
+            <div class="field"><label>Subtítulo / especialidad</label><input id="cfgInstitutionSubtitle" type="text" placeholder="Ej: Medicina Ocupacional y Salud Laboral"></div>
+            <div class="field"><label>Ciudad</label><input id="cfgInstitutionCity" type="text" placeholder="Ej: Quito – Ecuador"></div>
+            <div class="field"><label>Nota al pie de PDFs</label><input id="cfgFooterNote" type="text" placeholder="Ej: Documento confidencial de uso médico."></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:4px 0;">
+            <h3 style="font-size:.9rem;font-weight:600;margin:0;">Médico responsable</h3>
+            <div class="field"><label>Nombre del médico (firma)</label><input id="cfgSignatureName" type="text" placeholder="Ej: Dra. María García López"></div>
+            <div class="field"><label>Título / cargo</label><input id="cfgSignatureTitle" type="text" placeholder="Ej: Médico Ocupacional - Responsable de SSO"></div>
+            <div class="field"><label>Código profesional</label><input id="cfgProfessionalCode" type="text" placeholder="Ej: MED-12345"></div>
+            <div class="field"><label>Tratamiento (Dr./Dra.)</label><input id="cfgProfessionalTitle" type="text" placeholder="Dr./Dra."></div>
+            <button class="btn accent" type="submit" style="width:fit-content;">💾 Guardar configuración</button>
+        </form>
+    </article>
+
+    <div class="grid3 view-settings" style="margin-bottom:1.5rem;">
+        <!-- Logo -->
+        <article class="card">
+            <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">🖼 Logo institucional</h3>
+            <div id="logoPreview" style="min-height:80px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:12px;background:var(--bg);">
+                <span style="color:var(--muted);font-size:.8rem;">Sin logo</span>
+            </div>
+            <input id="logoFileInput" type="file" accept="image/*" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn" type="button" onclick="document.getElementById('logoFileInput').click()">📂 Seleccionar</button>
+                <button class="btn accent" type="button" id="logoUploadBtn">⬆️ Subir logo</button>
+                <button class="btn danger" type="button" id="logoDeleteBtn">🗑</button>
+            </div>
+        </article>
+
+        <!-- Firma -->
+        <article class="card">
+            <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">✍️ Firma del médico</h3>
+            <div id="signaturePreview" style="min-height:80px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:12px;background:var(--bg);">
+                <span style="color:var(--muted);font-size:.8rem;">Sin firma</span>
+            </div>
+            <input id="signatureFileInput" type="file" accept="image/*" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn" type="button" onclick="document.getElementById('signatureFileInput').click()">📂 Seleccionar</button>
+                <button class="btn accent" type="button" id="signatureUploadBtn">⬆️ Subir firma</button>
+                <button class="btn danger" type="button" id="signatureDeleteBtn">🗑</button>
+            </div>
+        </article>
+
+        <!-- Sello -->
+        <article class="card">
+            <h3 style="font-size:.9rem;font-weight:600;margin:0 0 12px;">🔏 Sello del médico</h3>
+            <div id="sealPreview" style="min-height:80px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:8px;margin-bottom:12px;background:var(--bg);">
+                <span style="color:var(--muted);font-size:.8rem;">Sin sello</span>
+            </div>
+            <input id="sealFileInput" type="file" accept="image/*" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn" type="button" onclick="document.getElementById('sealFileInput').click()">📂 Seleccionar</button>
+                <button class="btn accent" type="button" id="sealUploadBtn">⬆️ Subir sello</button>
+                <button class="btn danger" type="button" id="sealDeleteBtn">🗑</button>
+            </div>
+        </article>
+    </div>
+
+</div>
+
 <!-- Modal: Explicacion SOAP -->
 <div id="soapHelpModal" class="modalOverlay hidden">
     <div class="modalBox">
@@ -1107,7 +1175,7 @@ const refs = {
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
     workerFlowTabs: document.querySelectorAll(".workerFlowTab"), workerStepPanels: document.querySelectorAll("[data-worker-panel]"), workerPanelHosts: document.querySelectorAll("[data-worker-panel-host]"),
     operationFlowTabs: document.querySelectorAll(".operationFlowTab"), operationStepPanels: document.querySelectorAll("[data-operation-panel]"),
-    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"),
+    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
@@ -1392,6 +1460,7 @@ function resolveViewFromPath(){
     if(p.startsWith("/sistema/trabajadores")) return "workers";
     if(p.startsWith("/sistema/operacion")) return "operations";
     if(p.startsWith("/sistema/usuarios")) return "users";
+    if(p.startsWith("/sistema/configuracion")) return "settings";
     return "dashboard";
 }
 
@@ -1445,10 +1514,12 @@ function applyViewVisibility(){
     const workers = state.activeView === "workers";
     const operations = state.activeView === "operations";
     const users = state.activeView === "users" && canManageUsers();
+    const settings = state.activeView === "settings";
     refs.dashboardViews.forEach(el => el.classList.toggle("hidden", !dashboard));
     refs.workerViews.forEach(el => el.classList.toggle("hidden", !workers));
     refs.operationViews.forEach(el => el.classList.toggle("hidden", !operations));
     refs.userViews.forEach(el => el.classList.toggle("hidden", !users));
+    refs.settingsViews.forEach(el => el.classList.toggle("hidden", !settings));
     if(refs.userTab) refs.userTab.classList.toggle("hidden", !canManageUsers());
     refs.tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-view") === state.activeView));
     applyWorkerStepVisibility();
@@ -1461,12 +1532,15 @@ function setView(view, updateHistory=true){
     }
     state.activeView = view;
     applyViewVisibility();
+    if(view === "settings") loadSettings();
     if(!updateHistory) return;
     const target = view === "workers"
         ? "/sistema/trabajadores"
         : (view === "operations"
             ? "/sistema/operacion"
-            : (view === "users" ? "/sistema/usuarios" : "/sistema"));
+            : (view === "users"
+                ? "/sistema/usuarios"
+                : (view === "settings" ? "/sistema/configuracion" : "/sistema")));
     if(window.location.pathname !== target) window.history.pushState({view}, "", target);
 }
 
@@ -3774,6 +3848,87 @@ if(xlsExportBtn){
 
 // Load alerts on init
 loadExpiringAlerts();
+
+/* ─── CONFIGURACIÓN DEL SISTEMA ─── */
+let _settingsLoaded = false;
+async function loadSettings(){
+    if(_settingsLoaded) return;
+    try{
+        const res = await api("/api/settings");
+        const d = res.data || {};
+        document.getElementById("cfgInstitutionName").value    = d.institution_name     || "";
+        document.getElementById("cfgInstitutionSubtitle").value= d.institution_subtitle || "";
+        document.getElementById("cfgInstitutionCity").value    = d.institution_city     || "";
+        document.getElementById("cfgFooterNote").value         = d.footer_note          || "";
+        document.getElementById("cfgSignatureName").value      = d.signature_name       || "";
+        document.getElementById("cfgSignatureTitle").value     = d.signature_title      || "";
+        document.getElementById("cfgProfessionalCode").value   = d.professional_code    || "";
+        document.getElementById("cfgProfessionalTitle").value  = d.professional_title   || "";
+        renderSettingsImagePreview("logo",      d.logo_url);
+        renderSettingsImagePreview("signature", d.signature_url);
+        renderSettingsImagePreview("seal",      d.seal_url);
+        _settingsLoaded = true;
+    } catch(err){ showStatus("Error cargando configuración: " + err.message, "error"); }
+}
+
+function renderSettingsImagePreview(type, url){
+    const el = document.getElementById(`${type}Preview`);
+    if(!el) return;
+    if(url){
+        el.innerHTML = `<img src="${url}" alt="${type}" style="max-height:80px;max-width:100%;border-radius:6px;object-fit:contain;">`;
+    } else {
+        el.innerHTML = `<span style="color:var(--muted);font-size:.8rem;">Sin ${type}</span>`;
+    }
+}
+
+async function uploadSettingImage(type){
+    const input = document.getElementById(`${type}FileInput`);
+    if(!input?.files?.length){ showStatus("Selecciona un archivo primero.", "error"); return; }
+    const form = new FormData();
+    form.append("image", input.files[0]);
+    try {
+        const res = await api(`/api/settings/upload-image/${type}`, {method:"POST", body:form, form:true});
+        renderSettingsImagePreview(type, res.url);
+        _settingsLoaded = false;
+        showStatus(`${type.charAt(0).toUpperCase()+type.slice(1)} actualizado correctamente.`, "success");
+    } catch(err){ showStatus("Error subiendo imagen: " + err.message, "error"); }
+}
+
+async function deleteSettingImage(type){
+    if(!confirm(`¿Eliminar ${type}?`)) return;
+    try {
+        await api(`/api/settings/image/${type}`, {method:"DELETE"});
+        renderSettingsImagePreview(type, null);
+        _settingsLoaded = false;
+        showStatus(`${type} eliminado.`, "success");
+    } catch(err){ showStatus("Error eliminando imagen: " + err.message, "error"); }
+}
+
+document.getElementById("settingsForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const body = {
+        institution_name:      document.getElementById("cfgInstitutionName").value.trim(),
+        institution_subtitle:  document.getElementById("cfgInstitutionSubtitle").value.trim(),
+        institution_city:      document.getElementById("cfgInstitutionCity").value.trim(),
+        footer_note:           document.getElementById("cfgFooterNote").value.trim(),
+        signature_name:        document.getElementById("cfgSignatureName").value.trim(),
+        signature_title:       document.getElementById("cfgSignatureTitle").value.trim(),
+        professional_code:     document.getElementById("cfgProfessionalCode").value.trim(),
+        professional_title:    document.getElementById("cfgProfessionalTitle").value.trim(),
+    };
+    try {
+        await api("/api/settings", {method:"PUT", body});
+        _settingsLoaded = false;
+        showStatus("✅ Configuración guardada correctamente.", "success");
+    } catch(err){ showStatus("Error: " + err.message, "error"); }
+});
+
+document.getElementById("logoUploadBtn")?.addEventListener("click", () => uploadSettingImage("logo"));
+document.getElementById("signatureUploadBtn")?.addEventListener("click", () => uploadSettingImage("signature"));
+document.getElementById("sealUploadBtn")?.addEventListener("click", () => uploadSettingImage("seal"));
+document.getElementById("logoDeleteBtn")?.addEventListener("click", () => deleteSettingImage("logo"));
+document.getElementById("signatureDeleteBtn")?.addEventListener("click", () => deleteSettingImage("signature"));
+document.getElementById("sealDeleteBtn")?.addEventListener("click", () => deleteSettingImage("seal"));
 
 refs.workersPrevBtn.addEventListener("click", async () => {
     if(!state.pagination.workers.has_prev) return;

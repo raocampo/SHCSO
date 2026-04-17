@@ -155,17 +155,7 @@ class CertificateController extends Controller
 
     private function certificateInstitutionData(): array
     {
-        return [
-            'name' => config('shcso.institution.name'),
-            'subtitle' => config('shcso.institution.subtitle'),
-            'city' => config('shcso.institution.city'),
-            'footer_note' => config('shcso.pdf_certificate.footer_note'),
-            'signature_name' => config('shcso.pdf_certificate.signature_name'),
-            'signature_title' => config('shcso.pdf_certificate.signature_title'),
-            'logo_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.logo_path')),
-            'seal_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.seal_path')),
-            'signature_path' => $this->resolvePublicAssetPath(config('shcso.pdf_certificate.signature_path')),
-        ];
+        return \App\Models\SystemSetting::institutionConfig();
     }
 
     private function ensurePdfGenerated(MedicalCertificate $certificate): string
