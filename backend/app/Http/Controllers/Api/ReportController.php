@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use App\Models\MedicalCertificate;
+use App\Models\OccupationalAccident;
 use App\Models\OccupationalEvaluation;
 use App\Models\Worker;
 use Illuminate\Http\JsonResponse;
@@ -58,14 +60,31 @@ class ReportController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        // Stats adicionales para el dashboard
+        $todayAppts = \App\Models\Appointment::query()
+            ->whereDate('scheduled_at', today())
+            ->count();
+
+        $thisMonthEvals = OccupationalEvaluation::query()
+            ->whereYear('attention_date', now()->year)
+            ->whereMonth('attention_date', now()->month)
+            ->count();
+
+        $thisYearAccidents = OccupationalAccident::query()
+            ->whereYear('accident_date', now()->year)
+            ->count();
+
         return response()->json([
             'ok' => true,
             'data' => [
                 'totals' => [
-                    'workers' => $workersCount,
-                    'evaluations' => $evaluationsCount,
-                    'certificates' => $certificatesCount,
-                    'pending_certificates' => $pendingCertificates,
+                    'workers'             => $workersCount,
+                    'evaluations'         => $evaluationsCount,
+                    'certificates'        => $certificatesCount,
+                    'pending_certificates'=> $pendingCertificates,
+                    'today_appointments'  => $todayAppts,
+                    'month_evaluations'   => $thisMonthEvals,
+                    'year_accidents'      => $thisYearAccidents,
                 ],
                 'aptitude_distribution' => $aptitudeDistribution,
             ],

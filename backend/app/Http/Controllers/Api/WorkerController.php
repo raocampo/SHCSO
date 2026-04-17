@@ -25,22 +25,27 @@ class WorkerController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'q' => ['nullable', 'string', 'max:120'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'q'          => ['nullable', 'string', 'max:120'],
+            'company_id' => ['nullable', 'integer', 'min:1'],
+            'page'       => ['nullable', 'integer', 'min:1'],
+            'per_page'   => ['nullable', 'integer', 'min:1', 'max:100'],
+            'limit'      => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = trim((string) ($validated['q'] ?? ''));
-        $perPage = (int) ($validated['per_page'] ?? $validated['limit'] ?? 20);
-        $page = (int) ($validated['page'] ?? 1);
+        $query     = trim((string) ($validated['q'] ?? ''));
+        $companyId = $validated['company_id'] ?? null;
+        $perPage   = (int) ($validated['per_page'] ?? $validated['limit'] ?? 20);
+        $page      = (int) ($validated['page'] ?? 1);
 
         $workersQuery = Worker::query()
             ->with(['company:id,business_name', 'jobPosition:id,name'])
             ->when($query !== '', function ($builder) use ($query) {
-                $builder->where('document_number', 'like', "%{$query}%")
-                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
+                $builder->where(function ($q) use ($query) {
+                    $q->where('document_number', 'like', "%{$query}%")
+                      ->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"]);
+                });
             })
+            ->when($companyId !== null, fn ($b) => $b->where('company_id', $companyId))
             ->latest();
 
         $total = (clone $workersQuery)->count();
@@ -54,12 +59,12 @@ class WorkerController extends Controller
             'ok' => true,
             'data' => $workers,
             'meta' => [
-                'page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
+                'page'        => $page,
+                'per_page'    => $perPage,
+                'total'       => $total,
                 'total_pages' => $totalPages,
-                'has_next' => $page < $totalPages,
-                'has_prev' => $page > 1,
+                'has_next'    => $page < $totalPages,
+                'has_prev'    => $page > 1,
             ],
         ]);
     }

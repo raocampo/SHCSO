@@ -479,6 +479,11 @@
                 <h2 class="section">Trabajadores recientes</h2>
                 <div class="toolbar compact">
                     <div class="field"><label>Buscar</label><input id="workerSearchInput" placeholder="Documento o nombre"></div>
+                    <div class="field"><label>Empresa</label>
+                        <select id="workerCompanyFilter" style="min-width:140px;">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
                     <button id="workerSearchBtn" class="btn" type="button">Buscar</button>
                     <button id="workersExportBtn" class="btn" type="button">Exportar CSV</button>
                 </div>
@@ -1271,6 +1276,12 @@
         </form>
     </article>
 
+    <!-- Preview de configuración guardada -->
+    <article class="card view-settings" style="margin-bottom:1.5rem;background:var(--bg);" id="settingsPreviewCard">
+        <h2 class="section">✅ Configuración activa</h2>
+        <div id="settingsPreview" style="font-size:.87rem;color:var(--muted);">Cargando…</div>
+    </article>
+
     <div class="grid3 view-settings" style="margin-bottom:1.5rem;">
         <!-- Logo -->
         <article class="card">
@@ -1348,7 +1359,7 @@
 <script>
 const state = {
     token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
-    selectedWorkerId:null, selectedWorkerName:null, selectedWorkerHistory:null, selectedWorkerEvolutions:[], activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"",
+    selectedWorkerId:null, selectedWorkerName:null, selectedWorkerHistory:null, selectedWorkerEvolutions:[], activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"", workerCompanyId:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     consultation:{ worker_search:"", diagnosis_results:[], selected_diagnoses:[], prescriptions:[] },
     pagination:{
@@ -1375,7 +1386,7 @@ const refs = {
     evaluationsPrevBtn: document.getElementById("evaluationsPrevBtn"), evaluationsNextBtn: document.getElementById("evaluationsNextBtn"), evaluationsPageInfo: document.getElementById("evaluationsPageInfo"), evaluationsExportBtn: document.getElementById("evaluationsExportBtn"),
     certificatesPrevBtn: document.getElementById("certificatesPrevBtn"), certificatesNextBtn: document.getElementById("certificatesNextBtn"), certificatesPageInfo: document.getElementById("certificatesPageInfo"), certificatesExportBtn: document.getElementById("certificatesExportBtn"),
     usersPrevBtn: document.getElementById("usersPrevBtn"), usersNextBtn: document.getElementById("usersNextBtn"), usersPageInfo: document.getElementById("usersPageInfo"), usersExportBtn: document.getElementById("usersExportBtn"),
-    workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"),
+    workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"), workerCompanyFilter: document.getElementById("workerCompanyFilter"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
     workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
@@ -1405,6 +1416,8 @@ const refs = {
 let diagnosisSearchTimer = null;
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
+// Alias: showStatus("text", "success"|"error"|"warn") — usado por módulos nuevos
+function showStatus(msg, type="info"){ status(msg, type === "success" ? "ok" : type); }
 function fmtDate(v){ if(!v) return "-"; try { return new Date(v).toLocaleDateString(); } catch { return v; } }
 function formatBytes(value){
     const bytes = Number(value || 0);
@@ -1769,6 +1782,7 @@ async function loadAll(){
 
     const workersQuery = buildQueryString({
         q: state.workerQuery,
+        company_id: state.workerCompanyId || undefined,
         page: state.pagination.workers.page,
         per_page: state.pagination.workers.per_page,
     });
@@ -1822,7 +1836,15 @@ async function loadWorkerHistory(workerId){
 
 function renderStats(){
     const t = state.dashboard?.totals || {};
-    const cards = [["Trabajadores", t.workers ?? 0], ["Evaluaciones", t.evaluations ?? 0], ["Certificados", t.certificates ?? 0], ["Pendientes", t.pending_certificates ?? 0]];
+    const cards = [
+        ["👥 Trabajadores",         t.workers             ?? 0],
+        ["📋 Evaluaciones",         t.evaluations         ?? 0],
+        ["📜 Certificados",         t.certificates        ?? 0],
+        ["⏳ Pendientes de cert.",  t.pending_certificates ?? 0],
+        ["📅 Citas hoy",            t.today_appointments  ?? 0],
+        ["🩺 Evaluaciones (mes)",   t.month_evaluations   ?? 0],
+        ["⚠️ Accidentes (año)",    t.year_accidents       ?? 0],
+    ];
     refs.statsGrid.innerHTML = "";
     cards.forEach(([k,v]) => { const el = document.createElement("article"); el.className="stat"; el.innerHTML=`<h4>${k}</h4><p>${v}</p>`; refs.statsGrid.appendChild(el); });
 }
@@ -1961,13 +1983,25 @@ function renderWorkerHistory(){
     }
 
     const w = history.worker;
+    // Calcular edad
+    let age = "";
+    if(w.birth_date){
+        const born = new Date(w.birth_date);
+        const today = new Date();
+        let a = today.getFullYear() - born.getFullYear();
+        const m = today.getMonth() - born.getMonth();
+        if(m < 0 || (m === 0 && today.getDate() < born.getDate())) a--;
+        age = ` · ${a} años`;
+    }
     refs.workerDetailBox.innerHTML = `
-        <p class="meta"><strong>Nombre:</strong> ${esc(w.first_name)} ${esc(w.last_name)}</p>
+        <p class="meta"><strong>Nombre:</strong> ${esc(w.last_name)}, ${esc(w.first_name)}${age}</p>
         <p class="meta"><strong>Documento:</strong> ${esc(w.document_type)} ${esc(w.document_number)}</p>
-        <p class="meta"><strong>Historia:</strong> ${esc(w.history_number)}</p>
-        <p class="meta"><strong>Archivo:</strong> ${esc(w.file_number)}</p>
+        <p class="meta"><strong>Sexo / Sangre:</strong> ${esc(w.sex || "—")} / ${esc(w.blood_type || "—")}</p>
+        <p class="meta"><strong>Historia:</strong> ${esc(w.history_number)} &nbsp;|&nbsp; <strong>Archivo:</strong> ${esc(w.file_number)}</p>
         <p class="meta"><strong>Empresa:</strong> ${esc(w.company?.business_name || "Sin empresa")}</p>
         <p class="meta"><strong>Puesto:</strong> ${esc(w.job_position?.name || "Sin puesto")}</p>
+        ${w.email ? `<p class="meta"><strong>Email:</strong> ${esc(w.email)}</p>` : ""}
+        ${w.phone ? `<p class="meta"><strong>Teléfono:</strong> ${esc(w.phone)}</p>` : ""}
         <div class="chips"><span class="chip">Evaluaciones: ${(history.evaluations || []).length}</span><span class="chip">Certificados: ${(history.certificates || []).length}</span></div>
     `;
 
@@ -2943,6 +2977,13 @@ function renderUsers(){
 function fillSelects(){
     refs.workerCompany.innerHTML = ""; refs.workerCompany.appendChild(makeOpt("", "Sin empresa")); state.companies.forEach(c=>refs.workerCompany.appendChild(makeOpt(c.id, c.business_name)));
     refs.workerPosition.innerHTML = ""; refs.workerPosition.appendChild(makeOpt("", "Sin puesto")); state.positions.forEach(p=>refs.workerPosition.appendChild(makeOpt(p.id, p.name)));
+    // Filtro por empresa en el listado de trabajadores
+    if(refs.workerCompanyFilter){
+        const prev = refs.workerCompanyFilter.value;
+        refs.workerCompanyFilter.innerHTML = `<option value="">Todas</option>`;
+        state.companies.forEach(c => refs.workerCompanyFilter.appendChild(makeOpt(c.id, c.business_name)));
+        if(prev) refs.workerCompanyFilter.value = prev;
+    }
     filterEvaluationWorkerOptions();
     [refs.certificateEvaluation, refs.attachmentEvaluation].forEach(sel => { sel.innerHTML=""; state.evaluations.forEach(e=>{ const w=e.worker||{}; sel.appendChild(makeOpt(e.id, `${e.evaluation_type} - ${w.first_name || ""} ${w.last_name || ""}`)); }); });
     if(refs.userRoleSelect && refs.userEditRoleSelect){
@@ -4103,8 +4144,26 @@ async function loadSettings(){
         renderSettingsImagePreview("logo",      d.logo_url);
         renderSettingsImagePreview("signature", d.signature_url);
         renderSettingsImagePreview("seal",      d.seal_url);
+        // Panel de confirmación visual
+        const prev = document.getElementById("settingsPreview");
+        if(prev){
+            const rows = [
+                ["Institución",       d.institution_name     || "(sin configurar)"],
+                ["Subtítulo",         d.institution_subtitle || "(sin configurar)"],
+                ["Ciudad",            d.institution_city     || "(sin configurar)"],
+                ["Médico responsable",d.signature_name       || "(sin configurar)"],
+                ["Cargo / título",    d.signature_title      || "(sin configurar)"],
+                ["Código profesional",d.professional_code    || "(sin configurar)"],
+            ];
+            prev.innerHTML = `<table style="border-collapse:collapse;width:100%;font-size:.86rem;">
+                ${rows.map(([k,v]) => `<tr>
+                    <td style="padding:4px 10px 4px 0;color:var(--muted);font-weight:600;width:40%;vertical-align:top;">${e(k)}</td>
+                    <td style="padding:4px 0;color:var(--text);">${e(v)}</td>
+                </tr>`).join('')}
+            </table>`;
+        }
         _settingsLoaded = true;
-    } catch(err){ showStatus("Error cargando configuración: " + err.message, "error"); }
+    } catch(err){ status("Error cargando configuración: " + err.message, "error"); }
 }
 
 function renderSettingsImagePreview(type, url){
@@ -4142,6 +4201,8 @@ async function deleteSettingImage(type){
 
 document.getElementById("settingsForm")?.addEventListener("submit", async e => {
     e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    if(btn){ btn.disabled = true; btn.textContent = "Guardando…"; }
     const body = {
         institution_name:      document.getElementById("cfgInstitutionName").value.trim(),
         institution_subtitle:  document.getElementById("cfgInstitutionSubtitle").value.trim(),
@@ -4155,8 +4216,10 @@ document.getElementById("settingsForm")?.addEventListener("submit", async e => {
     try {
         await api("/api/settings", {method:"PUT", body});
         _settingsLoaded = false;
+        await loadSettings();   // Recarga los datos desde el servidor para confirmar el guardado
         showStatus("✅ Configuración guardada correctamente.", "success");
     } catch(err){ showStatus("Error: " + err.message, "error"); }
+    finally { if(btn){ btn.disabled = false; btn.textContent = "Guardar configuración"; } }
 });
 
 document.getElementById("logoUploadBtn")?.addEventListener("click", () => uploadSettingImage("logo"));
@@ -4405,6 +4468,7 @@ refs.usersNextBtn.addEventListener("click", async () => {
 
 refs.workerSearchBtn.addEventListener("click", async () => {
     state.workerQuery = refs.workerSearchInput.value.trim();
+    state.workerCompanyId = refs.workerCompanyFilter?.value || "";
     state.pagination.workers.page = 1;
     await refreshData();
 });
@@ -4413,6 +4477,7 @@ refs.workerSearchInput.addEventListener("keydown", async (e) => {
     if(e.key !== "Enter") return;
     e.preventDefault();
     state.workerQuery = refs.workerSearchInput.value.trim();
+    state.workerCompanyId = refs.workerCompanyFilter?.value || "";
     state.pagination.workers.page = 1;
     await refreshData();
 });
