@@ -169,10 +169,14 @@
             <div class="sig-sub">C.I.: {{ $worker['document_number'] }}</div>
         </div>
         <div class="sig-col">
+            @if(!empty($config['signature_path']) && file_exists($config['signature_path']))
+                <div style="text-align:center;margin-bottom:4px;"><img src="{{ $config['signature_path'] }}" style="max-height:44px;max-width:120px;" alt="Firma"></div>
+            @endif
             <div class="sig-line"></div>
             <div class="sig-name">MÉDICO OCUPACIONAL</div>
             <div class="sig-sub">{{ $doctor['name'] }}</div>
             @if(!empty($doctor['code'])) <div class="sig-sub">Reg.: {{ $doctor['code'] }}</div> @endif
+            @if(!empty($config['signature_name'])) <div class="sig-sub">{{ $config['signature_name'] }}</div> @endif
         </div>
         <div class="sig-col">
             <div class="sig-line"></div>

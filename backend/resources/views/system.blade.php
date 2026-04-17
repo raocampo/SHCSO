@@ -254,6 +254,7 @@
             <button class="tab" data-view="workers" type="button">Trabajadores</button>
             <button class="tab" data-view="operations" type="button">Operacion</button>
             <button class="tab" data-view="users" type="button">Usuarios</button>
+            <button class="tab" data-view="agenda" type="button">📅 Agenda</button>
             <button class="tab" data-view="settings" type="button">⚙️ Configuración</button>
         </nav>
         <nav class="workerFlow view-workers">
@@ -1060,6 +1061,116 @@
     </div>
 </div>
 
+<!-- ─── AGENDA VIEW ──────────────────────────────────────────────── -->
+<div class="view-agenda hidden" style="padding:0 8px;">
+
+    <!-- Widget citas de hoy (también aparece en dashboard) -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.2rem;">
+        <article class="card" style="flex:1;min-width:260px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h2 class="section" style="margin:0;">📅 Citas de hoy</h2>
+                <span id="todayDateLabel" style="font-size:.8rem;color:var(--muted);"></span>
+            </div>
+            <div id="todayAppointmentsList" style="font-size:.85rem;color:var(--muted);">Cargando...</div>
+        </article>
+
+        <article class="card" style="flex:1;min-width:260px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h2 class="section" style="margin:0;">🔜 Próximas citas</h2>
+                <button class="btn" type="button" id="newApptBtn" style="font-size:.78rem;padding:4px 10px;">+ Nueva</button>
+            </div>
+            <div id="upcomingAppointmentsList" style="font-size:.85rem;color:var(--muted);">Cargando...</div>
+        </article>
+    </div>
+
+    <!-- Formulario nueva/editar cita -->
+    <article class="card view-agenda" id="apptFormCard" style="display:none;margin-bottom:1.2rem;">
+        <h3 id="apptFormTitle" style="font-size:.95rem;font-weight:600;margin:0 0 14px;">Nueva cita</h3>
+        <form id="apptForm" style="display:grid;gap:10px;max-width:620px;">
+            <input type="hidden" id="apptId">
+            <div class="field">
+                <label>Trabajador <span style="color:red">*</span></label>
+                <input id="apptWorkerSearch" type="text" placeholder="Buscar por nombre o cédula..." autocomplete="off">
+                <input type="hidden" id="apptWorkerId">
+                <div id="apptWorkerResults" style="position:relative;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="field"><label>Fecha <span style="color:red">*</span></label><input id="apptDate" type="date" required></div>
+                <div class="field"><label>Hora <span style="color:red">*</span></label><input id="apptTime" type="time" required></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="field">
+                    <label>Tipo de cita</label>
+                    <select id="apptType">
+                        <option value="CONSULTA">Consulta general</option>
+                        <option value="EXAMEN_PREOCUPACIONAL">Examen preocupacional</option>
+                        <option value="EXAMEN_PERIODICO">Examen periódico</option>
+                        <option value="EXAMEN_RETIRO">Examen de retiro</option>
+                        <option value="SEGUIMIENTO">Seguimiento</option>
+                        <option value="INTERCONSULTA">Interconsulta</option>
+                        <option value="VACUNACION">Vacunación</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Estado</label>
+                    <select id="apptStatus">
+                        <option value="PROGRAMADA">Programada</option>
+                        <option value="CONFIRMADA">Confirmada</option>
+                        <option value="ATENDIDA">Atendida</option>
+                        <option value="CANCELADA">Cancelada</option>
+                        <option value="NO_ASISTIO">No asistió</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field"><label>Motivo de la cita</label><input id="apptReason" type="text" placeholder="Ej: Control anual, seguimiento lumbalgia..."></div>
+            <div class="field"><label>Notas adicionales</label><textarea id="apptNotes" rows="2" style="resize:vertical;"></textarea></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn accent" type="submit">💾 Guardar cita</button>
+                <button class="btn" type="button" id="apptFormCancel">Cancelar</button>
+            </div>
+        </form>
+    </article>
+
+    <!-- Lista / filtros de citas -->
+    <article class="card view-agenda">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+            <h2 class="section" style="margin:0;flex:1;">Lista de citas</h2>
+            <div class="field" style="margin:0;min-width:140px;"><label style="font-size:.75rem;">Desde</label><input id="apptFilterFrom" type="date"></div>
+            <div class="field" style="margin:0;min-width:140px;"><label style="font-size:.75rem;">Hasta</label><input id="apptFilterTo" type="date"></div>
+            <div class="field" style="margin:0;min-width:130px;">
+                <label style="font-size:.75rem;">Estado</label>
+                <select id="apptFilterStatus">
+                    <option value="">Todos</option>
+                    <option value="PROGRAMADA">Programada</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="ATENDIDA">Atendida</option>
+                    <option value="CANCELADA">Cancelada</option>
+                    <option value="NO_ASISTIO">No asistió</option>
+                </select>
+            </div>
+            <button class="btn accent" type="button" id="apptFilterBtn">🔍 Filtrar</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="tableCompact" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Fecha</th><th>Hora</th><th>Trabajador</th><th>Empresa</th>
+                        <th>Tipo</th><th>Estado</th><th>Motivo</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentsBody">
+                    <tr><td colspan="8" style="text-align:center;color:var(--muted);">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+            <button class="btn" id="apptPrevBtn" type="button">← Anterior</button>
+            <span id="apptPageInfo" style="font-size:.8rem;color:var(--muted);">Página 1</span>
+            <button class="btn" id="apptNextBtn" type="button">Siguiente →</button>
+        </div>
+    </article>
+</div>
+
 <!-- ─── SETTINGS VIEW ─────────────────────────────────────────────── -->
 <div class="view-settings hidden" style="padding:0 8px;">
 
@@ -1175,7 +1286,7 @@ const refs = {
     tabs: document.querySelectorAll(".tab"), userTab: document.querySelector('.tab[data-view="users"]'),
     workerFlowTabs: document.querySelectorAll(".workerFlowTab"), workerStepPanels: document.querySelectorAll("[data-worker-panel]"), workerPanelHosts: document.querySelectorAll("[data-worker-panel-host]"),
     operationFlowTabs: document.querySelectorAll(".operationFlowTab"), operationStepPanels: document.querySelectorAll("[data-operation-panel]"),
-    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"),
+    dashboardViews: document.querySelectorAll(".view-dashboard"), workerViews: document.querySelectorAll(".view-workers"), operationViews: document.querySelectorAll(".view-operations"), userViews: document.querySelectorAll(".view-users"), settingsViews: document.querySelectorAll(".view-settings"), agendaViews: document.querySelectorAll(".view-agenda"),
     statsGrid: document.getElementById("statsGrid"), monthlyChart: document.getElementById("monthlyChart"), aptitudeBody: document.getElementById("aptitudeBody"),
     operationsEvalTotal: document.getElementById("operationsEvalTotal"), operationsCertTotal: document.getElementById("operationsCertTotal"), operationsPendingTotal: document.getElementById("operationsPendingTotal"),
     workersBody: document.getElementById("workersBody"), evaluationsBody: document.getElementById("evaluationsBody"), certificatesBody: document.getElementById("certificatesBody"), usersBody: document.getElementById("usersBody"),
@@ -1461,6 +1572,7 @@ function resolveViewFromPath(){
     if(p.startsWith("/sistema/operacion")) return "operations";
     if(p.startsWith("/sistema/usuarios")) return "users";
     if(p.startsWith("/sistema/configuracion")) return "settings";
+    if(p.startsWith("/sistema/agenda")) return "agenda";
     return "dashboard";
 }
 
@@ -1515,11 +1627,13 @@ function applyViewVisibility(){
     const operations = state.activeView === "operations";
     const users = state.activeView === "users" && canManageUsers();
     const settings = state.activeView === "settings";
+    const agenda = state.activeView === "agenda";
     refs.dashboardViews.forEach(el => el.classList.toggle("hidden", !dashboard));
     refs.workerViews.forEach(el => el.classList.toggle("hidden", !workers));
     refs.operationViews.forEach(el => el.classList.toggle("hidden", !operations));
     refs.userViews.forEach(el => el.classList.toggle("hidden", !users));
     refs.settingsViews.forEach(el => el.classList.toggle("hidden", !settings));
+    refs.agendaViews.forEach(el => el.classList.toggle("hidden", !agenda));
     if(refs.userTab) refs.userTab.classList.toggle("hidden", !canManageUsers());
     refs.tabs.forEach(tab => tab.classList.toggle("active", tab.getAttribute("data-view") === state.activeView));
     applyWorkerStepVisibility();
@@ -1533,6 +1647,7 @@ function setView(view, updateHistory=true){
     state.activeView = view;
     applyViewVisibility();
     if(view === "settings") loadSettings();
+    if(view === "agenda") loadAgendaView();
     if(!updateHistory) return;
     const target = view === "workers"
         ? "/sistema/trabajadores"
@@ -1540,7 +1655,9 @@ function setView(view, updateHistory=true){
             ? "/sistema/operacion"
             : (view === "users"
                 ? "/sistema/usuarios"
-                : (view === "settings" ? "/sistema/configuracion" : "/sistema")));
+                : (view === "settings"
+                    ? "/sistema/configuracion"
+                    : (view === "agenda" ? "/sistema/agenda" : "/sistema"))));
     if(window.location.pathname !== target) window.history.pushState({view}, "", target);
 }
 
@@ -3929,6 +4046,202 @@ document.getElementById("sealUploadBtn")?.addEventListener("click", () => upload
 document.getElementById("logoDeleteBtn")?.addEventListener("click", () => deleteSettingImage("logo"));
 document.getElementById("signatureDeleteBtn")?.addEventListener("click", () => deleteSettingImage("signature"));
 document.getElementById("sealDeleteBtn")?.addEventListener("click", () => deleteSettingImage("seal"));
+
+/* ─── AGENDA DE CITAS ─── */
+const apptState = {
+    page: 1, per_page: 15, total_pages: 1, has_next: false, has_prev: false,
+    filters: { date_from: '', date_to: '', status: '' },
+    editingId: null,
+};
+
+const APPT_STATUS_COLORS = {
+    PROGRAMADA: '#3b82f6', CONFIRMADA: '#059669', ATENDIDA: '#6366f1',
+    CANCELADA: '#ef4444', NO_ASISTIO: '#f59e0b'
+};
+
+async function loadAgendaView(){
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('todayDateLabel').textContent = new Date().toLocaleDateString('es-EC', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    document.getElementById('apptFilterFrom').value = document.getElementById('apptFilterFrom').value || today;
+    await Promise.all([loadTodayAppointments(), loadUpcomingAppointments(), loadAppointmentsList()]);
+}
+
+async function loadTodayAppointments(){
+    try {
+        const res = await api('/api/appointments/today');
+        const list = document.getElementById('todayAppointmentsList');
+        if(!res.data?.length){ list.innerHTML = '<span style="color:var(--muted)">No hay citas para hoy.</span>'; return; }
+        list.innerHTML = res.data.map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <strong>${a.appointment_time.slice(0,5)}</strong>
+                    <span style="margin-left:8px;">${a.worker_name}</span>
+                    <span style="margin-left:6px;font-size:.75rem;color:var(--muted);">${a.type_label}</span>
+                </div>
+                <span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:${APPT_STATUS_COLORS[a.status] || '#94a3b8'}20;color:${APPT_STATUS_COLORS[a.status] || '#64748b'};">${a.status_label}</span>
+            </div>`).join('');
+    } catch(e){ document.getElementById('todayAppointmentsList').textContent = 'Error: ' + e.message; }
+}
+
+async function loadUpcomingAppointments(){
+    try {
+        const res = await api('/api/appointments/upcoming');
+        const list = document.getElementById('upcomingAppointmentsList');
+        if(!res.data?.length){ list.innerHTML = '<span style="color:var(--muted)">No hay citas próximas.</span>'; return; }
+        list.innerHTML = res.data.map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <strong>${a.appointment_date_display}</strong>
+                    <span style="margin-left:6px;font-size:.78rem;">${a.appointment_time.slice(0,5)}</span>
+                    <span style="margin-left:6px;">${a.worker_name}</span>
+                </div>
+                <span style="font-size:.72rem;padding:2px 7px;border-radius:99px;background:${APPT_STATUS_COLORS[a.status] || '#94a3b8'}20;color:${APPT_STATUS_COLORS[a.status] || '#64748b'};">${a.type_label}</span>
+            </div>`).join('');
+    } catch(e){ document.getElementById('upcomingAppointmentsList').textContent = 'Error: ' + e.message; }
+}
+
+async function loadAppointmentsList(){
+    const q = new URLSearchParams({ page: apptState.page, per_page: apptState.per_page });
+    if(apptState.filters.date_from) q.set('date_from', apptState.filters.date_from);
+    if(apptState.filters.date_to)   q.set('date_to',   apptState.filters.date_to);
+    if(apptState.filters.status)    q.set('status',    apptState.filters.status);
+    try {
+        const res = await api('/api/appointments?' + q.toString());
+        const tbody = document.getElementById('appointmentsBody');
+        if(!res.data?.length){
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);">Sin resultados.</td></tr>';
+        } else {
+            tbody.innerHTML = res.data.map(a => `
+                <tr>
+                    <td>${a.appointment_date_display}</td>
+                    <td>${a.appointment_time.slice(0,5)}</td>
+                    <td><strong>${a.worker_name}</strong><br><small style="color:var(--muted)">${a.worker_document}</small></td>
+                    <td style="font-size:.8rem;">${a.worker_company}</td>
+                    <td style="font-size:.8rem;">${a.type_label}</td>
+                    <td><span style="font-size:.75rem;padding:2px 7px;border-radius:99px;background:${APPT_STATUS_COLORS[a.status] || '#94a3b8'}20;color:${APPT_STATUS_COLORS[a.status] || '#64748b'};">${a.status_label}</span></td>
+                    <td style="font-size:.8rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.reason || '-'}</td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn" style="font-size:.75rem;padding:3px 8px;" onclick="editAppointment('${a.id}')">✏️</button>
+                        <button class="btn danger" style="font-size:.75rem;padding:3px 8px;" onclick="deleteAppointment('${a.id}')">🗑</button>
+                    </td>
+                </tr>`).join('');
+        }
+        const m = res.meta || {};
+        apptState.total_pages = m.total_pages || 1;
+        apptState.has_next    = m.has_next || false;
+        apptState.has_prev    = m.has_prev || false;
+        document.getElementById('apptPageInfo').textContent = `Página ${m.page || 1} de ${m.total_pages || 1} (${m.total || 0} citas)`;
+        document.getElementById('apptPrevBtn').disabled = !apptState.has_prev;
+        document.getElementById('apptNextBtn').disabled = !apptState.has_next;
+    } catch(e){ document.getElementById('appointmentsBody').innerHTML = `<tr><td colspan="8" style="color:red;">${e.message}</td></tr>`; }
+}
+
+function showApptForm(appt = null){
+    apptState.editingId = appt?.id || null;
+    document.getElementById('apptFormTitle').textContent = appt ? 'Editar cita' : 'Nueva cita';
+    document.getElementById('apptId').value              = appt?.id || '';
+    document.getElementById('apptWorkerSearch').value   = appt?.worker_name || '';
+    document.getElementById('apptWorkerId').value        = appt?.worker_id || '';
+    document.getElementById('apptDate').value            = appt?.appointment_date || new Date().toISOString().split('T')[0];
+    document.getElementById('apptTime').value            = appt?.appointment_time?.slice(0,5) || '08:00';
+    document.getElementById('apptType').value            = appt?.type || 'CONSULTA';
+    document.getElementById('apptStatus').value          = appt?.status || 'PROGRAMADA';
+    document.getElementById('apptReason').value          = appt?.reason || '';
+    document.getElementById('apptNotes').value           = appt?.notes || '';
+    document.getElementById('apptFormCard').style.display = '';
+    document.getElementById('apptWorkerResults').innerHTML = '';
+    document.getElementById('apptFormCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+async function editAppointment(id){
+    try {
+        const res = await api(`/api/appointments/${id}`);
+        showApptForm(res.data);
+    } catch(e){ showStatus('Error: ' + e.message, 'error'); }
+}
+
+async function deleteAppointment(id){
+    if(!confirm('¿Eliminar esta cita?')) return;
+    try {
+        await api(`/api/appointments/${id}`, {method:'DELETE'});
+        showStatus('Cita eliminada.', 'success');
+        await loadAgendaView();
+    } catch(e){ showStatus('Error: ' + e.message, 'error'); }
+}
+
+// Worker search for appointment form
+let apptWorkerSearchTimer = null;
+document.getElementById('apptWorkerSearch')?.addEventListener('input', e => {
+    clearTimeout(apptWorkerSearchTimer);
+    const q = e.target.value.trim();
+    if(q.length < 2){ document.getElementById('apptWorkerResults').innerHTML = ''; return; }
+    apptWorkerSearchTimer = setTimeout(async () => {
+        try {
+            const res = await api(`/api/workers?q=${encodeURIComponent(q)}&per_page=6`);
+            const results = document.getElementById('apptWorkerResults');
+            if(!res.data?.length){ results.innerHTML = '<div style="padding:6px;color:var(--muted);font-size:.8rem;">Sin resultados</div>'; return; }
+            results.innerHTML = `<div style="position:absolute;z-index:99;background:var(--card);border:1px solid var(--border);border-radius:8px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;">${
+                res.data.map(w => `<div style="padding:8px 12px;cursor:pointer;font-size:.85rem;border-bottom:1px solid var(--border);" 
+                    onmousedown="selectApptWorker('${w.id}','${(w.full_name||'').replace(/'/g,"\\'")}')">
+                    <strong>${w.full_name}</strong> <span style="color:var(--muted)">${w.document_number} · ${w.company_name || ''}</span></div>`).join('')
+            }</div>`;
+        } catch(e){}
+    }, 300);
+});
+
+function selectApptWorker(id, name){
+    document.getElementById('apptWorkerId').value = id;
+    document.getElementById('apptWorkerSearch').value = name;
+    document.getElementById('apptWorkerResults').innerHTML = '';
+}
+
+document.getElementById('apptForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const workerId = document.getElementById('apptWorkerId').value;
+    if(!workerId){ showStatus('Selecciona un trabajador de la lista.', 'error'); return; }
+    const body = {
+        worker_id:        workerId,
+        appointment_date: document.getElementById('apptDate').value,
+        appointment_time: document.getElementById('apptTime').value,
+        type:             document.getElementById('apptType').value,
+        status:           document.getElementById('apptStatus').value,
+        reason:           document.getElementById('apptReason').value.trim() || null,
+        notes:            document.getElementById('apptNotes').value.trim() || null,
+    };
+    try {
+        if(apptState.editingId){
+            await api(`/api/appointments/${apptState.editingId}`, {method:'PUT', body});
+            showStatus('✅ Cita actualizada.', 'success');
+        } else {
+            await api('/api/appointments', {method:'POST', body});
+            showStatus('✅ Cita creada.', 'success');
+        }
+        document.getElementById('apptFormCard').style.display = 'none';
+        apptState.editingId = null;
+        await loadAgendaView();
+    } catch(err){ showStatus('Error: ' + err.message, 'error'); }
+});
+
+document.getElementById('newApptBtn')?.addEventListener('click', () => showApptForm());
+document.getElementById('apptFormCancel')?.addEventListener('click', () => {
+    document.getElementById('apptFormCard').style.display = 'none';
+    apptState.editingId = null;
+});
+document.getElementById('apptFilterBtn')?.addEventListener('click', async () => {
+    apptState.page = 1;
+    apptState.filters.date_from = document.getElementById('apptFilterFrom').value;
+    apptState.filters.date_to   = document.getElementById('apptFilterTo').value;
+    apptState.filters.status    = document.getElementById('apptFilterStatus').value;
+    await loadAppointmentsList();
+});
+document.getElementById('apptPrevBtn')?.addEventListener('click', async () => {
+    if(!apptState.has_prev) return;
+    apptState.page--; await loadAppointmentsList();
+});
+document.getElementById('apptNextBtn')?.addEventListener('click', async () => {
+    if(!apptState.has_next) return;
+    apptState.page++; await loadAppointmentsList();
+});
 
 refs.workersPrevBtn.addEventListener("click", async () => {
     if(!state.pagination.workers.has_prev) return;

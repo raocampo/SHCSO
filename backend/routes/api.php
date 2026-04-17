@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AccidentController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CertificateController;
@@ -172,5 +173,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/upload-image/{type}', [SettingsController::class, 'uploadImage'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
     Route::delete('/settings/image/{type}', [SettingsController::class, 'deleteImage'])
+        ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
+
+    // Agenda de citas
+    Route::get('/appointments/catalog', [AppointmentController::class, 'catalog']);
+    Route::get('/appointments/today', [AppointmentController::class, 'today']);
+    Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
+    Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::post('/appointments', [AppointmentController::class, 'store']);
+    Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+    Route::put('/appointments/{id}', [AppointmentController::class, 'update']);
+    Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy'])
         ->middleware('role:ADMIN,MEDICO_OCUPACIONAL');
 });
