@@ -396,4 +396,25 @@ class WorkerController extends Controller
         $filename = 'HC-' . strtoupper(substr($workerId, 0, 8)) . '.pdf';
         return $pdf->download($filename);
     }
+
+    public function workerCard(string $workerId): Response
+    {
+        $worker = Worker::query()
+            ->with(['company:id,business_name', 'jobPosition:id,name'])
+            ->findOrFail($workerId);
+
+        $certificate = MedicalCertificate::query()
+            ->where('worker_id', $workerId)
+            ->latest('issue_date')
+            ->first();
+
+        $institution = \App\Models\SystemSetting::institutionConfig();
+
+        $pdf = Pdf::loadView('pdf.worker-card', compact('worker', 'institution', 'certificate'));
+        // A7 landscape in points (74.25mm × 52.5mm → 210pt × 149pt; use 283pt × 198pt ≈ 100mm × 70mm)
+        $pdf->setPaper([0, 0, 283, 198], 'landscape');
+
+        $filename = 'carnet_' . Str::slug($worker->first_name . '-' . $worker->last_name) . '.pdf';
+        return $pdf->download($filename);
+    }
 }

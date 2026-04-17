@@ -562,6 +562,7 @@
 
         <article class="card view-workers workerStepPanel" data-worker-panel="history">
             <h2 class="section">Historial clinico del trabajador
+                <button id="workerCardBtn" class="btn small" type="button" style="float:right;font-size:.78rem;margin-left:6px;" title="Descargar carnet del trabajador en PDF">🪪 Carnet</button>
                 <button id="workerHistoryPdfBtn" class="btn small" type="button" style="float:right;font-size:.78rem;" title="Descargar historia clínica completa en PDF">📄 HC PDF</button>
             </h2>
             <div id="workerHistoryEval" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
@@ -1395,7 +1396,7 @@ const refs = {
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
     workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
-    workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerHistoryPdfBtn: document.getElementById("workerHistoryPdfBtn"),
+    workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerHistoryPdfBtn: document.getElementById("workerHistoryPdfBtn"), workerCardBtn: document.getElementById("workerCardBtn"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
     workerPrescriptionsList: document.getElementById("workerPrescriptionsList"), prescriptionForm: document.getElementById("prescriptionForm"), rxEvaluation: document.getElementById("rxEvaluation"), rxGeneralNotes: document.getElementById("rxGeneralNotes"), rxMedLines: document.getElementById("rxMedLines"), rxAddMedBtn: document.getElementById("rxAddMedBtn"), rxSubmitBtn: document.getElementById("rxSubmitBtn"), rxCancelBtn: document.getElementById("rxCancelBtn"), rxEditId: document.getElementById("rxEditId"),
     // Tab 6 — Estudios Médicos
@@ -4631,6 +4632,21 @@ if(refs.workerHistoryPdfBtn){
             status("Historia clínica PDF descargada.", "ok");
         } catch(err){ status(err.message || "Error generando PDF.", "error"); }
         finally{ refs.workerHistoryPdfBtn.disabled = false; refs.workerHistoryPdfBtn.textContent = "📄 HC PDF"; }
+    });
+}
+
+// Carnet button
+if(refs.workerCardBtn){
+    refs.workerCardBtn.addEventListener("click", async () => {
+        const wid = state.selectedWorkerId;
+        if(!wid){ status("Selecciona un trabajador primero.", "warn"); return; }
+        refs.workerCardBtn.disabled = true;
+        refs.workerCardBtn.textContent = "⏳";
+        try{
+            await downloadWithToken(`/api/workers/${wid}/card`, `carnet-${wid.substring(0,8)}.pdf`);
+            status("Carnet PDF descargado.", "ok");
+        } catch(err){ status(err.message || "Error generando carnet.", "error"); }
+        finally{ refs.workerCardBtn.disabled = false; refs.workerCardBtn.textContent = "🪪 Carnet"; }
     });
 }
 
