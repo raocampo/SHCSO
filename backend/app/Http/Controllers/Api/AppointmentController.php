@@ -69,7 +69,7 @@ class AppointmentController extends Controller
     {
         $items = Appointment::with(['worker', 'doctor'])
             ->whereDate('appointment_date', '>=', today())
-            ->whereIn('status', ['PROGRAMADA', 'CONFIRMADA'])
+            ->whereIn('status', ['PENDIENTE', 'CONFIRMADA'])
             ->orderBy('appointment_date')
             ->orderBy('appointment_time')
             ->limit(10)
@@ -84,7 +84,8 @@ class AppointmentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'worker_id'        => ['required', 'uuid', 'exists:workers,id'],
+            'worker_id'        => ['nullable', 'uuid', 'exists:workers,id'],
+            'patient_name'     => ['nullable', 'string', 'max:200'],
             'doctor_id'        => ['nullable', 'uuid', 'exists:users,id'],
             'appointment_date' => ['required', 'date'],
             'appointment_time' => ['required', 'date_format:H:i'],
@@ -94,18 +95,26 @@ class AppointmentController extends Controller
             'notes'            => ['nullable', 'string', 'max:1000'],
         ]);
 
+        if (empty($data['worker_id']) && empty($data['patient_name'])) {
+            return response()->json(['ok' => false, 'message' => 'Indica un trabajador o un nombre de paciente.'], 422);
+        }
+
         $data['created_by'] = $request->user()->id;
-        $data['status']     = $data['status'] ?? 'PROGRAMADA';
+        $data['status']     = $data['status'] ?? 'PENDIENTE';
 
         $appointment = Appointment::create($data);
         $appointment->load(['worker', 'doctor']);
+
+        $patientLabel = $appointment->worker
+            ? trim($appointment->worker->first_name . ' ' . $appointment->worker->last_name)
+            : ($appointment->patient_name ?? 'externo');
 
         AuditLog::create([
             'user_id'     => $request->user()->id,
             'action'      => 'CREATE_APPOINTMENT',
             'entity_type' => 'Appointment',
             'entity_id'   => $appointment->id,
-            'description' => "Cita programada para {$appointment->worker->full_name} el {$appointment->appointment_date->format('d/m/Y')} {$appointment->appointment_time}",
+            'description' => "Cita programada para {$patientLabel} el {$appointment->appointment_date->format('d/m/Y')} {$appointment->appointment_time}",
             'ip_address'  => $request->ip(),
         ]);
 
@@ -123,7 +132,8 @@ class AppointmentController extends Controller
         $appointment = Appointment::findOrFail($id);
 
         $data = $request->validate([
-            'worker_id'        => ['sometimes', 'uuid', 'exists:workers,id'],
+            'worker_id'        => ['nullable', 'uuid', 'exists:workers,id'],
+            'patient_name'     => ['nullable', 'string', 'max:200'],
             'doctor_id'        => ['nullable', 'uuid', 'exists:users,id'],
             'appointment_date' => ['sometimes', 'date'],
             'appointment_time' => ['sometimes', 'date_format:H:i'],
@@ -181,9 +191,10 @@ class AppointmentController extends Controller
         return [
             'id'               => $a->id,
             'worker_id'        => $a->worker_id,
-            'worker_name'      => $a->worker?->full_name ?? '-',
+            'patient_name'     => $a->patient_name,
+            'worker_name'      => $a->worker ? trim($a->worker->first_name . ' ' . $a->worker->last_name) : ($a->patient_name ?? '-'),
             'worker_document'  => $a->worker?->document_number ?? '-',
-            'worker_company'   => $a->worker?->company?->name ?? '-',
+            'worker_company'   => $a->worker?->company?->business_name ?? '-',
             'doctor_id'        => $a->doctor_id,
             'doctor_name'      => $a->doctor?->name ?? '-',
             'appointment_date' => $a->appointment_date?->format('Y-m-d'),

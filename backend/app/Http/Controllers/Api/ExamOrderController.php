@@ -150,9 +150,11 @@ class ExamOrderController extends Controller
                 'full_name'       => trim(($worker->first_name ?? '') . ' ' . ($worker->last_name ?? '')),
                 'document_number' => $worker->document_number ?? '-',
                 'age'             => $birthDate ? $birthDate->age . ' años' : '-',
-                'sex'             => $worker->sex ?? '-',
+                'sex'             => $worker->sex_label,
                 'company'         => $worker->company?->name ?? '-',
-                'job_position'    => $worker->jobPosition?->name ?? '-',
+                'job_position'    => $worker->jobPosition
+                    ? trim((($worker->jobPosition->ciiu_code ?? null) ? $worker->jobPosition->ciiu_code . ' - ' : '') . $worker->jobPosition->name)
+                    : '-',
             ],
             'doctor'     => [
                 'name'  => $order->orderedBy?->name ?? 'MÉDICO OCUPACIONAL',

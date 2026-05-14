@@ -16,8 +16,8 @@ return new class extends Migration
             $table->date('appointment_date');
             $table->time('appointment_time');
             $table->string('type', 60)->default('CONSULTA');
-            // PROGRAMADA | CONFIRMADA | ATENDIDA | CANCELADA | NO_ASISTIO
-            $table->string('status', 30)->default('PROGRAMADA');
+            // PENDIENTE | CONFIRMADA | CANCELADA | CANCELADA_PACIENTE | NO_ASISTIO
+            $table->string('status', 30)->default('PENDIENTE');
             $table->string('reason', 255)->nullable();
             $table->text('notes')->nullable();
             $table->uuid('created_by')->nullable();

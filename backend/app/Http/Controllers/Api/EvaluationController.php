@@ -10,6 +10,7 @@ use App\Models\EvaluationDiagnosis;
 use App\Models\EvaluationPrescription;
 use App\Models\OccupationalEvaluation;
 use App\Models\SystemSetting;
+use App\Models\Worker;
 use App\Services\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -381,7 +382,7 @@ class EvaluationController extends Controller
 
         $worker  = $evaluation->worker;
         $age     = $worker->birth_date ? (int) now()->diffInYears($worker->birth_date) . ' años' : '-';
-        $sexMap  = ['M' => 'Masculino', 'F' => 'Femenino', 'O' => 'Otro'];
+        $sexMap  = Worker::SEX_LABELS;
 
         $diagnosisSummary = $evaluation->diagnoses
             ->map(fn ($d) => $d->diagnosis_code . ($d->diagnosisCatalog ? ' - ' . $d->diagnosisCatalog->description : ''))

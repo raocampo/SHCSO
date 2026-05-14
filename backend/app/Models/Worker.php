@@ -16,6 +16,15 @@ class Worker extends Model
 
     protected $keyType = 'string';
 
+    public const SEX_LABELS = [
+        'M' => 'Hombre',
+        'F' => 'Mujer',
+    ];
+
+    protected $appends = [
+        'sex_label',
+    ];
+
     protected $fillable = [
         'history_number',
         'file_number',
@@ -51,6 +60,11 @@ class Worker extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function getSexLabelAttribute(): string
+    {
+        return self::SEX_LABELS[$this->sex] ?? ($this->sex ?? '-');
     }
 
     public function jobPosition(): BelongsTo

@@ -119,7 +119,7 @@ Funciones web actuales:
 - `PUT /api/users/{userId}/status` (`ADMIN`)
 - `PUT /api/users/{userId}/reset-password` (`ADMIN`)
 - `GET|POST /api/catalog/companies`
-- `GET|POST /api/catalog/job-positions`
+- `GET|POST /api/catalog/job-positions` (puestos/actividades desde CIIU Rev. 4.0 INEC; acepta `q`, `level`, `limit`)
 - `GET /api/catalog/diagnoses` (busqueda CIE-10)
 - `GET|POST /api/workers`
 - `PUT /api/workers/{workerId}`
@@ -143,6 +143,14 @@ Funciones web actuales:
 - `GET /api/reports/aptitude-by-company`
 - `GET /api/reports/top-diagnoses`
 - `GET /api/reports/monthly-activity`
+
+Estados de agenda soportados:
+
+- `PENDIENTE`
+- `CONFIRMADA`
+- `CANCELADA`
+- `CANCELADA_PACIENTE`
+- `NO_ASISTIO`
 
 Notas de paginacion en listados:
 

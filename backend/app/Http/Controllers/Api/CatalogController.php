@@ -84,21 +84,49 @@ class CatalogController extends Controller
         return response()->json(['ok' => true, 'message' => 'Empresa eliminada correctamente.']);
     }
 
-    public function listJobPositions(): JsonResponse
+    public function listJobPositions(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'level' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:3500'],
+        ]);
+
+        $query = mb_strtolower(trim((string) ($validated['q'] ?? '')));
+        $level = $validated['level'] ?? null;
+        $limit = (int) ($validated['limit'] ?? 2500);
+
         return response()->json([
             'ok' => true,
-            'data' => JobPosition::query()->latest()->limit(200)->get(),
+            'data' => JobPosition::query()
+                ->whereNotNull('ciiu_code')
+                ->when($query !== '', function ($builder) use ($query) {
+                    $builder->where(function ($q) use ($query) {
+                        $q->whereRaw('LOWER(COALESCE(ciiu_code, ciuo_code, \'\')) LIKE ?', ["%{$query}%"])
+                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$query}%"]);
+                    });
+                })
+                ->when($level !== null, fn ($builder) => $builder->where('ciiu_level', $level))
+                ->orderByRaw('COALESCE(ciiu_code, ciuo_code, \'\') ASC')
+                ->orderBy('name')
+                ->limit($limit)
+                ->get(),
         ]);
     }
 
     public function createJobPosition(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'ciiu_code' => ['nullable', 'string', 'max:12'],
             'ciuo_code' => ['nullable', 'string', 'max:12'],
+            'ciiu_level' => ['nullable', 'integer', 'min:1', 'max:6'],
             'name' => ['required', 'string', 'min:3', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
         ]);
+
+        if (empty($validated['ciuo_code']) && ! empty($validated['ciiu_code'])) {
+            $validated['ciuo_code'] = $validated['ciiu_code'];
+        }
 
         $jobPosition = JobPosition::create($validated);
 

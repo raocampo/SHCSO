@@ -171,7 +171,9 @@
 <?php
   $fullName = trim(($worker->first_name ?? '') . ' ' . ($worker->last_name ?? ''));
   $histNum  = $worker->history_number ?? '—';
-  $position = $worker->jobPosition->name ?? null;
+  $position = $worker->jobPosition
+      ? trim((($worker->jobPosition->ciiu_code ?? null) ? $worker->jobPosition->ciiu_code . ' - ' : '') . $worker->jobPosition->name)
+      : null;
   $company  = $worker->company->business_name ?? '—';
   $blood    = $worker->blood_type ?? null;
 

@@ -213,6 +213,12 @@ class CertificateController extends Controller
     public function generatePdf(Request $request, string $certificateId): JsonResponse
     {
         $certificate = MedicalCertificate::query()->findOrFail($certificateId);
+        // Siempre regenerar para reflejar datos actualizados (empresa, trabajador, etc.)
+        $disk = Storage::disk('public');
+        if ($certificate->pdf_path && $disk->exists($certificate->pdf_path)) {
+            $disk->delete($certificate->pdf_path);
+            $certificate->pdf_path = null;
+        }
         $path = $this->ensurePdfGenerated($certificate);
 
         AuditLogger::log(

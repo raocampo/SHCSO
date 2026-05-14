@@ -74,6 +74,13 @@
         .tableCompact td { padding:5px 8px; border-bottom:1px solid var(--color-border,#ddd); vertical-align:middle; }
         .workerStepPanel { margin-bottom:12px; }
         .workerStepPanel[data-worker-panel="manage"], .workerStepPanel[data-worker-panel="recent"] { grid-column:1 / -1; }
+        .workerActiveBanner { display:flex; align-items:center; gap:10px; background:#f0f9f5; border:1px solid #b6d9cd; border-radius:8px; padding:8px 14px; margin-bottom:14px; font-size:.85rem; }
+        .workerActiveBanner .wab-icon { font-size:1.1rem; flex-shrink:0; }
+        .workerActiveBanner .wab-name { font-weight:600; color:#115f61; }
+        .workerActiveBanner .wab-doc  { color:var(--muted); margin-left:6px; }
+        .workerActiveBanner.wab-empty { background:#fdf6ec; border-color:#f5c27a; }
+        .workerActiveBanner.wab-empty .wab-icon { color:#c8762e; }
+        .workerActiveBanner.wab-empty .wab-name { color:#c8762e; font-weight:400; }
         .workerManagePanel { padding:18px 20px; }
         .workerManageToolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
         .workerManageToolbar .hint { font-size:.8rem; }
@@ -84,6 +91,8 @@
         .workerManagePanel .rowActions .btn.small { min-width:80px; }
         .workerFormLocked { opacity:.78; }
         .workerFormLocked .field label { color:#7a8a90; }
+        .workerPositionSearchWrap { position:relative; }
+        .workerPositionSelected { margin:4px 0 0; min-height:16px; }
         .meta { margin:4px 0; color:var(--muted); font-size:.86rem; }
         .meta strong { color:var(--ink); }
         .historyList { display:grid; gap:8px; }
@@ -161,7 +170,7 @@
         </div>
         <div class="actions">
             <button id="miPerfilBtn" class="btn small hidden" type="button">👤 Mi Perfil</button>
-            <a href="/api/manual/download" target="_blank" class="btn small" title="Descargar manual de usuario" style="text-decoration:none;">📖 Manual</a>
+            <a href="/api/manual/preview" target="_blank" class="btn small" title="Ver manual de usuario en el navegador" style="text-decoration:none;">📖 Manual</a>
             <button id="refreshBtn" class="btn hidden" type="button">Refrescar</button>
             <button id="logoutBtn" class="btn warn hidden" type="button">Cerrar sesion</button>
         </div>
@@ -264,16 +273,16 @@
             <button class="workerFlowTab" data-worker-step="manage" type="button">2. Nuevo trabajador</button>
             <button class="workerFlowTab" data-worker-step="clinical" type="button">3. Historia clinica ampliada</button>
             <button class="workerFlowTab" data-worker-step="history" type="button">4. Historial clinico</button>
-            <button class="workerFlowTab" data-worker-step="evolutions" type="button">5. Evoluciones y Prescripciones</button>
-            <button class="workerFlowTab" data-worker-step="studies" type="button">6. Estudios Médicos</button>
-            <button class="workerFlowTab" data-worker-step="vaccines" type="button">7. Vacunación</button>
-            <button class="workerFlowTab" data-worker-step="accidents" type="button">8. Accidentes Laborales</button>
+            <button class="workerFlowTab" data-worker-step="studies" type="button">5. Estudios Médicos</button>
+            <button class="workerFlowTab" data-worker-step="vaccines" type="button">6. Vacunación</button>
+            <button class="workerFlowTab" data-worker-step="accidents" type="button">7. Accidentes Laborales</button>
         </nav>
         <nav class="operationFlow view-operations">
             <button class="operationFlowTab active" data-operation-step="consult" type="button">1. Consulta medica</button>
-            <button class="operationFlowTab" data-operation-step="certificate" type="button">2. Certificado y adjunto</button>
-            <button class="operationFlowTab" data-operation-step="evaluations" type="button">3. Evaluaciones recientes</button>
-            <button class="operationFlowTab" data-operation-step="certificates" type="button">4. Certificados recientes</button>
+            <button class="operationFlowTab" data-operation-step="evolutions" type="button">2. Evoluciones y Seguimiento</button>
+            <button class="operationFlowTab" data-operation-step="certificate" type="button">3. Certificado y adjunto</button>
+            <button class="operationFlowTab" data-operation-step="evaluations" type="button">4. Evaluaciones recientes</button>
+            <button class="operationFlowTab" data-operation-step="certificates" type="button">5. Certificados recientes</button>
         </nav>
 
         <div id="statsGrid" class="stats view-dashboard"></div>
@@ -361,13 +370,20 @@
                         <div class="field span-3"><label>Nombres</label><input name="first_name" required></div>
                         <div class="field span-4"><label>Apellidos</label><input name="last_name" required></div>
                         <div class="field span-2"><label>Nacimiento</label><input type="date" name="birth_date" required></div>
-                        <div class="field span-1"><label>Sexo</label><select name="sex"><option>M</option><option>F</option><option>O</option></select></div>
+                        <div class="field span-1"><label>Sexo</label><select name="sex"><option value="M">Hombre</option><option value="F">Mujer</option></select></div>
                         <div class="field span-3"><label>Email</label><input name="email" type="email"></div>
                         <div class="field span-2"><label>Telefono</label><input name="phone"></div>
                         <div class="field span-2"><label>Tipo de sangre</label><input name="blood_type"></div>
                         <div class="field span-2"><label>Lateralidad</label><input name="laterality"></div>
                         <div class="field span-6"><label>Empresa</label><select id="workerCompany" name="company_id"></select></div>
-                        <div class="field span-6"><label>Puesto</label><select id="workerPosition" name="job_position_id"></select></div>
+                        <div class="field span-6"><label>Puesto CIIU</label>
+                            <div class="workerPositionSearchWrap">
+                                <input id="workerPositionSearch" type="text" placeholder="Buscar codigo o actividad CIIU" autocomplete="off">
+                                <input id="workerPosition" name="job_position_id" type="hidden">
+                                <div id="workerPositionResults" class="autocompleteDropdown hidden"></div>
+                            </div>
+                            <p id="workerPositionSelected" class="hint workerPositionSelected">Sin puesto seleccionado.</p>
+                        </div>
                     </div>
                     <div class="rowActions workerFormActions">
                         <button id="workerFormSubmitBtn" class="btn accent" type="submit">Guardar trabajador</button>
@@ -545,6 +561,7 @@
 
         <article class="card view-workers workerStepPanel" data-worker-panel="clinical">
             <h2 class="section">Historia clinica ampliada</h2>
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span></div>
             <form id="workerClinicalForm">
                 <input type="hidden" name="worker_id">
                 <div class="field"><label>Antecedentes personales</label><textarea name="personal_background" placeholder="Antecedentes personales relevantes"></textarea></div>
@@ -561,6 +578,7 @@
         </article>
 
         <article class="card view-workers workerStepPanel" data-worker-panel="history">
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span></div>
             <h2 class="section">Historial clinico del trabajador
                 <button id="workerCardBtn" class="btn small" type="button" style="float:right;font-size:.78rem;margin-left:6px;" title="Descargar carnet del trabajador en PDF">🪪 Carnet</button>
                 <button id="workerHistoryPdfBtn" class="btn small" type="button" style="float:right;font-size:.78rem;" title="Descargar historia clínica completa en PDF">📄 HC PDF</button>
@@ -573,8 +591,9 @@
             <div id="workerTimeline" class="historyList"><p class="empty">Sin trabajador seleccionado.</p></div>
         </article>
 
-        <article class="card view-workers workerStepPanel" data-worker-panel="evolutions">
-            <h2 class="section">Seguimiento del Trabajador <span class="sectionBadge">seguimiento</span></h2>
+        <article class="card view-operations operationCard operationStepPanel" data-operation-panel="evolutions">
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin paciente seleccionado. Ve a "1. Consulta medica", selecciona el paciente y regresa aquí.</span></div>
+            <h2 class="section">Evoluciones y Seguimiento <span class="sectionBadge">seguimiento</span></h2>
 
             <!-- ===== CARD PRESCRIPCIONES ===== -->
             <div class="subCard" style="margin-bottom:24px;">
@@ -677,6 +696,7 @@
 
         <!-- ===== TAB 6: ESTUDIOS MÉDICOS ===== -->
         <article class="card view-workers workerStepPanel" data-worker-panel="studies">
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span></div>
             <h2 class="section">Estudios Médicos <span class="sectionBadge">diagnóstico</span></h2>
 
             <!-- Sub-card: Pedidos de Exámenes -->
@@ -805,6 +825,7 @@
 
         <!-- Tab 7: Vacunación Laboral -->
         <article class="card view-workers workerStepPanel" data-worker-panel="vaccines">
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span></div>
             <h2 class="section">💉 Vacunación Laboral</h2>
             <div class="subCard">
                 <div class="subCardTitle">Historial de Vacunas</div>
@@ -860,6 +881,7 @@
 
         <!-- Tab 8: Accidentes Laborales -->
         <article class="card view-workers workerStepPanel" data-worker-panel="accidents">
+            <div class="workerActiveBanner wab-empty" data-worker-banner><span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span></div>
             <h2 class="section">⚠️ Accidentes Laborales (AT-01)</h2>
             <div class="subCard">
                 <div class="subCardTitle">Registro de Accidentes / Incidentes</div>
@@ -1196,10 +1218,15 @@
         <form id="apptForm" style="display:grid;gap:10px;max-width:620px;">
             <input type="hidden" id="apptId">
             <div class="field">
-                <label>Trabajador <span style="color:red">*</span></label>
+                <label>Trabajador</label>
                 <input id="apptWorkerSearch" type="text" placeholder="Buscar por nombre o cédula..." autocomplete="off">
                 <input type="hidden" id="apptWorkerId">
                 <div id="apptWorkerResults" style="position:relative;"></div>
+                <p style="font-size:.75rem;color:var(--muted);margin:3px 0 0;">Selecciona de la lista o escribe un nombre libre si el paciente no está registrado.</p>
+            </div>
+            <div class="field" id="apptPatientNameField" style="display:none;">
+                <label>Nombre del paciente <span style="color:red">*</span></label>
+                <input id="apptPatientName" type="text" placeholder="Nombres y apellidos completos">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <div class="field"><label>Fecha <span style="color:red">*</span></label><input id="apptDate" type="date" required></div>
@@ -1221,10 +1248,10 @@
                 <div class="field">
                     <label>Estado</label>
                     <select id="apptStatus">
-                        <option value="PROGRAMADA">Programada</option>
+                        <option value="PENDIENTE">Pendiente</option>
                         <option value="CONFIRMADA">Confirmada</option>
-                        <option value="ATENDIDA">Atendida</option>
                         <option value="CANCELADA">Cancelada</option>
+                        <option value="CANCELADA_PACIENTE">Cancelada por paciente</option>
                         <option value="NO_ASISTIO">No asistió</option>
                     </select>
                 </div>
@@ -1248,10 +1275,10 @@
                 <label style="font-size:.75rem;">Estado</label>
                 <select id="apptFilterStatus">
                     <option value="">Todos</option>
-                    <option value="PROGRAMADA">Programada</option>
+                    <option value="PENDIENTE">Pendiente</option>
                     <option value="CONFIRMADA">Confirmada</option>
-                    <option value="ATENDIDA">Atendida</option>
                     <option value="CANCELADA">Cancelada</option>
+                    <option value="CANCELADA_PACIENTE">Cancelada por paciente</option>
                     <option value="NO_ASISTIO">No asistió</option>
                 </select>
             </div>
@@ -1415,7 +1442,7 @@ const refs = {
     usersPrevBtn: document.getElementById("usersPrevBtn"), usersNextBtn: document.getElementById("usersNextBtn"), usersPageInfo: document.getElementById("usersPageInfo"), usersExportBtn: document.getElementById("usersExportBtn"),
     workerSearchInput: document.getElementById("workerSearchInput"), workerSearchBtn: document.getElementById("workerSearchBtn"), workerCompanyFilter: document.getElementById("workerCompanyFilter"),
     evaluationFilterForm: document.getElementById("evaluationFilterForm"), certificateFilterForm: document.getElementById("certificateFilterForm"),
-    workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"),
+    workerForm: document.getElementById("workerForm"), workerCompany: document.getElementById("workerCompany"), workerPosition: document.getElementById("workerPosition"), workerPositionSearch: document.getElementById("workerPositionSearch"), workerPositionResults: document.getElementById("workerPositionResults"), workerPositionSelected: document.getElementById("workerPositionSelected"),
     workerDetailBox: document.getElementById("workerDetailBox"), workersManageBody: document.getElementById("workersManageBody"), workerClinicalForm: document.getElementById("workerClinicalForm"), workerFormSubmitBtn: document.getElementById("workerFormSubmitBtn"), workerFormResetBtn: document.getElementById("workerFormResetBtn"), workerCreateBtn: document.getElementById("workerCreateBtn"), workerFormModeHint: document.getElementById("workerFormModeHint"),
     workerHistoryEval: document.getElementById("workerHistoryEval"), workerHistoryCert: document.getElementById("workerHistoryCert"), workerTimeline: document.getElementById("workerTimeline"), workerHistoryPdfBtn: document.getElementById("workerHistoryPdfBtn"), workerCardBtn: document.getElementById("workerCardBtn"),
     workerEvolutionsList: document.getElementById("workerEvolutionsList"), evolutionForm: document.getElementById("evolutionForm"), evoType: document.getElementById("evoType"), evoEvaluation: document.getElementById("evoEvaluation"), evoSubjective: document.getElementById("evoSubjective"), evoObjective: document.getElementById("evoObjective"), evoAssessment: document.getElementById("evoAssessment"), evoPlan: document.getElementById("evoPlan"), evoBP: document.getElementById("evoBP"), evoTemp: document.getElementById("evoTemp"), evoHR: document.getElementById("evoHR"), evoRR: document.getElementById("evoRR"), evoWeight: document.getElementById("evoWeight"), evoHeight: document.getElementById("evoHeight"), evoNotes: document.getElementById("evoNotes"), evoSubmitBtn: document.getElementById("evoSubmitBtn"), evoCancelBtn: document.getElementById("evoCancelBtn"), evoEditId: document.getElementById("evoEditId"), evoFormTitle: document.getElementById("evoFormTitle"),
@@ -1442,6 +1469,7 @@ const refs = {
     companyModal: document.getElementById('companyModal'), companyForm: document.getElementById('companyForm'), companyFormId: document.getElementById('companyFormId'), newCompanyBtn: document.getElementById('newCompanyBtn')
 };
 let diagnosisSearchTimer = null;
+let workerPositionSearchTimer = null;
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
 // Alias: showStatus("text", "success"|"error"|"warn") — usado por módulos nuevos
@@ -1624,6 +1652,113 @@ function filterEvaluationWorkerOptions(){
 function mbLower(value){
     return String(value || "").toLocaleLowerCase();
 }
+function sexLabel(value){
+    const labels = { M:"Hombre", F:"Mujer" };
+    return labels[value] || value || "—";
+}
+function jobPositionLabel(position){
+    if(!position) return "Sin puesto";
+    const code = position.ciiu_code || position.ciuo_code || "";
+    return code ? `${code} - ${position.name}` : position.name;
+}
+function normalizeWorkerSexOptions(){
+    const select = refs.workerForm?.sex;
+    if(!select) return;
+    const current = select.value === "F" ? "F" : "M";
+    select.innerHTML = "";
+    select.appendChild(makeOpt("M", "Hombre"));
+    select.appendChild(makeOpt("F", "Mujer"));
+    select.value = current;
+}
+function normalizeSearchText(value){
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase();
+}
+function normalizeSearchCode(value){
+    return normalizeSearchText(value).replace(/[^a-z0-9]/g, "");
+}
+function workerPositionSearchText(position){
+    return [
+        position?.ciiu_code,
+        position?.ciuo_code,
+        position?.name,
+        position?.description
+    ].filter(Boolean).join(" ");
+}
+function findWorkerPositionById(id){
+    if(!id) return null;
+    return state.positions.find((position) => String(position.id) === String(id)) || null;
+}
+function hideWorkerPositionResults(){
+    if(!refs.workerPositionResults) return;
+    refs.workerPositionResults.classList.add("hidden");
+}
+function setWorkerPosition(position, fallbackId=""){
+    if(!refs.workerPosition) return;
+    const id = position?.id || fallbackId || "";
+    const label = position ? jobPositionLabel(position) : "";
+    refs.workerPosition.value = id;
+    if(refs.workerPositionSearch) refs.workerPositionSearch.value = label;
+    if(refs.workerPositionSelected){
+        refs.workerPositionSelected.textContent = position ? `Seleccionado: ${label}` : "Sin puesto seleccionado.";
+    }
+    if(refs.workerPositionResults){
+        refs.workerPositionResults.innerHTML = "";
+        hideWorkerPositionResults();
+    }
+}
+function getWorkerPositionMatches(query){
+    const raw = String(query || "").trim();
+    if(raw.length < 2) return [];
+    const terms = normalizeSearchText(raw).split(/\s+/).filter(Boolean);
+    const codeTerm = normalizeSearchCode(raw);
+    return state.positions
+        .filter((position) => {
+            const haystack = normalizeSearchText(workerPositionSearchText(position));
+            const codeHaystack = normalizeSearchCode(workerPositionSearchText(position));
+            return terms.every((term) => haystack.includes(term)) || (codeTerm.length >= 2 && codeHaystack.includes(codeTerm));
+        })
+        .slice(0, 18);
+}
+function renderWorkerPositionResults(results, message=""){
+    if(!refs.workerPositionResults) return;
+    refs.workerPositionResults.innerHTML = "";
+    if(message){
+        const item = document.createElement("div");
+        item.className = "rxMedItem";
+        item.innerHTML = `<span>${esc(message)}</span>`;
+        refs.workerPositionResults.appendChild(item);
+        refs.workerPositionResults.classList.remove("hidden");
+        return;
+    }
+    if(!results.length){
+        hideWorkerPositionResults();
+        return;
+    }
+    results.forEach((position) => {
+        const item = document.createElement("div");
+        const description = position.description && position.description !== position.name ? `<span>${esc(position.description)}</span>` : "";
+        item.className = "rxMedItem";
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+        item.dataset.positionId = position.id;
+        item.innerHTML = `<strong>${esc(jobPositionLabel(position))}</strong>${description}`;
+        refs.workerPositionResults.appendChild(item);
+    });
+    refs.workerPositionResults.classList.remove("hidden");
+}
+function searchWorkerPositions(){
+    if(!refs.workerPositionSearch) return;
+    const query = refs.workerPositionSearch.value;
+    if(String(query || "").trim().length < 2){
+        renderWorkerPositionResults([], "Escribe al menos 2 caracteres del codigo o actividad CIIU.");
+        return;
+    }
+    const results = getWorkerPositionMatches(query);
+    renderWorkerPositionResults(results, results.length ? "" : "Sin coincidencias en el catalogo CIIU.");
+}
 async function searchDiagnosisCatalog(){
     const query = String(refs.diagnosisSearchInput?.value || "").trim();
     if(query.length < 2){
@@ -1654,6 +1789,26 @@ async function downloadWithToken(path, filename){
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+async function openPdfWithToken(path){
+    const opened = window.open("", "_blank");
+    if(opened){
+        opened.document.write("<p style='font-family:sans-serif;color:#475569'>Generando PDF...</p>");
+    }
+    const res = await fetch(path, { headers:{ Authorization:`Bearer ${state.token}` } });
+    if(!res.ok){
+        const err = await res.json().catch(() => ({}));
+        if(opened) opened.close();
+        throw new Error(err.message || "No se pudo abrir el PDF.");
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    if(!opened){
+        URL.revokeObjectURL(url);
+        throw new Error("El navegador bloqueo la ventana del PDF.");
+    }
+    opened.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 function showRecoveryMode(mode){
     if(!refs.forgotPasswordBox || !refs.resetPasswordBox) return;
@@ -1717,7 +1872,7 @@ function applyWorkerStepVisibility(){
 }
 
 function setWorkerStep(step){
-    const allowed = new Set(["recent","manage","clinical","history","evolutions","studies","vaccines","accidents"]);
+    const allowed = new Set(["recent","manage","clinical","history","studies","vaccines","accidents"]);
     state.workerStep = allowed.has(step) ? step : "recent";
     applyWorkerStepVisibility();
 }
@@ -1739,7 +1894,7 @@ function applyOperationStepVisibility(){
 }
 
 function setOperationStep(step){
-    const allowed = new Set(["consult","certificate","evaluations","certificates"]);
+    const allowed = new Set(["consult","evolutions","certificate","evaluations","certificates"]);
     state.operationStep = allowed.has(step) ? step : "consult";
     applyOperationStepVisibility();
 }
@@ -1826,7 +1981,7 @@ async function loadAll(){
     });
     const [dashboard, monthly, aptitude, workers, evaluations, certificates, companies, positions] = await Promise.all([
         api("/api/reports/dashboard"), api("/api/reports/monthly-activity?months=6"), api("/api/reports/aptitude-by-company?limit=8"),
-        api(`/api/workers?${workersQuery}`), api(`/api/evaluations?${evaluationsQuery}`), api(`/api/certificates?${certificatesQuery}`), api("/api/catalog/companies"), api("/api/catalog/job-positions")
+        api(`/api/workers?${workersQuery}`), api(`/api/evaluations?${evaluationsQuery}`), api(`/api/certificates?${certificatesQuery}`), api("/api/catalog/companies"), api("/api/catalog/job-positions?level=6&limit=2500")
     ]);
     state.dashboard = dashboard.data; state.monthly = monthly.data || []; state.aptitude = aptitude.data || [];
     state.workers = workers.data || []; state.evaluations = evaluations.data || []; state.certificates = certificates.data || []; state.companies = companies.data || []; state.positions = positions.data || [];
@@ -1947,12 +2102,13 @@ function setWorkerFormEnabled(enabled){
 
 function resetWorkerForm(keepHistory=false){
     if(!refs.workerForm) return;
+    normalizeWorkerSexOptions();
     refs.workerForm.reset();
     refs.workerForm.worker_id.value = "";
     refs.workerForm.document_type.value = "CEDULA";
     refs.workerForm.sex.value = "M";
     refs.workerForm.company_id.value = "";
-    refs.workerForm.job_position_id.value = "";
+    setWorkerPosition(null);
     setWorkerFormMode("create");
     setWorkerFormEnabled(false);
     if(!keepHistory){
@@ -1962,19 +2118,20 @@ function resetWorkerForm(keepHistory=false){
 
 function fillWorkerForm(worker, enableEditing=false){
     if(!refs.workerForm) return;
+    normalizeWorkerSexOptions();
     refs.workerForm.worker_id.value = worker.id || "";
     refs.workerForm.document_type.value = worker.document_type || "CEDULA";
     refs.workerForm.document_number.value = worker.document_number || "";
     refs.workerForm.first_name.value = worker.first_name || "";
     refs.workerForm.last_name.value = worker.last_name || "";
     refs.workerForm.birth_date.value = worker.birth_date || "";
-    refs.workerForm.sex.value = worker.sex || "M";
+    refs.workerForm.sex.value = worker.sex === "F" ? "F" : "M";
     refs.workerForm.email.value = worker.email || "";
     refs.workerForm.phone.value = worker.phone || "";
     refs.workerForm.blood_type.value = worker.blood_type || "";
     refs.workerForm.laterality.value = worker.laterality || "";
     refs.workerForm.company_id.value = worker.company_id || "";
-    refs.workerForm.job_position_id.value = worker.job_position_id || "";
+    setWorkerPosition(worker.job_position || findWorkerPositionById(worker.job_position_id), worker.job_position_id || "");
     setWorkerFormMode("edit");
     setWorkerFormEnabled(enableEditing);
     if(!enableEditing && refs.workerFormModeHint){
@@ -1998,7 +2155,24 @@ function fillWorkerClinicalForm(clinicalHistory, workerId){
     form.longitudinal_notes.value = data.longitudinal_notes || "";
 }
 
+function updateWorkerBanners(){
+    const history = state.selectedWorkerHistory;
+    const w = history?.worker;
+    const banners = document.querySelectorAll('[data-worker-banner]');
+    banners.forEach(banner => {
+        if(w){
+            const company = w.company?.business_name || '';
+            banner.className = 'workerActiveBanner';
+            banner.innerHTML = `<span class="wab-icon">👤</span><span class="wab-name">${esc(w.last_name)}, ${esc(w.first_name)}</span><span class="wab-doc">${esc(w.document_type||'CI')} ${esc(w.document_number)}${company ? ' · ' + esc(company) : ''}</span>`;
+        } else {
+            banner.className = 'workerActiveBanner wab-empty';
+            banner.innerHTML = `<span class="wab-icon">⚠️</span><span class="wab-name">Sin trabajador seleccionado. Ve a "Trabajadores recientes" y haz clic en Ver o Editar.</span>`;
+        }
+    });
+}
+
 function renderWorkerHistory(){
+    updateWorkerBanners();
     const history = state.selectedWorkerHistory;
     if(!history || !history.worker){
         refs.workerDetailBox.innerHTML = `<p class="empty">Selecciona un trabajador para ver ficha completa.</p>`;
@@ -2021,13 +2195,17 @@ function renderWorkerHistory(){
         if(m < 0 || (m === 0 && today.getDate() < born.getDate())) a--;
         age = ` · ${a} años`;
     }
+    const birthDisplay = w.birth_date
+        ? new Date(w.birth_date + 'T00:00:00').toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) + age
+        : '—';
     refs.workerDetailBox.innerHTML = `
-        <p class="meta"><strong>Nombre:</strong> ${esc(w.last_name)}, ${esc(w.first_name)}${age}</p>
+        <p class="meta"><strong>Nombre:</strong> ${esc(w.last_name)}, ${esc(w.first_name)}</p>
+        <p class="meta"><strong>Fecha nacimiento:</strong> ${birthDisplay}</p>
         <p class="meta"><strong>Documento:</strong> ${esc(w.document_type)} ${esc(w.document_number)}</p>
-        <p class="meta"><strong>Sexo / Sangre:</strong> ${esc(w.sex || "—")} / ${esc(w.blood_type || "—")}</p>
+        <p class="meta"><strong>Sexo / Sangre:</strong> ${esc(w.sex_label || sexLabel(w.sex))} / ${esc(w.blood_type || "—")}</p>
         <p class="meta"><strong>Historia:</strong> ${esc(w.history_number)} &nbsp;|&nbsp; <strong>Archivo:</strong> ${esc(w.file_number)}</p>
         <p class="meta"><strong>Empresa:</strong> ${esc(w.company?.business_name || "Sin empresa")}</p>
-        <p class="meta"><strong>Puesto:</strong> ${esc(w.job_position?.name || "Sin puesto")}</p>
+        <p class="meta"><strong>Puesto:</strong> ${esc(jobPositionLabel(w.job_position))}</p>
         ${w.email ? `<p class="meta"><strong>Email:</strong> ${esc(w.email)}</p>` : ""}
         ${w.phone ? `<p class="meta"><strong>Teléfono:</strong> ${esc(w.phone)}</p>` : ""}
         <div class="chips"><span class="chip">Evaluaciones: ${(history.evaluations || []).length}</span><span class="chip">Certificados: ${(history.certificates || []).length}</span></div>
@@ -2412,7 +2590,11 @@ if(refs.workerPrescriptionsList){
         const act = btn.dataset.act;
         if(act === "print-rx"){
             const evalId = btn.dataset.evalId;
-            window.open(`/api/evaluations/${evalId}/prescription-pdf`, "_blank");
+            try{
+                await openPdfWithToken(`/api/evaluations/${evalId}/prescription-pdf`);
+            } catch(err){
+                showToast(err.message || "No se pudo abrir la receta.", "error");
+            }
         } else if(act === "edit-rx-evo"){
             const evoId = btn.dataset.evoId;
             const ev = (state.selectedWorkerEvolutions||[]).find(x => String(x.id) === String(evoId));
@@ -2684,7 +2866,11 @@ if(refs.examOrdersList){
         const act = btn.dataset.act;
         const orderId = btn.dataset.orderId;
         if(act === "print-order"){
-            window.open(`/api/workers/${state.selectedWorkerId}/exam-orders/${orderId}/pdf`, "_blank");
+            try{
+                await openPdfWithToken(`/api/workers/${state.selectedWorkerId}/exam-orders/${orderId}/pdf`);
+            } catch(err){
+                showToast(err.message || "No se pudo abrir el pedido.", "error");
+            }
         } else if(act === "edit-order"){
             const o = state_studies.examOrders.find(x => String(x.id) === String(orderId));
             if(o) fillExamOrderForm(o);
@@ -2744,7 +2930,7 @@ function renderAttachmentGallery(){
                     ${isImage ? `<button class="btn small" data-act="view-image" data-url="${att.file_url}" data-name="${esc(att.file_name)}" type="button">🔍 Ver</button>` : ""}
                     ${isPdf ? `<button class="btn small" data-act="view-pdf" data-url="${att.file_url}" type="button">📄 Ver PDF</button>` : ""}
                     ${isDicom ? `<button class="btn small" data-act="view-dicom" data-download="${att.download_path}" data-name="${esc(att.file_name)}" type="button">💿 Ver DICOM</button>` : ""}
-                    <a href="${att.download_path}" class="btn small" target="_blank">⬇️ Descargar</a>
+                    <button class="btn small" data-act="download-attachment" data-download="${att.download_path}" data-name="${esc(att.file_name)}" type="button">⬇️ Descargar</button>
                 </div>
             </div>
             ${isImage ? `<div style="margin-top:8px;"><img src="${att.file_url}" alt="${esc(att.file_name)}" style="max-height:120px;max-width:100%;border-radius:6px;cursor:pointer;object-fit:cover;" data-act="view-image" data-url="${att.file_url}" data-name="${esc(att.file_name)}"></div>` : ""}`;
@@ -2755,6 +2941,7 @@ function renderAttachmentGallery(){
             if(act2 === "view-image") openLightbox(btn2.dataset.url, btn2.dataset.name);
             else if(act2 === "view-pdf") window.open(btn2.dataset.url, "_blank");
             else if(act2 === "view-dicom") openDicomViewer(btn2.dataset.download, btn2.dataset.name);
+            else if(act2 === "download-attachment") downloadWithToken(btn2.dataset.download, btn2.dataset.name).catch(err => showToast(err.message || "No se pudo descargar.", "error"));
         });
         gallery.appendChild(card);
     });
@@ -3003,8 +3190,12 @@ function renderUsers(){
 }
 
 function fillSelects(){
+    normalizeWorkerSexOptions();
     refs.workerCompany.innerHTML = ""; refs.workerCompany.appendChild(makeOpt("", "Sin empresa")); state.companies.forEach(c=>refs.workerCompany.appendChild(makeOpt(c.id, c.business_name)));
-    refs.workerPosition.innerHTML = ""; refs.workerPosition.appendChild(makeOpt("", "Sin puesto")); state.positions.forEach(p=>refs.workerPosition.appendChild(makeOpt(p.id, p.name)));
+    if(refs.workerPosition?.value){
+        const currentPosition = findWorkerPositionById(refs.workerPosition.value);
+        if(currentPosition) setWorkerPosition(currentPosition);
+    }
     // Filtro por empresa en el listado de trabajadores
     if(refs.workerCompanyFilter){
         const prev = refs.workerCompanyFilter.value;
@@ -3300,9 +3491,57 @@ refs.workerFormResetBtn.addEventListener("click", () => {
     status("Edicion cancelada. Puedes crear un nuevo trabajador.", "ok");
 });
 
+if(refs.workerPositionSearch){
+    refs.workerPositionSearch.addEventListener("input", () => {
+        if(refs.workerPosition) refs.workerPosition.value = "";
+        if(refs.workerPositionSelected) refs.workerPositionSelected.textContent = "Sin puesto seleccionado.";
+        clearTimeout(workerPositionSearchTimer);
+        workerPositionSearchTimer = setTimeout(searchWorkerPositions, 180);
+    });
+    refs.workerPositionSearch.addEventListener("focus", () => {
+        if(refs.workerPositionSearch.value.trim().length >= 2) searchWorkerPositions();
+    });
+    refs.workerPositionSearch.addEventListener("keydown", (e) => {
+        if(e.key === "Escape"){
+            hideWorkerPositionResults();
+            return;
+        }
+        if(e.key === "Enter" && refs.workerPositionResults && !refs.workerPositionResults.classList.contains("hidden")){
+            const first = refs.workerPositionResults.querySelector("[data-position-id]");
+            if(first){
+                e.preventDefault();
+                const position = findWorkerPositionById(first.dataset.positionId);
+                if(position) setWorkerPosition(position);
+            }
+        }
+    });
+    refs.workerPositionSearch.addEventListener("blur", () => {
+        window.setTimeout(hideWorkerPositionResults, 160);
+    });
+}
+if(refs.workerPositionResults){
+    refs.workerPositionResults.addEventListener("mousedown", (e) => e.preventDefault());
+    refs.workerPositionResults.addEventListener("click", (e) => {
+        const item = e.target.closest("[data-position-id]");
+        if(!item) return;
+        const position = findWorkerPositionById(item.dataset.positionId);
+        if(position) setWorkerPosition(position);
+    });
+}
+
 refs.evaluationWorkerSearch.addEventListener("input", (e) => {
     state.consultation.worker_search = e.target.value || "";
     filterEvaluationWorkerOptions();
+});
+
+// Sincronizar paciente seleccionado en Consulta médica → Evoluciones y Seguimiento
+refs.evaluationWorker?.addEventListener("change", async () => {
+    const workerId = refs.evaluationWorker.value;
+    if(!workerId || workerId === state.selectedWorkerId) return;
+    try {
+        await loadWorkerHistory(workerId);
+        renderWorkerHistory();
+    } catch(e){ /* no interrumpir el flujo de consulta */ }
 });
 
 refs.diagnosisSearchInput.addEventListener("input", () => {
@@ -3317,7 +3556,8 @@ refs.diagnosisSearchResults.addEventListener("click", (e) => {
     const description = String(btn.getAttribute("data-description") || "").trim();
     if(code === "" || state.consultation.selected_diagnoses.some(x => x.code === code)) return;
     state.consultation.selected_diagnoses.push({ code, description, diagnosis_type:"DEF" });
-    state.consultation.diagnosis_results = state.consultation.diagnosis_results.filter(x => normalizeDiagnosisCode(x.code) !== code);
+    state.consultation.diagnosis_results = [];
+    if(refs.diagnosisSearchInput) refs.diagnosisSearchInput.value = "";
     renderDiagnosisSearchResults();
     renderSelectedDiagnoses();
 });
@@ -3782,8 +4022,10 @@ async function handleWorkerAction(workerId, action){
     if(action === "view-worker"){
         await loadWorkerHistory(workerId);
         renderWorkerHistory();
-        setWorkerStep("history");
-        status("Historial cargado.", "ok");
+        setWorkerFormEnabled(false);
+        setWorkerFormMode("view");
+        setWorkerStep("manage");
+        status("Ficha cargada en solo lectura. Usa Editar para habilitar.", "ok");
         return;
     }
     if(action === "edit-worker"){
@@ -4034,9 +4276,17 @@ refs.workerFlowTabs.forEach(tab => {
 });
 
 refs.operationFlowTabs.forEach(tab => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
         const nextStep = tab.getAttribute("data-operation-step");
-        if(nextStep) setOperationStep(nextStep);
+        if(!nextStep) return;
+        // Al entrar a Evoluciones, sincronizar paciente desde el select de Consulta si aún no hay uno cargado
+        if(nextStep === "evolutions" && !state.selectedWorkerId && refs.evaluationWorker?.value){
+            try {
+                await loadWorkerHistory(refs.evaluationWorker.value);
+                renderWorkerHistory();
+            } catch(e){}
+        }
+        setOperationStep(nextStep);
     });
 });
 
@@ -4130,7 +4380,7 @@ async function loadTodayAppts(){
             return;
         }
         refs.todayApptsEmpty.style.display = "none";
-        const statusColor = { PROGRAMADA:'#1565c0', CONFIRMADA:'#2e7d32', CANCELADA:'#e53935', COMPLETADA:'#546e7a', EN_CURSO:'#f57c00' };
+        const statusColor = { PENDIENTE:'#1565c0', CONFIRMADA:'#2e7d32', CANCELADA:'#e53935', CANCELADA_PACIENTE:'#c2410c', NO_ASISTIO:'#f57c00' };
         refs.todayApptsList.innerHTML = `
         <table class="tableCompact" style="width:100%;border-collapse:collapse;">
             <thead><tr>
@@ -4143,8 +4393,8 @@ async function loadTodayAppts(){
                 return `<tr>
                     <td style="font-weight:700;">${hour}</td>
                     <td>${e(a.worker_name || '—')}</td>
-                    <td>${e(a.appointment_type || '—')}</td>
-                    <td style="color:${col};font-weight:600;">${e(a.status)}</td>
+                    <td>${e(a.type_label || '—')}</td>
+                    <td style="color:${col};font-weight:600;">${e(a.status_label || a.status)}</td>
                     <td>${e(a.reason || '—')}</td>
                 </tr>`;
             }).join('')}
@@ -4285,8 +4535,8 @@ const apptState = {
 };
 
 const APPT_STATUS_COLORS = {
-    PROGRAMADA: '#3b82f6', CONFIRMADA: '#059669', ATENDIDA: '#6366f1',
-    CANCELADA: '#ef4444', NO_ASISTIO: '#f59e0b'
+    PENDIENTE: '#3b82f6', CONFIRMADA: '#059669',
+    CANCELADA: '#ef4444', CANCELADA_PACIENTE: '#c2410c', NO_ASISTIO: '#f59e0b'
 };
 
 async function loadAgendaView(){
@@ -4372,10 +4622,14 @@ function showApptForm(appt = null){
     document.getElementById('apptId').value              = appt?.id || '';
     document.getElementById('apptWorkerSearch').value   = appt?.worker_name || '';
     document.getElementById('apptWorkerId').value        = appt?.worker_id || '';
+    const apptPatientNameEl = document.getElementById('apptPatientName');
+    const apptPatientField  = document.getElementById('apptPatientNameField');
+    if(apptPatientNameEl) apptPatientNameEl.value = appt?.patient_name || '';
+    if(apptPatientField)  apptPatientField.style.display = (!appt?.worker_id && appt?.patient_name) ? '' : 'none';
     document.getElementById('apptDate').value            = appt?.appointment_date || new Date().toISOString().split('T')[0];
     document.getElementById('apptTime').value            = appt?.appointment_time?.slice(0,5) || '08:00';
     document.getElementById('apptType').value            = appt?.type || 'CONSULTA';
-    document.getElementById('apptStatus').value          = appt?.status || 'PROGRAMADA';
+    document.getElementById('apptStatus').value          = appt?.status || 'PENDIENTE';
     document.getElementById('apptReason').value          = appt?.reason || '';
     document.getElementById('apptNotes').value           = appt?.notes || '';
     document.getElementById('apptFormCard').style.display = '';
@@ -4404,16 +4658,33 @@ let apptWorkerSearchTimer = null;
 document.getElementById('apptWorkerSearch')?.addEventListener('input', e => {
     clearTimeout(apptWorkerSearchTimer);
     const q = e.target.value.trim();
-    if(q.length < 2){ document.getElementById('apptWorkerResults').innerHTML = ''; return; }
+    // Si se borra el campo o se cambia el texto, limpiar selección previa
+    document.getElementById('apptWorkerId').value = '';
+    const patientField = document.getElementById('apptPatientNameField');
+    if(q.length < 2){
+        document.getElementById('apptWorkerResults').innerHTML = '';
+        if(q.length > 0) patientField.style.display = '';
+        else patientField.style.display = 'none';
+        return;
+    }
     apptWorkerSearchTimer = setTimeout(async () => {
         try {
             const res = await api(`/api/workers?q=${encodeURIComponent(q)}&per_page=6`);
             const results = document.getElementById('apptWorkerResults');
-            if(!res.data?.length){ results.innerHTML = '<div style="padding:6px;color:var(--muted);font-size:.8rem;">Sin resultados</div>'; return; }
+            if(!res.data?.length){
+                results.innerHTML = '<div style="padding:6px;color:var(--muted);font-size:.8rem;">Sin coincidencias en trabajadores registrados.</div>';
+                patientField.style.display = '';
+                return;
+            }
+            patientField.style.display = 'none';
             results.innerHTML = `<div style="position:absolute;z-index:99;background:var(--card);border:1px solid var(--border);border-radius:8px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;">${
-                res.data.map(w => `<div style="padding:8px 12px;cursor:pointer;font-size:.85rem;border-bottom:1px solid var(--border);" 
-                    onmousedown="selectApptWorker('${w.id}','${(w.full_name||'').replace(/'/g,"\\'")}')">
-                    <strong>${w.full_name}</strong> <span style="color:var(--muted)">${w.document_number} · ${w.company_name || ''}</span></div>`).join('')
+                res.data.map(w => {
+                    const wname = `${w.first_name||''} ${w.last_name||''}`.trim();
+                    const company = w.company?.business_name || w.company_name || '';
+                    return `<div style="padding:8px 12px;cursor:pointer;font-size:.85rem;border-bottom:1px solid var(--border);"
+                        onmousedown="selectApptWorker('${w.id}','${wname.replace(/'/g,"\\'")}')">
+                        <strong>${wname}</strong> <span style="color:var(--muted)">${w.document_number}${company ? ' · ' + company : ''}</span></div>`;
+                }).join('')
             }</div>`;
         } catch(e){}
     }, 300);
@@ -4423,14 +4694,18 @@ function selectApptWorker(id, name){
     document.getElementById('apptWorkerId').value = id;
     document.getElementById('apptWorkerSearch').value = name;
     document.getElementById('apptWorkerResults').innerHTML = '';
+    document.getElementById('apptPatientNameField').style.display = 'none';
+    document.getElementById('apptPatientName').value = '';
 }
 
 document.getElementById('apptForm')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const workerId = document.getElementById('apptWorkerId').value;
-    if(!workerId){ showStatus('Selecciona un trabajador de la lista.', 'error'); return; }
+    const workerId    = document.getElementById('apptWorkerId').value.trim();
+    const patientName = document.getElementById('apptPatientName')?.value.trim() || '';
+    if(!workerId && !patientName){ showStatus('Selecciona un trabajador o ingresa un nombre de paciente.', 'error'); return; }
     const body = {
-        worker_id:        workerId,
+        worker_id:        workerId || null,
+        patient_name:     !workerId ? patientName : null,
         appointment_date: document.getElementById('apptDate').value,
         appointment_time: document.getElementById('apptTime').value,
         type:             document.getElementById('apptType').value,

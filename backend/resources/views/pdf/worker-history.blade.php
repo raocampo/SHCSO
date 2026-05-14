@@ -106,9 +106,15 @@
             </tr>
             <tr>
                 <td class="lbl">Sexo / Sangre</td>
-                <td class="val">{{ $w->sex ?? 'N/A' }} / {{ $w->blood_type ?? 'N/A' }}</td>
+                <td class="val">{{ $w->sex_label ?? 'N/A' }} / {{ $w->blood_type ?? 'N/A' }}</td>
                 <td class="lbl">Cargo</td>
-                <td class="val">{{ $w->jobPosition?->name ?? $w->job_title ?? 'N/A' }}</td>
+                <td class="val">
+                    @if($w->jobPosition)
+                        {{ trim((($w->jobPosition->ciiu_code ?? null) ? $w->jobPosition->ciiu_code . ' - ' : '') . $w->jobPosition->name) }}
+                    @else
+                        {{ $w->job_title ?? 'N/A' }}
+                    @endif
+                </td>
             </tr>
             <tr>
                 <td class="lbl">Fecha Nacimiento</td>

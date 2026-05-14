@@ -24,18 +24,7 @@ class CatalogSeeder extends Seeder
             ]
         );
 
-        $positions = [
-            ['ciuo_code' => '2261', 'name' => 'Medico Ocupacional', 'description' => 'Responsable de evaluaciones y certificados ocupacionales'],
-            ['ciuo_code' => '3256', 'name' => 'Enfermeria', 'description' => 'Apoyo en toma de signos y registro clinico'],
-            ['ciuo_code' => '4321', 'name' => 'Recepcion', 'description' => 'Agendamiento y registro de pacientes'],
-        ];
-
-        foreach ($positions as $position) {
-            JobPosition::query()->firstOrCreate(
-                ['name' => $position['name']],
-                $position
-            );
-        }
+        $this->seedCiiuJobPositions();
 
         $diagnoses = [
             'Z00.0' => 'Examen medico general',
@@ -49,5 +38,47 @@ class CatalogSeeder extends Seeder
                 ['description' => $description]
             );
         }
+    }
+
+    private function seedCiiuJobPositions(): void
+    {
+        $path = database_path('data/ciiu_rev4_inec.csv');
+        if (! is_readable($path)) {
+            return;
+        }
+
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            return;
+        }
+
+        fgetcsv($handle);
+
+        while (($row = fgetcsv($handle)) !== false) {
+            [$code, $description, $level] = array_pad($row, 3, null);
+            $code = trim((string) $code);
+            $description = trim((string) $description);
+            $level = (int) $level;
+
+            if ($code === '' || $description === '' || $level < 1) {
+                continue;
+            }
+
+            $name = mb_strlen($description) > 160
+                ? rtrim(mb_substr($description, 0, 157)) . '...'
+                : $description;
+
+            JobPosition::query()->updateOrCreate(
+                ['ciiu_code' => $code],
+                [
+                    'ciuo_code' => $code,
+                    'ciiu_level' => $level,
+                    'name' => $name,
+                    'description' => $description,
+                ]
+            );
+        }
+
+        fclose($handle);
     }
 }

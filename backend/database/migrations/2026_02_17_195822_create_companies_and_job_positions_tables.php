@@ -24,6 +24,8 @@ return new class extends Migration
         Schema::create('job_positions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('ciuo_code', 12)->nullable();
+            $table->string('ciiu_code', 12)->nullable()->index();
+            $table->unsignedTinyInteger('ciiu_level')->nullable()->index();
             $table->string('name', 160);
             $table->text('description')->nullable();
             $table->timestamps();

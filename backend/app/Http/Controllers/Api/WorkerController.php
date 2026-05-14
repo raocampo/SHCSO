@@ -38,7 +38,7 @@ class WorkerController extends Controller
         $page      = (int) ($validated['page'] ?? 1);
 
         $workersQuery = Worker::query()
-            ->with(['company:id,business_name', 'jobPosition:id,name'])
+            ->with(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
             ->when($query !== '', function ($builder) use ($query) {
                 $builder->where(function ($q) use ($query) {
                     $q->where('document_number', 'like', "%{$query}%")
@@ -77,7 +77,7 @@ class WorkerController extends Controller
             'first_name' => ['required', 'string', 'min:2', 'max:120'],
             'last_name' => ['required', 'string', 'min:2', 'max:120'],
             'birth_date' => ['required', 'date'],
-            'sex' => ['required', 'in:M,F,O'],
+            'sex' => ['required', 'in:M,F'],
             'email' => ['nullable', 'email', 'max:160'],
             'phone' => ['nullable', 'string', 'max:30'],
             'blood_type' => ['nullable', 'string', 'max:10'],
@@ -106,14 +106,14 @@ class WorkerController extends Controller
 
         return response()->json([
             'ok' => true,
-            'data' => $worker->load(['company:id,business_name', 'jobPosition:id,name']),
+            'data' => $worker->load(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level']),
         ], 201);
     }
 
     public function show(string $workerId): JsonResponse
     {
         $worker = Worker::query()
-            ->with(['company:id,business_name', 'jobPosition:id,name'])
+            ->with(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
             ->findOrFail($workerId);
 
         return response()->json([
@@ -138,7 +138,7 @@ class WorkerController extends Controller
             'first_name' => ['sometimes', 'string', 'min:2', 'max:120'],
             'last_name' => ['sometimes', 'string', 'min:2', 'max:120'],
             'birth_date' => ['sometimes', 'date'],
-            'sex' => ['sometimes', 'in:M,F,O'],
+            'sex' => ['sometimes', 'in:M,F'],
             'email' => ['sometimes', 'nullable', 'email', 'max:160'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'blood_type' => ['sometimes', 'nullable', 'string', 'max:10'],
@@ -163,7 +163,7 @@ class WorkerController extends Controller
 
         return response()->json([
             'ok' => true,
-            'data' => $worker->load(['company:id,business_name', 'jobPosition:id,name']),
+            'data' => $worker->load(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level']),
         ]);
     }
 
@@ -251,7 +251,7 @@ class WorkerController extends Controller
     public function history(string $workerId): JsonResponse
     {
         $worker = Worker::query()
-            ->with(['company:id,business_name', 'jobPosition:id,name'])
+            ->with(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
             ->findOrFail($workerId);
 
         $evaluations = OccupationalEvaluation::query()
@@ -350,7 +350,7 @@ class WorkerController extends Controller
     public function historyPdf(string $workerId): Response
     {
         $worker = Worker::query()
-            ->with(['company:id,business_name,ruc', 'jobPosition:id,name'])
+            ->with(['company:id,business_name,ruc', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
             ->findOrFail($workerId);
 
         $clinicalHistory = WorkerClinicalHistory::query()
@@ -400,7 +400,7 @@ class WorkerController extends Controller
     public function workerCard(string $workerId): Response
     {
         $worker = Worker::query()
-            ->with(['company:id,business_name', 'jobPosition:id,name'])
+            ->with(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
             ->findOrFail($workerId);
 
         $certificate = MedicalCertificate::query()

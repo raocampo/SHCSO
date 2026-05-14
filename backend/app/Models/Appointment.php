@@ -11,7 +11,7 @@ class Appointment extends Model
     use HasUuids;
 
     protected $fillable = [
-        'worker_id', 'doctor_id', 'appointment_date', 'appointment_time',
+        'worker_id', 'patient_name', 'doctor_id', 'appointment_date', 'appointment_time',
         'type', 'status', 'reason', 'notes', 'created_by',
     ];
 
@@ -30,11 +30,11 @@ class Appointment extends Model
     ];
 
     public const STATUSES = [
-        'PROGRAMADA'  => 'Programada',
-        'CONFIRMADA'  => 'Confirmada',
-        'ATENDIDA'    => 'Atendida',
-        'CANCELADA'   => 'Cancelada',
-        'NO_ASISTIO'  => 'No asistió',
+        'PENDIENTE'           => 'Pendiente',
+        'CONFIRMADA'          => 'Confirmada',
+        'CANCELADA'           => 'Cancelada',
+        'CANCELADA_PACIENTE'  => 'Cancelada por paciente',
+        'NO_ASISTIO'          => 'No asistió',
     ];
 
     public function worker(): BelongsTo

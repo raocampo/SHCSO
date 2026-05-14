@@ -238,7 +238,7 @@ class ReportController extends Controller
         if ($type === 'workers') {
             $title   = 'Trabajadores';
             $headers = ['Historia', 'Nombre', 'Documento', 'Empresa', 'Cargo', 'Sexo', 'Fecha Nacimiento', 'Activo'];
-            $query   = Worker::with(['company:id,business_name', 'jobPosition:id,name'])
+            $query   = Worker::with(['company:id,business_name', 'jobPosition:id,name,ciiu_code,ciuo_code,ciiu_level'])
                 ->when($validated['company_id'] ?? null, fn ($q, $id) => $q->where('company_id', $id))
                 ->orderBy('last_name')
                 ->cursor();
@@ -248,8 +248,10 @@ class ReportController extends Controller
                     trim($w->first_name . ' ' . $w->last_name),
                     $w->document_number,
                     $w->company?->business_name ?? '-',
-                    $w->jobPosition?->name ?? '-',
-                    $w->sex,
+                    $w->jobPosition
+                        ? trim(($w->jobPosition->ciiu_code ? $w->jobPosition->ciiu_code . ' - ' : '') . $w->jobPosition->name)
+                        : '-',
+                    $w->sex_label,
                     $w->birth_date?->toDateString() ?? '-',
                     $w->is_active ? 'Sí' : 'No',
                 ];
