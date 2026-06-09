@@ -110,7 +110,7 @@
                 <td class="lbl">Cargo</td>
                 <td class="val">
                     @if($w->jobPosition)
-                        {{ trim((($w->jobPosition->ciiu_code ?? null) ? $w->jobPosition->ciiu_code . ' - ' : '') . $w->jobPosition->name) }}
+                        {{ trim((($w->jobPosition->ciuo_code ?? $w->jobPosition->ciiu_code ?? null) ? ($w->jobPosition->ciuo_code ?? $w->jobPosition->ciiu_code) . ' - ' : '') . $w->jobPosition->name) }}
                     @else
                         {{ $w->job_title ?? 'N/A' }}
                     @endif

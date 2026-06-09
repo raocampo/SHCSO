@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\CiiuActivity;
 use App\Models\Company;
 use App\Models\DiagnosisCatalog;
 use App\Models\JobPosition;
@@ -10,6 +11,7 @@ use App\Models\Medication;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CatalogController extends Controller
 {
@@ -17,7 +19,42 @@ class CatalogController extends Controller
     {
         return response()->json([
             'ok' => true,
-            'data' => Company::query()->latest()->limit(200)->get(),
+            'data' => Company::query()
+                ->with('ciiuActivity:code,description,level')
+                ->latest()
+                ->limit(200)
+                ->get(),
+        ]);
+    }
+
+    public function listCiiuActivities(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'level' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = mb_strtolower(trim((string) ($validated['q'] ?? '')));
+        $level = $validated['level'] ?? null;
+        $limit = (int) ($validated['limit'] ?? 20);
+
+        $activities = CiiuActivity::query()
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($q) use ($query) {
+                    $q->whereRaw('LOWER(code) LIKE ?', ["%{$query}%"])
+                        ->orWhereRaw('LOWER(description) LIKE ?', ["%{$query}%"]);
+                });
+            })
+            ->when($level !== null, fn ($builder) => $builder->where('level', $level))
+            ->orderBy('level')
+            ->orderBy('code')
+            ->limit($limit)
+            ->get(['code', 'description', 'level']);
+
+        return response()->json([
+            'ok' => true,
+            'data' => $activities,
         ]);
     }
 
@@ -25,7 +62,7 @@ class CatalogController extends Controller
     {
         $validated = $request->validate([
             'ruc' => ['nullable', 'string', 'max:13', 'unique:companies,ruc'],
-            'ciiu' => ['nullable', 'string', 'max:12'],
+            'ciiu' => ['nullable', 'string', 'max:12', Rule::exists('ciiu_activities', 'code')],
             'business_name' => ['required', 'string', 'min:3', 'max:180'],
             'work_center' => ['nullable', 'string', 'max:180'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -42,7 +79,7 @@ class CatalogController extends Controller
 
         return response()->json([
             'ok' => true,
-            'data' => $company,
+            'data' => $company->load('ciiuActivity:code,description,level'),
         ], 201);
     }
 
@@ -52,7 +89,7 @@ class CatalogController extends Controller
 
         $validated = $request->validate([
             'ruc'           => ['nullable', 'string', 'max:13', 'unique:companies,ruc,' . $companyId],
-            'ciiu'          => ['nullable', 'string', 'max:12'],
+            'ciiu'          => ['nullable', 'string', 'max:12', Rule::exists('ciiu_activities', 'code')],
             'business_name' => ['required', 'string', 'min:3', 'max:180'],
             'work_center'   => ['nullable', 'string', 'max:180'],
             'address'       => ['nullable', 'string', 'max:500'],
@@ -62,7 +99,7 @@ class CatalogController extends Controller
 
         AuditLogger::log($request->user(), 'UPDATE_COMPANY', 'company', (string) $company->id);
 
-        return response()->json(['ok' => true, 'data' => $company]);
+        return response()->json(['ok' => true, 'data' => $company->load('ciiuActivity:code,description,level')]);
     }
 
     public function deleteCompany(Request $request, int $companyId): JsonResponse
@@ -88,26 +125,28 @@ class CatalogController extends Controller
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
-            'level' => ['nullable', 'integer', 'min:1', 'max:6'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:3500'],
+            'level' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:10000'],
         ]);
 
         $query = mb_strtolower(trim((string) ($validated['q'] ?? '')));
         $level = $validated['level'] ?? null;
-        $limit = (int) ($validated['limit'] ?? 2500);
+        $limit = (int) ($validated['limit'] ?? 500);
 
         return response()->json([
             'ok' => true,
             'data' => JobPosition::query()
-                ->whereNotNull('ciiu_code')
+                ->whereNull('ciiu_code')
+                ->whereNotNull('ciuo_code')
                 ->when($query !== '', function ($builder) use ($query) {
                     $builder->where(function ($q) use ($query) {
-                        $q->whereRaw('LOWER(COALESCE(ciiu_code, ciuo_code, \'\')) LIKE ?', ["%{$query}%"])
-                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$query}%"]);
+                        $q->whereRaw('LOWER(ciuo_code) LIKE ?', ["%{$query}%"])
+                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$query}%"])
+                            ->orWhereRaw('LOWER(description) LIKE ?', ["%{$query}%"]);
                     });
                 })
-                ->when($level !== null, fn ($builder) => $builder->where('ciiu_level', $level))
-                ->orderByRaw('COALESCE(ciiu_code, ciuo_code, \'\') ASC')
+                ->when($level !== null, fn ($builder) => $builder->where('ciuo_level', $level))
+                ->orderBy('ciuo_code')
                 ->orderBy('name')
                 ->limit($limit)
                 ->get(),
@@ -119,14 +158,11 @@ class CatalogController extends Controller
         $validated = $request->validate([
             'ciiu_code' => ['nullable', 'string', 'max:12'],
             'ciuo_code' => ['nullable', 'string', 'max:12'],
+            'ciuo_level' => ['nullable', 'integer', 'min:1', 'max:8'],
             'ciiu_level' => ['nullable', 'integer', 'min:1', 'max:6'],
             'name' => ['required', 'string', 'min:3', 'max:160'],
             'description' => ['nullable', 'string', 'max:500'],
         ]);
-
-        if (empty($validated['ciuo_code']) && ! empty($validated['ciiu_code'])) {
-            $validated['ciuo_code'] = $validated['ciiu_code'];
-        }
 
         $jobPosition = JobPosition::create($validated);
 

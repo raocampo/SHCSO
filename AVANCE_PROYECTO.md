@@ -385,3 +385,19 @@
     - alta de consulta con receta
     - busqueda CIE-10 en catalogo
   - validacion local completa: `25 passed (141 assertions)`.
+
+## Actualizacion ejecutada (2026-06-09 - separacion CIIU/CIUO)
+
+### Implementado
+
+- Catalogo CIIU separado para actividad economica de empresas:
+  - nueva tabla `ciiu_activities`
+  - nuevo endpoint `GET /api/catalog/ciiu-activities`
+  - formulario de empresa con buscador y seleccion desde catalogo CIIU
+- Catalogo CIUO para puesto/area de trabajo del trabajador:
+  - importacion desde `docs/ciuo.xlsx` a `backend/database/data/ciuo_ecuador.csv`
+  - `job_positions` pasa a usarse como catalogo CIUO
+  - formulario de trabajador actualizado a `Puesto / area CIUO`
+- Ajustes de reportes/PDF para mostrar codigo CIUO en cargos de trabajadores.
+- Pruebas:
+  - nuevo `CatalogClassificationApiTest` para validar CIIU en empresas y CIUO en puestos.

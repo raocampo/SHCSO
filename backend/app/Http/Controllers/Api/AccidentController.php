@@ -168,7 +168,7 @@ class AccidentController extends Controller
                 'sex'             => $worker->sex_label,
                 'company'         => $worker->company?->name ?? ($worker->company?->business_name ?? '-'),
                 'job_position'    => $worker->jobPosition
-                    ? trim((($worker->jobPosition->ciiu_code ?? null) ? $worker->jobPosition->ciiu_code . ' - ' : '') . $worker->jobPosition->name)
+                    ? trim((($worker->jobPosition->ciuo_code ?? $worker->jobPosition->ciiu_code ?? null) ? ($worker->jobPosition->ciuo_code ?? $worker->jobPosition->ciiu_code) . ' - ' : '') . $worker->jobPosition->name)
                     : '-',
             ],
             'doctor'  => [

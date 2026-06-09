@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
@@ -18,5 +19,10 @@ class Company extends Model
     public function workers(): HasMany
     {
         return $this->hasMany(Worker::class);
+    }
+
+    public function ciiuActivity(): BelongsTo
+    {
+        return $this->belongsTo(CiiuActivity::class, 'ciiu', 'code');
     }
 }

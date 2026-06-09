@@ -376,9 +376,9 @@
                         <div class="field span-2"><label>Tipo de sangre</label><input name="blood_type"></div>
                         <div class="field span-2"><label>Lateralidad</label><input name="laterality"></div>
                         <div class="field span-6"><label>Empresa</label><select id="workerCompany" name="company_id"></select></div>
-                        <div class="field span-6"><label>Puesto CIIU</label>
+                        <div class="field span-6"><label>Puesto / área CIUO</label>
                             <div class="workerPositionSearchWrap">
-                                <input id="workerPositionSearch" type="text" placeholder="Buscar codigo o actividad CIIU" autocomplete="off">
+                                <input id="workerPositionSearch" type="text" placeholder="Buscar código o cargo CIUO" autocomplete="off">
                                 <input id="workerPosition" name="job_position_id" type="hidden">
                                 <div id="workerPositionResults" class="autocompleteDropdown hidden"></div>
                             </div>
@@ -1097,7 +1097,14 @@
             <div class="field"><label>RUC</label><input id="companyFormRuc" name="ruc" type="text" maxlength="13" placeholder="0999999999001"></div>
             <div class="field"><label>Centro de Trabajo</label><input id="companyFormWorkCenter" name="work_center" type="text" placeholder="Ej: Planta Norte"></div>
             <div class="field"><label>Dirección</label><input id="companyFormAddress" name="address" type="text" placeholder="Dirección principal"></div>
-            <div class="field"><label>Código CIIU</label><input id="companyFormCiiu" name="ciiu" type="text" maxlength="12" placeholder="Código actividad económica"></div>
+            <div class="field"><label>Actividad económica CIIU</label>
+                <div class="workerPositionSearchWrap">
+                    <input id="companyFormCiiuSearch" type="text" placeholder="Buscar código o actividad CIIU" autocomplete="off">
+                    <input id="companyFormCiiu" name="ciiu" type="hidden">
+                    <div id="companyFormCiiuResults" class="autocompleteDropdown hidden"></div>
+                </div>
+                <p id="companyFormCiiuSelected" class="hint workerPositionSelected">Sin actividad CIIU seleccionada.</p>
+            </div>
             <div style="display:flex;gap:8px;margin-top:12px;">
                 <button class="btn accent" type="submit" id="companyFormSubmitBtn">💾 Guardar</button>
                 <button class="btn" type="button" id="companyModalCancel">Cancelar</button>
@@ -1412,7 +1419,7 @@
 
 <script>
 const state = {
-    token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
+    token:null, user:null, workers:[], evaluations:[], certificates:[], companies:[], positions:[], companyCiiuResults:[], users:[], roles:[], dashboard:null, monthly:[], aptitude:[],
     selectedWorkerId:null, selectedWorkerName:null, selectedWorkerHistory:null, selectedWorkerEvolutions:[], activeView:"dashboard", workerStep:"recent", operationStep:"consult", workerQuery:"", workerCompanyId:"",
     setupStatus:{ admin_exists:true, bootstrap_required:false, users_count:0 },
     consultation:{ worker_search:"", diagnosis_results:[], selected_diagnoses:[], prescriptions:[] },
@@ -1466,10 +1473,12 @@ const refs = {
     authRecoveryActions: document.getElementById("authRecoveryActions"), showForgotPasswordBtn: document.getElementById("showForgotPasswordBtn"), showResetPasswordBtn: document.getElementById("showResetPasswordBtn"),
     forgotPasswordBox: document.getElementById("forgotPasswordBox"), forgotPasswordForm: document.getElementById("forgotPasswordForm"), cancelForgotPasswordBtn: document.getElementById("cancelForgotPasswordBtn"),
     resetPasswordBox: document.getElementById("resetPasswordBox"), resetPasswordForm: document.getElementById("resetPasswordForm"), cancelResetPasswordBtn: document.getElementById("cancelResetPasswordBtn"),
-    companyModal: document.getElementById('companyModal'), companyForm: document.getElementById('companyForm'), companyFormId: document.getElementById('companyFormId'), newCompanyBtn: document.getElementById('newCompanyBtn')
+    companyModal: document.getElementById('companyModal'), companyForm: document.getElementById('companyForm'), companyFormId: document.getElementById('companyFormId'), newCompanyBtn: document.getElementById('newCompanyBtn'),
+    companyFormCiiu: document.getElementById('companyFormCiiu'), companyFormCiiuSearch: document.getElementById('companyFormCiiuSearch'), companyFormCiiuResults: document.getElementById('companyFormCiiuResults'), companyFormCiiuSelected: document.getElementById('companyFormCiiuSelected')
 };
 let diagnosisSearchTimer = null;
 let workerPositionSearchTimer = null;
+let companyCiiuSearchTimer = null;
 
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
 // Alias: showStatus("text", "success"|"error"|"warn") — usado por módulos nuevos
@@ -1658,7 +1667,7 @@ function sexLabel(value){
 }
 function jobPositionLabel(position){
     if(!position) return "Sin puesto";
-    const code = position.ciiu_code || position.ciuo_code || "";
+    const code = position.ciuo_code || position.ciiu_code || "";
     return code ? `${code} - ${position.name}` : position.name;
 }
 function normalizeWorkerSexOptions(){
@@ -1681,11 +1690,81 @@ function normalizeSearchCode(value){
 }
 function workerPositionSearchText(position){
     return [
-        position?.ciiu_code,
         position?.ciuo_code,
+        position?.ciiu_code,
         position?.name,
         position?.description
     ].filter(Boolean).join(" ");
+}
+function ciiuActivityLabel(activity){
+    if(!activity) return "";
+    return activity.description ? `${activity.code} - ${activity.description}` : activity.code;
+}
+function hideCompanyCiiuResults(){
+    if(!refs.companyFormCiiuResults) return;
+    refs.companyFormCiiuResults.classList.add("hidden");
+}
+function setCompanyCiiu(activity=null){
+    const code = activity?.code || "";
+    const label = activity ? ciiuActivityLabel(activity) : "";
+    if(refs.companyFormCiiu) refs.companyFormCiiu.value = code;
+    if(refs.companyFormCiiuSearch) refs.companyFormCiiuSearch.value = label;
+    if(refs.companyFormCiiuSelected){
+        refs.companyFormCiiuSelected.textContent = activity ? `Seleccionado: ${label}` : "Sin actividad CIIU seleccionada.";
+    }
+    if(refs.companyFormCiiuResults){
+        refs.companyFormCiiuResults.innerHTML = "";
+        hideCompanyCiiuResults();
+    }
+}
+function renderCompanyCiiuResults(results, message=""){
+    if(!refs.companyFormCiiuResults) return;
+    refs.companyFormCiiuResults.innerHTML = "";
+    if(message){
+        const item = document.createElement("div");
+        item.className = "rxMedItem";
+        item.innerHTML = `<span>${esc(message)}</span>`;
+        refs.companyFormCiiuResults.appendChild(item);
+        refs.companyFormCiiuResults.classList.remove("hidden");
+        return;
+    }
+    if(!results.length){
+        hideCompanyCiiuResults();
+        return;
+    }
+    results.forEach((activity) => {
+        const item = document.createElement("div");
+        item.className = "rxMedItem";
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+        item.dataset.ciiuCode = activity.code;
+        item.innerHTML = `<strong>${esc(activity.code)} - ${esc(activity.description)}</strong><span>Nivel ${esc(activity.level)}</span>`;
+        refs.companyFormCiiuResults.appendChild(item);
+    });
+    refs.companyFormCiiuResults.classList.remove("hidden");
+}
+async function searchCompanyCiiuActivities(){
+    if(!refs.companyFormCiiuSearch) return;
+    const query = refs.companyFormCiiuSearch.value;
+    if(String(query || "").trim().length < 2){
+        renderCompanyCiiuResults([], "Escribe al menos 2 caracteres del código o actividad CIIU.");
+        return;
+    }
+    try{
+        const res = await api(`/api/catalog/ciiu-activities?${buildQueryString({ q:query, level:6, limit:12 })}`);
+        state.companyCiiuResults = res.data || [];
+        renderCompanyCiiuResults(state.companyCiiuResults, state.companyCiiuResults.length ? "" : "Sin coincidencias en el catálogo CIIU.");
+    } catch(err){
+        renderCompanyCiiuResults([], err.message || "No se pudo consultar el catálogo CIIU.");
+    }
+}
+function findCompanyCiiuByCode(code){
+    if(!code) return null;
+    const fromResults = state.companyCiiuResults.find((activity) => String(activity.code) === String(code));
+    if(fromResults) return fromResults;
+    const fromCompany = state.companies.find((company) => String(company.ciiu) === String(code));
+    if(fromCompany?.ciiu_activity) return fromCompany.ciiu_activity;
+    return { code, description:"", level:null };
 }
 function findWorkerPositionById(id){
     if(!id) return null;
@@ -1753,11 +1832,11 @@ function searchWorkerPositions(){
     if(!refs.workerPositionSearch) return;
     const query = refs.workerPositionSearch.value;
     if(String(query || "").trim().length < 2){
-        renderWorkerPositionResults([], "Escribe al menos 2 caracteres del codigo o actividad CIIU.");
+        renderWorkerPositionResults([], "Escribe al menos 2 caracteres del código o cargo CIUO.");
         return;
     }
     const results = getWorkerPositionMatches(query);
-    renderWorkerPositionResults(results, results.length ? "" : "Sin coincidencias en el catalogo CIIU.");
+    renderWorkerPositionResults(results, results.length ? "" : "Sin coincidencias en el catálogo CIUO.");
 }
 async function searchDiagnosisCatalog(){
     const query = String(refs.diagnosisSearchInput?.value || "").trim();
@@ -1981,7 +2060,7 @@ async function loadAll(){
     });
     const [dashboard, monthly, aptitude, workers, evaluations, certificates, companies, positions] = await Promise.all([
         api("/api/reports/dashboard"), api("/api/reports/monthly-activity?months=6"), api("/api/reports/aptitude-by-company?limit=8"),
-        api(`/api/workers?${workersQuery}`), api(`/api/evaluations?${evaluationsQuery}`), api(`/api/certificates?${certificatesQuery}`), api("/api/catalog/companies"), api("/api/catalog/job-positions?level=6&limit=2500")
+        api(`/api/workers?${workersQuery}`), api(`/api/evaluations?${evaluationsQuery}`), api(`/api/certificates?${certificatesQuery}`), api("/api/catalog/companies"), api("/api/catalog/job-positions?level=8&limit=10000")
     ]);
     state.dashboard = dashboard.data; state.monthly = monthly.data || []; state.aptitude = aptitude.data || [];
     state.workers = workers.data || []; state.evaluations = evaluations.data || []; state.certificates = certificates.data || []; state.companies = companies.data || []; state.positions = positions.data || [];
@@ -5207,6 +5286,8 @@ refs.miPerfilForm.addEventListener("submit", async (e) => {
 function openNewCompanyModal() {
     refs.companyFormId.value = '';
     refs.companyForm.reset();
+    state.companyCiiuResults = [];
+    setCompanyCiiu(null);
     document.getElementById('companyModalTitle').textContent = '🏢 Nueva Empresa';
     document.getElementById('companyFormSubmitBtn').textContent = '💾 Guardar';
     refs.companyModal.classList.remove('hidden');
@@ -5220,7 +5301,7 @@ function openEditCompany(id) {
     document.getElementById('companyFormRuc').value = co.ruc || '';
     document.getElementById('companyFormWorkCenter').value = co.work_center || '';
     document.getElementById('companyFormAddress').value = co.address || '';
-    document.getElementById('companyFormCiiu').value = co.ciiu || '';
+    setCompanyCiiu(co.ciiu_activity || (co.ciiu ? { code: co.ciiu, description: '', level: null } : null));
     document.getElementById('companyModalTitle').textContent = '✏️ Editar Empresa';
     document.getElementById('companyFormSubmitBtn').textContent = '💾 Actualizar';
     refs.companyModal.classList.remove('hidden');
@@ -5245,10 +5326,54 @@ refs.companyModal.addEventListener('click', (e) => { if (e.target === refs.compa
 document.getElementById('companyModalClose').addEventListener('click', () => refs.companyModal.classList.add('hidden'));
 document.getElementById('companyModalCancel').addEventListener('click', () => refs.companyModal.classList.add('hidden'));
 
+if(refs.companyFormCiiuSearch){
+    refs.companyFormCiiuSearch.addEventListener('input', () => {
+        if(refs.companyFormCiiu) refs.companyFormCiiu.value = '';
+        if(refs.companyFormCiiuSelected) refs.companyFormCiiuSelected.textContent = 'Sin actividad CIIU seleccionada.';
+        clearTimeout(companyCiiuSearchTimer);
+        companyCiiuSearchTimer = setTimeout(searchCompanyCiiuActivities, 180);
+    });
+    refs.companyFormCiiuSearch.addEventListener('focus', () => {
+        if(refs.companyFormCiiuSearch.value.trim().length >= 2 && !refs.companyFormCiiu?.value) searchCompanyCiiuActivities();
+    });
+    refs.companyFormCiiuSearch.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape'){
+            hideCompanyCiiuResults();
+            return;
+        }
+        if(e.key === 'Enter' && refs.companyFormCiiuResults && !refs.companyFormCiiuResults.classList.contains('hidden')){
+            const first = refs.companyFormCiiuResults.querySelector('[data-ciiu-code]');
+            if(first){
+                e.preventDefault();
+                const activity = findCompanyCiiuByCode(first.dataset.ciiuCode);
+                if(activity) setCompanyCiiu(activity);
+            }
+        }
+    });
+    refs.companyFormCiiuSearch.addEventListener('blur', () => {
+        window.setTimeout(hideCompanyCiiuResults, 160);
+    });
+}
+if(refs.companyFormCiiuResults){
+    refs.companyFormCiiuResults.addEventListener('mousedown', (e) => e.preventDefault());
+    refs.companyFormCiiuResults.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-ciiu-code]');
+        if(!item) return;
+        const activity = findCompanyCiiuByCode(item.dataset.ciiuCode);
+        if(activity) setCompanyCiiu(activity);
+    });
+}
+
 refs.companyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(refs.companyForm);
     const id = refs.companyFormId.value;
+    const ciiuSearch = String(refs.companyFormCiiuSearch?.value || '').trim();
+    if(ciiuSearch && !refs.companyFormCiiu?.value){
+        showStatus('Selecciona una actividad CIIU del catálogo antes de guardar la empresa.', 'error');
+        refs.companyFormCiiuSearch?.focus();
+        return;
+    }
     const body = {
         business_name: fd.get('business_name'),
         ruc: fd.get('ruc') || null,

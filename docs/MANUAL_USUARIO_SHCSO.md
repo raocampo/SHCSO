@@ -90,10 +90,10 @@ Acceda haciendo clic en la pestaña **"Trabajadores"** en la barra superior.
    - Nombres y apellidos
    - Fecha de nacimiento
    - Sexo
-3. Complete los campos opcionales: correo, teléfono, grupo sanguíneo, lateralidad, empresa, puesto de trabajo.
+3. Complete los campos opcionales: correo, teléfono, grupo sanguíneo, lateralidad, empresa y puesto/área de trabajo CIUO.
 4. Haga clic en **"Guardar trabajador"**.
 
-> **Tip:** Asigne la empresa y el puesto de trabajo para que los certificados e informes incluyan esta información automáticamente.
+> **Tip:** Asigne la empresa y seleccione el puesto/área CIUO para que los certificados e informes incluyan esta información automáticamente.
 
 ### 3.3 Historia clínica ampliada
 

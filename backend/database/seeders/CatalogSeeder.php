@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
+use App\Models\CiiuActivity;
 use App\Models\DiagnosisCatalog;
 use App\Models\JobPosition;
 use Illuminate\Database\Seeder;
@@ -14,17 +15,18 @@ class CatalogSeeder extends Seeder
      */
     public function run(): void
     {
-        Company::query()->firstOrCreate(
+        $this->seedCiiuActivities();
+        $this->seedCiuoJobPositions();
+
+        Company::query()->updateOrCreate(
             ['ruc' => '0999999999001'],
             [
-                'ciiu' => 'Q8621.01',
+                'ciiu' => 'Q8620.01',
                 'business_name' => 'Empresa Demo SHCSO',
                 'work_center' => 'Planta Principal',
                 'address' => 'Direccion referencial',
             ]
         );
-
-        $this->seedCiiuJobPositions();
 
         $diagnoses = [
             'Z00.0' => 'Examen medico general',
@@ -40,9 +42,45 @@ class CatalogSeeder extends Seeder
         }
     }
 
-    private function seedCiiuJobPositions(): void
+    private function seedCiiuActivities(): void
     {
         $path = database_path('data/ciiu_rev4_inec.csv');
+        if (! is_readable($path)) {
+            return;
+        }
+
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            return;
+        }
+
+        fgetcsv($handle);
+
+        while (($row = fgetcsv($handle)) !== false) {
+            [$code, $description, $level] = array_pad($row, 3, null);
+            $code = trim((string) $code);
+            $description = trim((string) $description);
+            $level = (int) $level;
+
+            if ($code === '' || $description === '' || $level < 1) {
+                continue;
+            }
+
+            CiiuActivity::query()->updateOrCreate(
+                ['code' => $code],
+                [
+                    'description' => $description,
+                    'level' => $level,
+                ]
+            );
+        }
+
+        fclose($handle);
+    }
+
+    private function seedCiuoJobPositions(): void
+    {
+        $path = database_path('data/ciuo_ecuador.csv');
         if (! is_readable($path)) {
             return;
         }
@@ -69,10 +107,11 @@ class CatalogSeeder extends Seeder
                 : $description;
 
             JobPosition::query()->updateOrCreate(
-                ['ciiu_code' => $code],
+                ['ciuo_code' => $code],
                 [
-                    'ciuo_code' => $code,
-                    'ciiu_level' => $level,
+                    'ciuo_level' => $level,
+                    'ciiu_code' => null,
+                    'ciiu_level' => null,
                     'name' => $name,
                     'description' => $description,
                 ]

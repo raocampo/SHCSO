@@ -81,6 +81,8 @@ Funciones web actuales:
 - Filtros de evaluaciones por tipo, aptitud y rango de fechas
 - Filtros de certificados por aptitud y rango de fechas
 - Gestion de usuarios desde interfaz web (crear, editar, activar/desactivar) para perfil `ADMIN`
+- Empresas con selección de actividad económica desde catálogo `CIIU Rev. 4.0 INEC`
+- Trabajadores con selección de puesto/área de trabajo desde catálogo `CIUO`
 - Historia clinica ampliada por trabajador (antecedentes estructurados y notas de evolucion longitudinal)
 - Linea de tiempo clinica consolidada (evaluaciones y certificados) en ficha de trabajador
 - Carga de examenes/adjuntos por evaluacion con metadatos:
@@ -119,7 +121,8 @@ Funciones web actuales:
 - `PUT /api/users/{userId}/status` (`ADMIN`)
 - `PUT /api/users/{userId}/reset-password` (`ADMIN`)
 - `GET|POST /api/catalog/companies`
-- `GET|POST /api/catalog/job-positions` (puestos/actividades desde CIIU Rev. 4.0 INEC; acepta `q`, `level`, `limit`)
+- `GET /api/catalog/ciiu-activities` (actividades economicas `CIIU Rev. 4.0 INEC`; acepta `q`, `level`, `limit`)
+- `GET|POST /api/catalog/job-positions` (puestos/areas de trabajo desde catalogo `CIUO`; acepta `q`, `level`, `limit`)
 - `GET /api/catalog/diagnoses` (busqueda CIE-10)
 - `GET|POST /api/workers`
 - `PUT /api/workers/{workerId}`

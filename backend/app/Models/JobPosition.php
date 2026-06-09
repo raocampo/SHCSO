@@ -9,6 +9,7 @@ class JobPosition extends Model
 {
     protected $fillable = [
         'ciuo_code',
+        'ciuo_level',
         'ciiu_code',
         'ciiu_level',
         'name',
@@ -18,6 +19,7 @@ class JobPosition extends Model
     protected function casts(): array
     {
         return [
+            'ciuo_level' => 'integer',
             'ciiu_level' => 'integer',
         ];
     }

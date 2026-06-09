@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
 
     Route::get('/catalog/companies', [CatalogController::class, 'listCompanies']);
+    Route::get('/catalog/ciiu-activities', [CatalogController::class, 'listCiiuActivities']);
     Route::post('/catalog/companies', [CatalogController::class, 'createCompany'])
         ->middleware('role:ADMIN,RECEPCION');
     Route::put('/catalog/companies/{companyId}', [CatalogController::class, 'updateCompany'])
