@@ -132,7 +132,8 @@
         .rxMedItem:hover { background:#eef4ff; }
         .rxMedItem strong { display:block; color:#0e5a5e; }
         .rxMedItem span { color:#7a8fa6; font-size:.8rem; }
-        .autocompleteDropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cde0d9; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:500; max-height:200px; overflow-y:auto; }
+        .autocompleteDropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid #cde0d9; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); z-index:500; max-height:var(--dropdown-max-height, 220px); overflow-y:auto; }
+        .autocompleteDropdown.dropUp { top:auto; bottom:calc(100% + 4px); }
         .autocompleteDropdown.hidden { display:none; }
         /* Modal overlay */
         .modalOverlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
@@ -1483,7 +1484,70 @@ let companyCiiuSearchTimer = null;
 function status(msg, type="info"){ refs.status.textContent = msg; refs.status.classList.remove("ok","error"); if(type==="ok") refs.status.classList.add("ok"); if(type==="error") refs.status.classList.add("error"); }
 // Alias: showStatus("text", "success"|"error"|"warn") — usado por módulos nuevos
 function showStatus(msg, type="info"){ status(msg, type === "success" ? "ok" : type); }
-function fmtDate(v){ if(!v) return "-"; try { return new Date(v).toLocaleDateString(); } catch { return v; } }
+function pad2(value){ return String(value).padStart(2, "0"); }
+function parseDateParts(value){
+    const raw = String(value ?? "").trim();
+    if(!raw) return null;
+    let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m){
+        const year = Number(m[1]);
+        const month = Number(m[2]);
+        const day = Number(m[3]);
+        if(year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31){
+            return { year, month, day, iso:`${m[1]}-${m[2]}-${m[3]}` };
+        }
+    }
+    m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if(m){
+        const day = Number(m[1]);
+        const month = Number(m[2]);
+        const year = Number(m[3]);
+        if(year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31){
+            return { year, month, day, iso:`${year}-${pad2(month)}-${pad2(day)}` };
+        }
+    }
+    const parsed = new Date(raw);
+    if(Number.isNaN(parsed.getTime())) return null;
+    return { year:parsed.getFullYear(), month:parsed.getMonth() + 1, day:parsed.getDate(), iso:`${parsed.getFullYear()}-${pad2(parsed.getMonth() + 1)}-${pad2(parsed.getDate())}` };
+}
+function dateInputValue(value){
+    return parseDateParts(value)?.iso || "";
+}
+function formatDateOnly(value){
+    const p = parseDateParts(value);
+    return p ? `${pad2(p.day)}/${pad2(p.month)}/${p.year}` : "-";
+}
+function calculateAge(value){
+    const p = parseDateParts(value);
+    if(!p) return null;
+    const today = new Date();
+    let age = today.getFullYear() - p.year;
+    const monthDelta = (today.getMonth() + 1) - p.month;
+    if(monthDelta < 0 || (monthDelta === 0 && today.getDate() < p.day)) age--;
+    return age >= 0 && age < 130 ? age : null;
+}
+function formatBirthWithAge(value){
+    const formatted = formatDateOnly(value);
+    if(formatted === "-") return "—";
+    const age = calculateAge(value);
+    return `${formatted}${age === null ? "" : ` · ${age} años`}`;
+}
+function fmtDate(v){
+    const dateOnly = parseDateParts(v);
+    if(dateOnly) return `${pad2(dateOnly.day)}/${pad2(dateOnly.month)}/${dateOnly.year}`;
+    return "-";
+}
+function orientAutocompleteDropdown(input, dropdown){
+    if(!input || !dropdown) return;
+    const rect = input.getBoundingClientRect();
+    const gap = 12;
+    const below = window.innerHeight - rect.bottom - gap;
+    const above = rect.top - gap;
+    const openUp = below < 190 && above > below;
+    const available = Math.max(120, Math.min(260, (openUp ? above : below) - 8));
+    dropdown.classList.toggle("dropUp", openUp);
+    dropdown.style.setProperty("--dropdown-max-height", `${available}px`);
+}
 function formatBytes(value){
     const bytes = Number(value || 0);
     if(!Number.isFinite(bytes) || bytes <= 0) return "-";
@@ -1725,6 +1789,7 @@ function renderCompanyCiiuResults(results, message=""){
         item.className = "rxMedItem";
         item.innerHTML = `<span>${esc(message)}</span>`;
         refs.companyFormCiiuResults.appendChild(item);
+        orientAutocompleteDropdown(refs.companyFormCiiuSearch, refs.companyFormCiiuResults);
         refs.companyFormCiiuResults.classList.remove("hidden");
         return;
     }
@@ -1741,6 +1806,7 @@ function renderCompanyCiiuResults(results, message=""){
         item.innerHTML = `<strong>${esc(activity.code)} - ${esc(activity.description)}</strong><span>Nivel ${esc(activity.level)}</span>`;
         refs.companyFormCiiuResults.appendChild(item);
     });
+    orientAutocompleteDropdown(refs.companyFormCiiuSearch, refs.companyFormCiiuResults);
     refs.companyFormCiiuResults.classList.remove("hidden");
 }
 async function searchCompanyCiiuActivities(){
@@ -1809,6 +1875,7 @@ function renderWorkerPositionResults(results, message=""){
         item.className = "rxMedItem";
         item.innerHTML = `<span>${esc(message)}</span>`;
         refs.workerPositionResults.appendChild(item);
+        orientAutocompleteDropdown(refs.workerPositionSearch, refs.workerPositionResults);
         refs.workerPositionResults.classList.remove("hidden");
         return;
     }
@@ -1826,6 +1893,7 @@ function renderWorkerPositionResults(results, message=""){
         item.innerHTML = `<strong>${esc(jobPositionLabel(position))}</strong>${description}`;
         refs.workerPositionResults.appendChild(item);
     });
+    orientAutocompleteDropdown(refs.workerPositionSearch, refs.workerPositionResults);
     refs.workerPositionResults.classList.remove("hidden");
 }
 function searchWorkerPositions(){
@@ -2203,7 +2271,7 @@ function fillWorkerForm(worker, enableEditing=false){
     refs.workerForm.document_number.value = worker.document_number || "";
     refs.workerForm.first_name.value = worker.first_name || "";
     refs.workerForm.last_name.value = worker.last_name || "";
-    refs.workerForm.birth_date.value = worker.birth_date || "";
+    refs.workerForm.birth_date.value = dateInputValue(worker.birth_date);
     refs.workerForm.sex.value = worker.sex === "F" ? "F" : "M";
     refs.workerForm.email.value = worker.email || "";
     refs.workerForm.phone.value = worker.phone || "";
@@ -2264,19 +2332,7 @@ function renderWorkerHistory(){
     }
 
     const w = history.worker;
-    // Calcular edad
-    let age = "";
-    if(w.birth_date){
-        const born = new Date(w.birth_date);
-        const today = new Date();
-        let a = today.getFullYear() - born.getFullYear();
-        const m = today.getMonth() - born.getMonth();
-        if(m < 0 || (m === 0 && today.getDate() < born.getDate())) a--;
-        age = ` · ${a} años`;
-    }
-    const birthDisplay = w.birth_date
-        ? new Date(w.birth_date + 'T00:00:00').toLocaleDateString('es-EC', {day:'2-digit', month:'2-digit', year:'numeric'}) + age
-        : '—';
+    const birthDisplay = formatBirthWithAge(w.birth_date);
     refs.workerDetailBox.innerHTML = `
         <p class="meta"><strong>Nombre:</strong> ${esc(w.last_name)}, ${esc(w.first_name)}</p>
         <p class="meta"><strong>Fecha nacimiento:</strong> ${birthDisplay}</p>
